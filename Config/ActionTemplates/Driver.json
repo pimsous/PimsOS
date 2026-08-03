@@ -1,0 +1,17 @@
+{
+    "Id": "PrinterDriver",
+
+    "Type": "Driver",
+
+    "Description": "Supprime un pilote.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Driver": "oem14.inf",
+
+    "Operation": "Remove"
+}

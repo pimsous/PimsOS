@@ -1,0 +1,19 @@
+{
+    "Id": "ProgramDataUpdater",
+
+    "Type": "ScheduledTask",
+
+    "Description": "Désactive la tâche.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Path": "\\Microsoft\\Windows\\Application Experience\\",
+
+    "Name": "ProgramDataUpdater",
+
+    "State": "Disabled"
+}

@@ -1,0 +1,17 @@
+{
+    "Id": "DeleteWallpaper",
+
+    "Type": "File",
+
+    "Description": "Supprime un fichier.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Operation": "Delete",
+
+    "Path": "%SystemRoot%\\Web\\Wallpaper\\..."
+}

@@ -1,0 +1,122 @@
+
+# ==========================================
+# Tests : ActionRegistry
+# Projet : PimsOS Builder
+# ==========================================
+
+BeforeAll {
+
+    $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
+
+    . "$ProjectRoot\Modules\Core\ActionRegistry.ps1"
+
+}
+
+Describe "ActionRegistry" {
+
+    BeforeEach {
+
+        Reset-ActionRegistry
+
+    }
+
+    Context "Get-ActionHandler" {
+
+        It "Retourne le handler Registry" {
+
+            $Handler = Get-ActionHandler -Type "Registry"
+
+            $Handler | Should -Be "Invoke-RegistryAction"
+
+        }
+
+        It "Retourne le handler Service" {
+
+            $Handler = Get-ActionHandler -Type "Service"
+
+            $Handler | Should -Be "Invoke-ServiceAction"
+
+        }
+
+        It "Retourne `$null pour un type inconnu" {
+
+            $Handler = Get-ActionHandler -Type "Unknown"
+
+            $Handler | Should -BeNullOrEmpty
+
+        }
+
+    }
+
+    Context "Register-ActionHandler" {
+
+        BeforeEach {
+
+            function Invoke-TestAction { }
+
+        }
+
+        It "Ajoute un nouveau handler" {
+
+            Register-ActionHandler `
+                -Type "Test" `
+                -Handler "Invoke-TestAction"
+
+            $Handler = Get-ActionHandler -Type "Test"
+
+            $Handler | Should -Be "Invoke-TestAction"
+
+        }
+
+        It "Refuse un type déjà enregistré" {
+
+            {
+                Register-ActionHandler `
+                    -Type "Registry" `
+                    -Handler "Invoke-TestAction"
+            } | Should -Throw
+
+        }
+
+        It "Refuse un handler inexistant" {
+
+            {
+                Register-ActionHandler `
+                    -Type "Test" `
+                    -Handler "Invoke-Inconnu"
+            } | Should -Throw
+
+        }
+
+    }
+
+    Context "Get-RegisteredActionHandlers" {
+
+        It "Retourne une Hashtable" {
+
+            $Registry = Get-RegisteredActionHandlers
+
+            $Registry | Should -BeOfType Hashtable
+
+        }
+
+        It "Contient Registry" {
+
+            $Registry = Get-RegisteredActionHandlers
+
+            $Registry.ContainsKey("Registry") | Should -BeTrue
+
+        }
+
+        It "Contient Service" {
+
+            $Registry = Get-RegisteredActionHandlers
+
+            $Registry.ContainsKey("Service") | Should -BeTrue
+
+        }
+
+    }
+
+}
+

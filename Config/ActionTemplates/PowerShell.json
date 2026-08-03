@@ -1,0 +1,15 @@
+{
+    "Id": "Cleanup",
+
+    "Type": "PowerShell",
+
+    "Description": "Script PowerShell.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Script": "Remove-AppxPackage ..."
+}

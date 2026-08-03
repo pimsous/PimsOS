@@ -1,0 +1,17 @@
+{
+    "Id": "Apps.RemoveWeather",
+
+    "Type": "Package",
+
+    "Description": "Supprime Windows Météo.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Package": "Microsoft.BingWeather",
+
+    "Operation": "Remove"
+}

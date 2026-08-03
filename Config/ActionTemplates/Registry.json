@@ -1,0 +1,23 @@
+{
+    "Id": "Privacy.DisableTelemetry.Registry01",
+
+    "Type": "Registry",
+
+    "Description": "Désactive la télémétrie.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Hive": "SOFTWARE",
+
+    "Key": "Policies\\Microsoft\\Windows\\DataCollection",
+
+    "Name": "AllowTelemetry",
+
+    "Value": 0,
+
+    "DataType": "DWord"
+}

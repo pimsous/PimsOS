@@ -1,0 +1,13 @@
+{
+  "Metadata": {
+    "Name": "Gaming",
+    "DisplayName": "Gaming",
+    "Description": "Optimisations pour les jeux.",
+    "Author": "Pims",
+    "Version": "1.0"
+  },
+  "Tweaks": {
+    "Privacy.DisableTelemetry": true,
+    "Explorer.ShowFileExtensions": true
+  }
+}

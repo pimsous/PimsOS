@@ -1,0 +1,12 @@
+{
+    "Name": "Registry",
+
+    "Description": "Profil de test du moteur Registry.",
+
+    "Tweaks": [
+        {
+            "Id": "Privacy.DisableTelemetry",
+            "Enabled": true
+        }
+    ]
+}

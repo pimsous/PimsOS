@@ -1,0 +1,17 @@
+{
+    "Id": "RemoveTemp",
+
+    "Type": "Folder",
+
+    "Description": "Supprime un dossier.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Operation": "Delete",
+
+    "Path": "%ProgramFiles%\\..."
+}

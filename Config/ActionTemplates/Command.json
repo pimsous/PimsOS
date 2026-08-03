@@ -1,0 +1,17 @@
+{
+    "Id": "TakeOwnership",
+
+    "Type": "Command",
+
+    "Description": "Exécute une commande.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Command": "takeown",
+
+    "Arguments": "/F C:\\..."
+}

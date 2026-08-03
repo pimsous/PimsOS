@@ -1,0 +1,46 @@
+{
+  
+  "Logging": {
+    "KeepLogs": 20,
+    "Level": "INFO",
+    "Encoding": "UTF8"
+  },
+
+  "Paths": {
+	  "ISO": "ISO",
+	  "Logs": "Logs",
+	  "Output": "Output",
+	  "Mount": "Mount",
+	  "Temp": "Temp",
+	  "Resources": "Resources",
+	  "Packages": "Packages",
+	  "Registry": "Registry",
+	  "Documentation": "Documentation"
+	},
+
+  "Workspace": {
+    "Root": "Workspace",
+    "ISO": "Workspace\\ISO",
+    "Sources": "Workspace\\Sources",
+    "MountISO": "Workspace\\Mount\\ISO",
+    "MountWIM": "Workspace\\Mount\\WIM",
+    "Temp": "Workspace\\Temp",
+    "Extract": "Workspace\\Extract"
+  },
+
+  "Requirements": {
+    "MinimumFreeSpaceGB": 20,
+    "PowerShellMajor": 7
+  },
+
+  "Image": {
+    "Edition": null,
+    "Language": "fr-FR"
+  },
+
+  "Build": {
+    "Id": "Development",
+    "CreateISO": true,
+    "CreateReport": true
+  }
+}

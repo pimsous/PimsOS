@@ -1,0 +1,52 @@
+{
+    "Categories": [
+
+        {
+            "Id": "Privacy",
+            "Name": "Confidentialité",
+            "Description": "Paramètres liés à la confidentialité.",
+
+            "Icon": "Shield",
+
+            "Color": "#0078D4",
+
+            "Visible": true,
+
+            "Order": 10,
+
+            "Groups": [
+                "Privacy",
+                "Telemetry",
+                "Advertising",
+                "Diagnostics",
+                "Cloud",
+                "Location"
+            ]
+        },
+
+        {
+            "Id": "Xbox",
+            "Name": "Xbox",
+
+            "Description": "Paramètres liés aux composants Xbox.",
+
+            "Icon": "Xbox",
+
+            "Color": "#107C10",
+
+            "Visible": true,
+
+            "Order": 20,
+
+            "Groups": [
+                "Gaming",
+                "Capture",
+                "Overlay",
+                "Services",
+                "Applications",
+                "Input"
+            ]
+        }
+
+    ]
+}

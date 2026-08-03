@@ -1,0 +1,48 @@
+{
+    "Id": "Xbox.DisableGameBar",
+    "Name": "Désactiver Xbox Game Bar",
+    "Description": "Empêche le lancement de Xbox Game Bar.",
+    "Help": "Désactive Xbox Game Bar et ses raccourcis.",
+
+    "CategoryId": "Xbox",
+    "Group": "Gaming",
+    "Level": "Official",
+
+    "Default": true,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+
+    "Supported": {
+        "MinBuild": 26100,
+        "MaxBuild": null
+    },
+
+    "Scores": {
+        "Privacy": 0,
+        "Performance": 1,
+        "Memory": 0,
+        "Compatibility": 1
+    },
+
+    "Tags": [
+        "Xbox",
+        "Gaming"
+    ],
+
+    "Actions": [
+        {
+            "Id": "Xbox.DisableGameBar.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive Xbox Game Bar.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\GameDVR",
+            "Name": "AllowGameDVR",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

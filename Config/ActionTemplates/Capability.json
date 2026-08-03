@@ -1,0 +1,17 @@
+{
+    "Id": "Capability.RemoveXPS",
+
+    "Type": "Capability",
+
+    "Description": "Supprime XPS.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Capability": "XPS.Viewer~~~~0.0.1.0",
+
+    "Operation": "Remove"
+}

@@ -1,0 +1,12 @@
+{
+    "Project": "PimsOS Builder",
+    "Version": "0.4.0",
+    "Windows": {
+        "Release": "11 25H2",
+        "Build": "26100"
+    },
+    "Author": "Pims",
+    "Company": "PimsOS",
+    "Repository": "https://github.com/Pims/PimsOS",
+    "BuildDate": null
+}

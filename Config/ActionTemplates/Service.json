@@ -1,0 +1,19 @@
+{
+    "Id": "DiagTrack",
+
+    "Type": "Service",
+
+    "Description": "Désactive DiagTrack.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Name": "DiagTrack",
+
+    "StartupType": "Disabled",
+
+    "Running": false
+}

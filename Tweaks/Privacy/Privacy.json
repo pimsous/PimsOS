@@ -1,0 +1,39 @@
+{
+    "Id": "Privacy.DisableTelemetry",
+    "Name": "Désactiver la télémétrie",
+    "Description": "Empêche Windows d'envoyer les données de diagnostic.",
+    "Help": "Désactive les principales stratégies de télémétrie.",
+
+    "CategoryId": "Privacy",
+
+    "Default": true,
+    "Recommended": true,
+
+    "Risk": "Safe",
+
+    "RequiresRestart": false,
+    "Reversible": true,
+
+    "Scores": {
+        "Privacy": 5,
+        "Performance": 1,
+        "Memory": 0,
+        "Compatibility": 0
+    },
+
+    "Actions": [
+        {
+            "Id": "Privacy.DisableTelemetry.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive la télémétrie.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\DataCollection",
+            "Name": "AllowTelemetry",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

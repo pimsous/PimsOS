@@ -1,0 +1,33 @@
+{
+    "Id": "SERVICE_DIAGTRACK_DISABLE",
+    "Name": "Disable Connected User Experiences and Telemetry",
+    "Description": "Disable the DiagTrack service used for telemetry.",
+    "CategoryId": "PRIVACY",
+    "Group": "Telemetry",
+
+    "Default": false,
+    "Recommended": true,
+
+    "Scores": {
+        "Privacy": 5,
+        "Performance": 1,
+        "Memory": 1,
+        "Compatibility": 2
+    },
+
+    "Supported": {
+        "MinBuild": 22000,
+        "MaxBuild": null
+    },
+
+    "Actions": [
+        {
+            "Id": "DisableDiagTrack",
+            "Type": "Service",
+            "Description": "Disable the DiagTrack service.",
+            "Name": "DiagTrack",
+            "StartupType": "Disabled",
+            "Stop": true
+        }
+    ]
+}

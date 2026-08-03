@@ -1,0 +1,17 @@
+{
+    "Id": "Recall.Disable",
+
+    "Type": "Feature",
+
+    "Description": "Désactive Recall.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Feature": "Recall",
+
+    "State": "Disabled"
+}

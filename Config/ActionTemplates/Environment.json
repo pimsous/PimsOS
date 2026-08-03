@@ -1,0 +1,19 @@
+{
+    "Id": "PATH",
+
+    "Type": "Environment",
+
+    "Description": "Ajoute une variable.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Variable": "PATH",
+
+    "Operation": "Append",
+
+    "Value": "C:\\Tools"
+}

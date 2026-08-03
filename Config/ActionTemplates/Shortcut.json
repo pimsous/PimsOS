@@ -1,0 +1,17 @@
+{
+    "Id": "DesktopShortcut",
+
+    "Type": "Shortcut",
+
+    "Description": "Supprime un raccourci.",
+
+    "Enabled": true,
+	
+	"RequiresRestart": false,
+
+    "ContinueOnError": false,
+
+    "Operation": "Delete",
+
+    "Path": "%Public%\\Desktop\\..."
+}

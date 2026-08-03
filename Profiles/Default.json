@@ -1,0 +1,11 @@
+{
+    "Name": "Default",
+    "Description": "Profil par défaut de PimsOS",
+
+    "Tweaks": [
+        {
+            "Id": "Privacy.DisableTelemetry",
+            "Enabled": true
+        }
+    ]
+}
