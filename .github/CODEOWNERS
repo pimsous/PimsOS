@@ -1,0 +1,33 @@
+# ==========================================
+# PimsOS Builder
+# Code Owners
+# ==========================================
+
+# Par défaut, le propriétaire de tous les fichiers
+# est le mainteneur principal du projet.
+
+* @pimsous
+
+# Documentation
+
+/Documentation/ @pimsous
+
+# Modules PowerShell
+
+/Modules/ @pimsous
+
+# Configuration
+
+/Config/ @pimsous
+
+# Build
+
+/Build/ @pimsous
+
+# Tests
+
+/Tests/ @pimsous
+
+# GitHub
+
+/.github/ @pimsous

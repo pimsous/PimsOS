@@ -194,6 +194,21 @@ Le Builder réalise automatiquement :
 - génération du rapport.
 
 ---
+# Premier lancement
+
+Le premier lancement du Builder permet de vérifier que l'environnement est correctement configuré.
+
+Exécutez :
+
+```powershell
+Import-Module .\Modules\PimsOS.psd1
+
+Initialize-PimsOS
+
+.\Build\Build-PimsOS.ps1
+```
+
+Si toutes les vérifications sont validées, le Builder prépare automatiquement le Workspace et démarre le pipeline de build.
 
 # Premier Tweak
 

@@ -2,11 +2,13 @@
 
 > Framework PowerShell permettant de construire automatiquement une image Windows personnalisée à partir d'une ISO officielle Microsoft.
 
-![Version](https://img.shields.io/badge/version-0.4.0-blue)
+![CI](https://github.com/pimsous/PimsOS/actions/workflows/pester.yml/badge.svg)
+![CodeQL](https://github.com/pimsous/PimsOS/actions/workflows/codeql.yml/badge.svg)
+![License](https://img.shields.io/github/license/pimsous/PimsOS)
+![Release](https://img.shields.io/github/v/release/pimsous/PimsOS)
 ![PowerShell](https://img.shields.io/badge/PowerShell-7.6+-5391FE)
 ![Windows](https://img.shields.io/badge/Windows-11%2024H2%20%7C%2025H2-0078D4)
 ![Status](https://img.shields.io/badge/status-Development-orange)
-![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
 ---
 
@@ -44,6 +46,18 @@ documentées et facilement maintenables.
 - Fournir une architecture modulaire, documentée et testable
 
 ---
+
+# Statut du projet
+
+Le projet est en développement actif.
+
+Architecture : ✅ Stable
+
+Documentation : ✅ Complète
+
+Pipeline : 🚧 En cours
+
+Première ISO : 🚧 En développement
 
 # Fonctionnalités actuelles
 
@@ -245,6 +259,32 @@ Les gestionnaires suivants seront pris en charge :
 
 ---
 
+# Installation
+
+```powershell
+git clone https://github.com/pimsous/PimsOS.git
+
+cd PimsOS
+```
+
+Pour une installation complète et la préparation de l'environnement de développement, consulter :
+
+- Documentation/GettingStarted.md
+
+# Démarrage rapide
+
+```powershell
+Import-Module .\Modules\PimsOS.psd1
+
+Initialize-PimsOS
+
+.\Build\Build-PimsOS.ps1
+```
+
+Pour plus d'informations, consulter :
+
+- Documentation/GettingStarted.md
+
 # Documentation
 
 Toute la documentation technique est disponible dans le dossier :
@@ -255,16 +295,19 @@ Documentation/
 
 Elle comprend notamment :
 
-- Architecture
-- BuildContext
-- Architecture Rules
-- Coding Standards
-- API
-- Roadmap
-- Release Notes
-- Tests
-- Technical Decisions
-- ADR
+-Architecture
+-Architecture Rules
+-BuildContext
+-Developer Guide
+-Module Guide
+-Coding Standards
+-API
+-Testing
+-Roadmap
+-Milestones
+-Release Notes
+-Technical Decisions
+-ADR
 
 ---
 
@@ -302,6 +345,21 @@ Les prochains développements concerneront principalement :
 
 ---
 
+# Philosophie
+
+PimsOS Builder repose sur quelques principes fondamentaux :
+
+- simplicité ;
+- modularité ;
+- reproductibilité ;
+- automatisation ;
+- testabilité ;
+- maintenabilité.
+
+L'objectif du projet n'est pas uniquement de générer une image Windows personnalisée.
+
+Il vise également à fournir un framework PowerShell robuste, documenté et facilement extensible.
+
 # Roadmap
 
 ## v0.4
@@ -336,6 +394,17 @@ Première version stable de PimsOS Builder.
 
 ---
 
+# Support
+
+Besoin d'aide ?
+
+Consulter :
+
+- Documentation/GettingStarted.md
+- Documentation/DeveloperGuide.md
+- Documentation/API.md
+- SUPPORT.md
+
 # Contribution
 
 Avant toute contribution, consulter :
@@ -355,8 +424,11 @@ Chaque contribution doit :
 
 ---
 
+
 ## Licence
 
 PimsOS Builder est distribué sous licence **GNU General Public License v3.0 (GPL-3.0)**.
 
-Voir le fichier [LICENSE](LICENSE) pour le texte complet de la licence.
+Vous êtes libre d'utiliser, d'étudier, de modifier et de redistribuer ce projet dans le respect des conditions de cette licence.
+
+Consultez le fichier [LICENSE](LICENSE) pour le texte complet de la licence.

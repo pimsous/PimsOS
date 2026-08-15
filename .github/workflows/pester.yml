@@ -1,0 +1,78 @@
+name: PimsOS CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+
+    name: PowerShell CI
+
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display PowerShell version
+        run: $PSVersionTable
+
+      - name: Install required modules
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+
+          Install-Module Pester `
+            -MinimumVersion 5.5 `
+            -Force `
+            -SkipPublisherCheck
+
+          Install-Module PSScriptAnalyzer `
+            -Force `
+            -SkipPublisherCheck
+
+      - name: Verify PimsOS module
+        run: |
+          $Manifest = Join-Path $PWD "Modules\PimsOS.psd1"
+
+          if (-not (Test-Path $Manifest)) {
+              throw "Module manifest not found: $Manifest"
+          }
+
+          Import-Module $Manifest -Force -ErrorAction Stop
+
+          Write-Host "Module imported successfully."
+
+      - name: Run Script Analyzer
+        run: |
+          $Results = Invoke-ScriptAnalyzer `
+              -Path Modules `
+              -Recurse `
+              -Severity Error
+
+          if ($Results) {
+              $Results | Format-Table
+              throw "PSScriptAnalyzer detected errors."
+          }
+
+      - name: Run Pester
+        run: |
+          Invoke-Pester `
+              -Path Tests `
+              -CI `
+              -Output Detailed

@@ -29,6 +29,34 @@ Les explications sont aussi importantes que le résultat.
 
 ---
 
+# Open Source
+
+Toujours privilégier :
+
+- une documentation claire ;
+- des messages d'erreur compréhensibles ;
+- des exemples simples ;
+- des API stables ;
+- une architecture facilement compréhensible par un nouveau contributeur.
+
+# Principe de développement
+
+Toujours privilégier :
+
+Documentation
+    ↓
+Architecture
+    ↓
+Développement
+    ↓
+Tests
+    ↓
+Git
+    ↓
+GitHub
+
+Ne jamais inverser cet ordre sans raison justifiée.
+
 # Compatibilité Windows
 
 PimsOS Builder n'est pas limité à une seule version de Windows.
@@ -121,6 +149,21 @@ Elle ne doit pas évoluer sans raison.
 
 ---
 
+# Gestion du projet
+
+Avant de commencer un nouveau développement, identifier dans quel document il doit être suivi.
+
+Utiliser les documents suivants :
+
+- CurrentSprint.md : travail en cours ;
+- Backlog.md : idées et améliorations futures ;
+- Milestones.md : jalons majeurs ;
+- Roadmap.md : vision à moyen et long terme.
+
+Ne jamais laisser une nouvelle idée importante sans l'affecter à l'un de ces documents.
+
+Le Sprint reste toujours prioritaire sur le Backlog.
+
 # Synchronisation de la documentation
 
 Avant de considérer une fonctionnalité comme terminée, vérifier que :
@@ -131,6 +174,16 @@ Avant de considérer une fonctionnalité comme terminée, vérifier que :
 - les anciennes informations ont été supprimées.
 
 La documentation ne doit jamais décrire un fonctionnement qui n'existe plus.
+
+# Synchronisation
+
+Après chaque étape importante :
+
+1. Vérifier git status.
+2. Effectuer un commit.
+3. Vérifier git log.
+4. Pousser les modifications sur GitHub.
+5. Vérifier que le dépôt distant est synchronisé.
 
 # Ma façon de travailler
 
@@ -233,6 +286,19 @@ Privilégier :
 Toujours expliquer ce que permet de vérifier chaque commande.
 
 ---
+
+# Qualité
+
+Avant de terminer une fonctionnalité, vérifier également :
+
+- PSScriptAnalyzer
+- Pester
+- Git Status
+- Documentation
+- CHANGELOG
+- Release Notes
+
+Une fonctionnalité n'est considérée comme terminée que lorsque ces éléments sont cohérents.
 
 # Modules PowerShell
 
@@ -445,6 +511,18 @@ Chaque modification doit laisser le projet dans un meilleur état qu'avant.
 - les avertissements ignorés.
 
 ---
+
+# GitHub
+
+Lorsque le projet évolue significativement, vérifier également :
+
+- README.md
+- CHANGELOG.md
+- ReleaseNotes.md
+- GitHub Issues
+- GitHub Actions
+
+Toute nouvelle fonctionnalité importante doit être compatible avec la publication sur GitHub.
 
 # Git
 
