@@ -15,6 +15,7 @@ permissions:
   contents: read
 
 jobs:
+
   test:
 
     name: PowerShell CI
@@ -27,11 +28,24 @@ jobs:
 
     steps:
 
+      # --------------------------------------------------
+      # Repository
+      # --------------------------------------------------
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # --------------------------------------------------
+      # PowerShell
+      # --------------------------------------------------
+
       - name: Display PowerShell version
-        run: $PSVersionTable
+        run: |
+          $PSVersionTable
+
+      # --------------------------------------------------
+      # Modules
+      # --------------------------------------------------
 
       - name: Install required modules
         run: |
@@ -46,6 +60,10 @@ jobs:
             -Force `
             -SkipPublisherCheck
 
+      # --------------------------------------------------
+      # PimsOS module
+      # --------------------------------------------------
+
       - name: Verify PimsOS module
         run: |
           $Manifest = Join-Path $PWD "Modules\PimsOS.psd1"
@@ -54,25 +72,77 @@ jobs:
               throw "Module manifest not found: $Manifest"
           }
 
-          Import-Module $Manifest -Force -ErrorAction Stop
+          Import-Module `
+            $Manifest `
+            -Force `
+            -ErrorAction Stop
+
+          $Module = Get-Module PimsOS
+
+          if ($null -eq $Module) {
+              throw "PimsOS module was not loaded."
+          }
 
           Write-Host "Module imported successfully."
+          Write-Host "Version : $($Module.Version)"
 
-      - name: Run Script Analyzer
+      # --------------------------------------------------
+      # Script Analyzer
+      # --------------------------------------------------
+
+      - name: Run PSScriptAnalyzer
         run: |
           $Results = Invoke-ScriptAnalyzer `
-              -Path Modules `
-              -Recurse `
-              -Severity Error
+            -Path Modules `
+            -Recurse `
+            -Severity Error
 
           if ($Results) {
-              $Results | Format-Table
+              $Results | Format-Table -AutoSize
               throw "PSScriptAnalyzer detected errors."
           }
 
-      - name: Run Pester
+          Write-Host "PSScriptAnalyzer : OK"
+
+      # --------------------------------------------------
+      # Pester Unit Tests
+      # --------------------------------------------------
+
+      - name: Run Pester unit tests
+        run: |
+          $Result = Invoke-Pester `
+            -Path Tests\Unit `
+            -CI `
+            -Output Detailed `
+            -PassThru
+
+          if ($Result.FailedCount -gt 0) {
+              throw "Pester detected $($Result.FailedCount) failing test(s)."
+          }
+
+          Write-Host "Pester unit tests : OK"
+
+      # --------------------------------------------------
+      # Test results
+      # --------------------------------------------------
+
+      - name: Generate Pester test report
+        if: always()
         run: |
           Invoke-Pester `
-              -Path Tests `
-              -CI `
-              -Output Detailed
+            -Path Tests\Unit `
+            -Output Normal `
+            -OutputFormat NUnitXml `
+            -OutputFile Tests\Pester-TestResults.xml
+
+      # --------------------------------------------------
+      # Upload test results
+      # --------------------------------------------------
+
+      - name: Upload Pester results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pester-test-results
+          path: Tests\Pester-TestResults.xml
+          if-no-files-found: warn

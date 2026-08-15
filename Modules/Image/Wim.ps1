@@ -35,6 +35,83 @@ function Test-WimContext {
 
 }
 
+# --------------------------------------------------
+# Vérifie qu'un fichier WIM est chargé
+# --------------------------------------------------
+
+function Test-WimLoaded {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    # --------------------------------------------------
+    # Vérification du contexte général
+    # --------------------------------------------------
+
+    Test-WimContext `
+        -Context $Context
+
+    # --------------------------------------------------
+    # Vérification de la propriété FullName
+    # --------------------------------------------------
+
+    if (
+        $null -eq $Context.WIM.PSObject.Properties["FullName"]
+    ) {
+
+        throw `
+            "La propriété WIM.FullName est absente du BuildContext."
+
+    }
+
+    # --------------------------------------------------
+    # Vérification du chemin
+    # --------------------------------------------------
+
+    if (
+        [string]::IsNullOrWhiteSpace(
+            [string]$Context.WIM.FullName
+        )
+    ) {
+
+        throw `
+            "Aucun fichier WIM n'est chargé dans le BuildContext."
+
+    }
+
+    # --------------------------------------------------
+    # Vérification physique du fichier
+    # --------------------------------------------------
+
+    if (
+        -not (Test-Path `
+            -LiteralPath $Context.WIM.FullName `
+            -PathType Leaf)
+    ) {
+
+        throw (
+            "Le fichier WIM est introuvable : {0}" -f
+            $Context.WIM.FullName
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Validation
+    # --------------------------------------------------
+
+    Write-Log (
+        "WIM chargé : {0}" -f
+        $Context.WIM.FullName
+    ) INFO
+
+}
+
 function New-WimMountState {
 
     [CmdletBinding()]
@@ -91,6 +168,251 @@ function New-WimMountState {
 }
 
 # --------------------------------------------------
+# Analyse l'état réel d'un montage WIM
+# --------------------------------------------------
+
+function Get-WimMountState {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    Test-WimContext `
+        -Context $Context
+
+    # --------------------------------------------------
+    # Initialisation
+    # --------------------------------------------------
+
+    $State = New-WimMountState
+
+    # --------------------------------------------------
+    # Vérification de DISM
+    # --------------------------------------------------
+
+    try {
+
+        $MountedImages = @(
+            Get-WindowsImage -Mounted `
+                -ErrorAction Stop
+        )
+
+    }
+    catch {
+
+        $State.Exists = $false
+        $State.Valid = $false
+        $State.CanReuse = $false
+        $State.NeedsCleanup = $false
+
+        $State.Message =
+            "Impossible d'interroger les images WIM montées : " +
+            $_.Exception.Message
+
+        return $State
+    }
+
+    # --------------------------------------------------
+    # Aucun montage
+    # --------------------------------------------------
+
+    if ($MountedImages.Count -eq 0) {
+
+        $State.Exists = $false
+        $State.Valid = $false
+        $State.CanReuse = $false
+        $State.NeedsCleanup = $false
+
+        $State.MountStatus = $null
+        $State.Message =
+            "Aucun montage WIM détecté."
+
+        return $State
+    }
+
+    # --------------------------------------------------
+    # Recherche du montage correspondant au Workspace
+    # --------------------------------------------------
+
+    $ExpectedMountPath = $null
+
+    if (
+        $null -ne $Context.Workspace -and
+        $Context.Workspace.PSObject.Properties.Name -contains "MountWIM"
+    ) {
+
+        $ExpectedMountPath =
+            [string]$Context.Workspace.MountWIM
+
+    }
+
+    $Mounted = $null
+
+    if (-not [string]::IsNullOrWhiteSpace($ExpectedMountPath)) {
+
+        $Mounted = $MountedImages |
+            Where-Object {
+
+                $_.Path -eq $ExpectedMountPath
+
+            } |
+            Select-Object -First 1
+
+    }
+
+    # --------------------------------------------------
+    # Aucun montage sur notre chemin
+    # --------------------------------------------------
+
+    if ($null -eq $Mounted) {
+
+        $State.Exists = $true
+        $State.Valid = $false
+        $State.CanReuse = $false
+        $State.NeedsCleanup = $false
+
+        $State.MountStatus = "Other"
+
+        $State.Message =
+            "Un montage WIM existe, mais aucun montage ne correspond au Workspace PimsOS."
+
+        return $State
+    }
+
+    # --------------------------------------------------
+    # Informations du montage
+    # --------------------------------------------------
+
+    $State.Exists = $true
+
+    $State.MountPath =
+        [string]$Mounted.Path
+
+    $State.ImagePath =
+        [string]$Mounted.ImagePath
+
+    $State.ImageIndex =
+        $Mounted.ImageIndex
+
+    $State.MountStatus =
+        [string]$Mounted.MountStatus
+
+    # --------------------------------------------------
+    # Vérification du dossier Windows
+    # --------------------------------------------------
+
+    $WindowsFolder = Join-Path `
+        -Path $State.MountPath `
+        -ChildPath "Windows"
+
+    $State.WindowsFolderExists =
+        Test-Path $WindowsFolder
+
+    # --------------------------------------------------
+    # Vérification de l'image attendue
+    # --------------------------------------------------
+
+    $State.ImageMatches = $true
+
+    if (
+        $Context.WIM.PSObject.Properties.Name -contains "FullName" -and
+        -not [string]::IsNullOrWhiteSpace(
+            [string]$Context.WIM.FullName
+        )
+    ) {
+
+        $ExpectedImagePath =
+            [System.IO.Path]::GetFullPath(
+                [string]$Context.WIM.FullName
+            )
+
+        try {
+
+            $ActualImagePath =
+                [System.IO.Path]::GetFullPath(
+                    [string]$State.ImagePath
+                )
+
+            $State.ImageMatches =
+                $ExpectedImagePath -eq $ActualImagePath
+
+        }
+        catch {
+
+            $State.ImageMatches = $false
+
+        }
+
+    }
+
+    # --------------------------------------------------
+    # Vérification du Workspace
+    # --------------------------------------------------
+
+    $State.WorkspaceReady = $true
+
+    if (
+        $null -ne $Context.Workspace -and
+        $Context.Workspace.PSObject.Properties.Name -contains "Sources"
+    ) {
+
+        $State.WorkspaceReady =
+            Test-Path $Context.Workspace.Sources
+
+    }
+
+    # --------------------------------------------------
+    # Vérification du registre
+    # --------------------------------------------------
+
+    $State.RegistryMounted =
+        Test-Path "Registry::HKLM\PimsOS_SOFTWARE"
+
+    # --------------------------------------------------
+    # Evaluation de l'état
+    # --------------------------------------------------
+
+    $MountIsOk =
+        $State.MountStatus -eq "Ok"
+
+    $State.Valid =
+        $MountIsOk -and
+        $State.WindowsFolderExists -and
+        $State.ImageMatches
+
+    # --------------------------------------------------
+    # Montage réutilisable
+    # --------------------------------------------------
+
+    if ($State.Valid) {
+
+        $State.CanReuse = $true
+        $State.NeedsCleanup = $false
+
+        $State.Message =
+            "Montage WIM valide et réutilisable."
+
+        return $State
+    }
+
+    # --------------------------------------------------
+    # Montage invalide
+    # --------------------------------------------------
+
+    $State.CanReuse = $false
+    $State.NeedsCleanup = $true
+
+    $State.Message =
+        "Montage WIM invalide ou incohérent avec le Workspace."
+
+    return $State
+}
+
+# --------------------------------------------------
 # Met à jour l'état de montage WIM
 # --------------------------------------------------
 
@@ -107,182 +429,187 @@ function Set-WimMountedState {
 
     )
 
-    $Context.BuildState.Image.WimMounted = $Mounted
+    Test-WimContext `
+        -Context $Context
 
-    if (-not $Mounted) {
+    # --------------------------------------------------
+    # Vérification du BuildState
+    # --------------------------------------------------
 
-        $Context.BuildState.Image.RegistryLoaded = $false
-        $Context.BuildState.Image.CurrentRegistryHive = $null
+    if ($null -eq $Context.BuildState) {
 
-        $Context.BuildState.Image.ConfigLoaded = $false
-        $Context.BuildState.Image.TweaksLoaded = $false
-        $Context.BuildState.Image.TweaksApplied = $false
-		
-		$Context.BuildState.Image.ProfileLoaded = $false
-		$Context.BuildState.Image.ProfileMerged = $false
+        throw "Le BuildState est absent du BuildContext."
+
+    }
+
+    if (
+        $Context.BuildState.PSObject.Properties.Name -notcontains "Image"
+    ) {
+
+        throw "La section Image est absente du BuildState."
+
+    }
+
+    # --------------------------------------------------
+    # Etat principal du montage WIM
+    # --------------------------------------------------
+
+    # Etat historique/interne utilisé par les autres modules.
+    if (
+        $Context.BuildState.Image.PSObject.Properties.Name -contains "WimMounted"
+    ) {
+
+        $Context.BuildState.Image.WimMounted = $Mounted
+
+    }
+    else {
+
+        $Context.BuildState.Image |
+            Add-Member `
+                -MemberType NoteProperty `
+                -Name "WimMounted" `
+                -Value $Mounted
+    }
+
+    # Etat public utilisé par les tests d'acceptation.
+    if (
+        $Context.BuildState.Image.PSObject.Properties.Name -contains "Mounted"
+    ) {
+
+        $Context.BuildState.Image.Mounted = $Mounted
+
+    }
+    else {
+
+        $Context.BuildState.Image |
+            Add-Member `
+                -MemberType NoteProperty `
+                -Name "Mounted" `
+                -Value $Mounted
+    }
+
+    # --------------------------------------------------
+    # Informations de montage
+    # --------------------------------------------------
+
+    if ($Mounted) {
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "MountPath"
+        ) {
+
+            $Context.BuildState.Image.MountPath =
+                $Context.WIM.Mount.Path
+
+        }
+        else {
+
+            $Context.BuildState.Image |
+                Add-Member `
+                    -MemberType NoteProperty `
+                    -Name "MountPath" `
+                    -Value $Context.WIM.Mount.Path
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "Index"
+        ) {
+
+            $Context.BuildState.Image.Index =
+                $Context.Image.Index
+
+        }
+        else {
+
+            $Context.BuildState.Image |
+                Add-Member `
+                    -MemberType NoteProperty `
+                    -Name "Index" `
+                    -Value $Context.Image.Index
+        }
+
+    }
+    else {
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "MountPath"
+        ) {
+
+            $Context.BuildState.Image.MountPath = $null
+
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "Index"
+        ) {
+
+            $Context.BuildState.Image.Index = $null
+
+        }
+
+        # --------------------------------------------------
+        # Nettoyage de l'état lié à l'image montée
+        # --------------------------------------------------
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "RegistryLoaded"
+        ) {
+
+            $Context.BuildState.Image.RegistryLoaded = $false
+
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "CurrentRegistryHive"
+        ) {
+
+            $Context.BuildState.Image.CurrentRegistryHive = $null
+
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "ConfigLoaded"
+        ) {
+
+            $Context.BuildState.Image.ConfigLoaded = $false
+
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "TweaksLoaded"
+        ) {
+
+            $Context.BuildState.Image.TweaksLoaded = $false
+
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "TweaksApplied"
+        ) {
+
+            $Context.BuildState.Image.TweaksApplied = $false
+
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "ProfileLoaded"
+        ) {
+
+            $Context.BuildState.Image.ProfileLoaded = $false
+
+        }
+
+        if (
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "ProfileMerged"
+        ) {
+
+            $Context.BuildState.Image.ProfileMerged = $false
+
+        }
+
     }
 
     return $Context
-
-}
-
-# --------------------------------------------------
-# Analyse l'état du montage WIM
-# --------------------------------------------------
-
-function Get-WimMountState {
-
-    [CmdletBinding()]
-    param(
-
-        [Parameter(Mandatory)]
-        [psobject]$Context
-
-    )
-
-    Test-WimContext `
-        -Context $Context
-
-    $State = New-WimMountState
-
-    $Mounted = Get-WindowsImage -Mounted |
-        Where-Object {
-            $_.Path -eq $Context.Workspace.MountWIM
-        }
-
-    if (-not $Mounted) {
-
-        $State.Message = "Aucun montage détecté."
-
-        return $State
-
-    }
-
-    $State.Exists      = $true
-	$State.MountStatus = $Mounted.MountStatus
-	$State.MountPath   = $Mounted.Path
-	$State.ImagePath   = $Mounted.ImagePath
-	$State.ImageIndex  = $Mounted.ImageIndex
-
-	# --------------------------------------------------
-	# Vérifications complémentaires
-	# --------------------------------------------------
-
-	$State.WindowsFolderExists = Test-Path (
-		Join-Path $Mounted.Path "Windows"
-	)
-
-	$State.ImageMatches =
-	(
-		$Mounted.ImagePath -eq $Context.WIM.FullName
-	) -and
-	(
-		$Mounted.ImageIndex -eq $Context.Image.Index
-	)
-
-	$State.WorkspaceReady =
-		Test-Path $Context.Workspace.Sources
-
-	$State.RegistryMounted =
-		Test-Path "Registry::HKLM\PimsOS_SOFTWARE"
-
-    switch ($Mounted.MountStatus) {
-
-    "Ok" {
-
-        $State.Valid = $true
-
-        if (-not $State.WindowsFolderExists) {
-
-            $State.NeedsCleanup = $true
-            $State.Message = "Montage incomplet (dossier Windows absent)."
-
-            break
-
-        }
-		
-		if (-not $State.WorkspaceReady) {
-
-			$State.NeedsCleanup = $true
-			$State.Message = "Workspace incomplet."
-
-			break
-
-		}
-
-		if (-not $State.RegistryMounted) {
-
-			$State.NeedsCleanup = $true
-			$State.Message = "Les ruches PimsOS ne sont plus montées."
-
-			break
-
-		}
-
-        if (-not $State.ImageMatches) {
-
-            $State.NeedsCleanup = $true
-            $State.Message = "Montage invalide (image ou index différent)."
-
-            break
-
-        }
-
-        $State.CanReuse = $true
-        $State.Message = "Montage valide (réutilisable)."
-
-    }
-
-    "NeedsRemount" {
-
-        $State.NeedsCleanup = $true
-        $State.Message = "Montage à reconstruire."
-
-    }
-
-    "Invalid" {
-
-        $State.NeedsCleanup = $true
-        $State.Message = "Montage invalide."
-
-    }
-
-    default {
-
-        $State.NeedsCleanup = $true
-        $State.Message = "Etat inconnu : $($Mounted.MountStatus)"
-
-    }
-
-}
-
-    return $State
-
-}
-
-# --------------------------------------------------
-# Vérifie qu'un WIM est chargé
-# --------------------------------------------------
-
-function Test-WimLoaded {
-
-    [CmdletBinding()]
-    param(
-
-        [Parameter(Mandatory)]
-        [psobject]$Context
-
-    )
-
-    Test-WimContext `
-        -Context $Context
-
-    if ([string]::IsNullOrWhiteSpace($Context.WIM.FullName)) {
-
-        throw "Aucun fichier WIM n'est chargé."
-
-    }
-
 }
 
 # --------------------------------------------------
@@ -299,7 +626,7 @@ function Test-WimImageSelected {
 
     )
 
-    Test-WimLoaded `
+    Test-WimContext `
         -Context $Context
 
     if ($null -eq $Context.Image.Index) {
@@ -427,61 +754,238 @@ function Copy-WimToWorkspace {
 
     )
 
-    Test-WimLoaded `
+    # --------------------------------------------------
+    # Vérification du contexte
+    # --------------------------------------------------
+
+    Test-WimContext `
         -Context $Context
 
-    Write-Log "Copie de l'image Windows..."
+    # --------------------------------------------------
+    # Vérification du fichier WIM source
+    # --------------------------------------------------
 
-    $Destination = Join-Path `
-        -Path $Context.Workspace.Sources `
-        -ChildPath $Context.WIM.Name
+    if (
+        $null -eq $Context.WIM.FullName -or
+        [string]::IsNullOrWhiteSpace(
+            [string]$Context.WIM.FullName
+        )
+    ) {
+
+        throw `
+            "Le chemin du fichier WIM source est absent du BuildContext."
+
+    }
+
+    if (-not (Test-Path $Context.WIM.FullName)) {
+
+        throw (
+            "Le fichier WIM source est introuvable : {0}" -f
+            $Context.WIM.FullName
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Vérification du Workspace
+    # --------------------------------------------------
+
+    if (
+        $null -eq $Context.Workspace -or
+        -not $Context.Workspace.PSObject.Properties["Sources"]
+    ) {
+
+        throw `
+            "Le chemin Workspace.Sources est absent du BuildContext."
+
+    }
+
+    if (
+        [string]::IsNullOrWhiteSpace(
+            [string]$Context.Workspace.Sources
+        )
+    ) {
+
+        throw `
+            "Le chemin Workspace.Sources est vide."
+
+    }
+
+    # --------------------------------------------------
+    # Préparation du dossier Sources
+    # --------------------------------------------------
 
     if (-not (Test-Path $Context.Workspace.Sources)) {
+
+        Write-Log `
+            "Création du dossier Sources du Workspace..." `
+            INFO
 
         New-Item `
             -ItemType Directory `
             -Path $Context.Workspace.Sources `
-            -Force |
+            -Force `
+            -ErrorAction Stop |
             Out-Null
 
     }
 
-    Copy-Item `
-		-Path $Context.WIM.FullName `
-		-Destination $Destination `
-		-Force `
-		-ErrorAction Stop
+    # --------------------------------------------------
+    # Détermination de la destination
+    # --------------------------------------------------
 
-    if (-not (Test-Path $Destination)) {
+    $SourceFile = Get-Item `
+        -Path $Context.WIM.FullName `
+        -ErrorAction Stop
 
-        throw "La copie de l'image Windows a échoué."
+    $Destination = Join-Path `
+        -Path $Context.Workspace.Sources `
+        -ChildPath $SourceFile.Name
+
+    # --------------------------------------------------
+    # Copie / réutilisation
+    # --------------------------------------------------
+
+    if (Test-Path $Destination) {
+
+        $ExistingFile = Get-Item `
+            -Path $Destination `
+            -ErrorAction Stop
+
+        Write-Log (
+            "Une image existe déjà dans le Workspace : {0}" -f
+            $Destination
+        ) WARNING
+
+        # --------------------------------------------------
+        # Même taille : réutilisation
+        # --------------------------------------------------
+
+        if ($ExistingFile.Length -eq $SourceFile.Length) {
+
+            Write-Log `
+                "L'image existante possède la même taille. Réutilisation du fichier." `
+                INFO
+
+        }
+        else {
+
+            Write-Log `
+                "L'image existante possède une taille différente. Remplacement..." `
+                WARNING
+
+            Copy-Item `
+                -Path $SourceFile.FullName `
+                -Destination $Destination `
+                -Force `
+                -ErrorAction Stop
+
+        }
+
+    }
+    else {
+
+        Write-Log `
+            "Copie de l'image Windows..." `
+            INFO
+
+        Copy-Item `
+            -Path $SourceFile.FullName `
+            -Destination $Destination `
+            -Force `
+            -ErrorAction Stop
 
     }
 
-    $File = Get-Item $Destination
-	
-	$File.Attributes =
-		$File.Attributes -band (-bnot [System.IO.FileAttributes]::ReadOnly)
+    # --------------------------------------------------
+    # Vérification de la destination
+    # --------------------------------------------------
 
-	$File.Refresh()
-	
-	
+    if (-not (Test-Path $Destination)) {
+
+        throw `
+            "La copie de l'image Windows a échoué."
+
+    }
+
+    $File = Get-Item `
+        -Path $Destination `
+        -ErrorAction Stop
+
+    # --------------------------------------------------
+    # Suppression de l'attribut ReadOnly
+    # --------------------------------------------------
+
+    if (
+        ($File.Attributes -band [System.IO.FileAttributes]::ReadOnly) -ne 0
+    ) {
+
+        $File.Attributes =
+            $File.Attributes -band (
+                -bnot [System.IO.FileAttributes]::ReadOnly
+            )
+
+        $File.Refresh()
+
+    }
+
+    # --------------------------------------------------
+    # Mise à jour du contexte WIM
+    # --------------------------------------------------
 
     $Context.WIM.FullName = $File.FullName
 
     $Context.WIM.Name = $File.Name
 
     $Context.WIM.SizeGB =
-        [Math]::Round($File.Length / 1GB,2)
+        [Math]::Round(
+            $File.Length / 1GB,
+            2
+        )
+
+    # --------------------------------------------------
+    # Type de l'image
+    # --------------------------------------------------
+
+    $Extension = $File.Extension.ToLowerInvariant()
+
+    if ($Extension -eq ".wim") {
+
+        $Context.WIM.Type = "WIM"
+
+    }
+    elseif ($Extension -eq ".esd") {
+
+        $Context.WIM.Type = "ESD"
+
+    }
+    else {
+
+        $Context.WIM.Type = $Extension.TrimStart(".")
+
+    }
+
+    # --------------------------------------------------
+    # Résultat
+    # --------------------------------------------------
+
+    Write-Log `
+        "Image copiée dans le Workspace." `
+        SUCCESS
 
     Write-Log (
-        "Image copiée dans le Workspace."
+        "WIM utilisé pour le montage : {0}" -f
+        $Context.WIM.FullName
     ) SUCCESS
-	
+
+    Write-Log (
+        "Taille : {0} Go" -f
+        $Context.WIM.SizeGB
+    ) INFO
 
     return $Context
-
 }
+
 # --------------------------------------------------
 # Lecture des images Windows
 # --------------------------------------------------
@@ -496,7 +1000,7 @@ function Get-WimImages {
 
     )
 
-    Test-WimLoaded `
+    Test-WimContext `
         -Context $Context
 
     Write-Log "Lecture des images Windows..."
@@ -640,7 +1144,7 @@ function Select-WimImage {
 
     )
 
-    Test-WimLoaded `
+    Test-WimContext `
         -Context $Context
 
     if (-not $Context.WIM.Images) {
@@ -752,10 +1256,16 @@ function Mount-Wim {
 
     )
 
+    # --------------------------------------------------
+    # Validation du contexte
+    # --------------------------------------------------
+
     Test-WimImageSelected `
         -Context $Context
 
-    Write-Log "Initialisation du montage de l'image Windows..."
+    Write-Log `
+        "Initialisation du montage de l'image Windows..." `
+        INFO
 
     # --------------------------------------------------
     # Préparation du dossier de montage
@@ -769,39 +1279,132 @@ function Mount-Wim {
     # Déjà montée dans le contexte ?
     # --------------------------------------------------
 
-    if ($Context.BuildState.Image.WimMounted) {
+    if (
+        $null -ne $Context.BuildState.Image -and
+        $Context.BuildState.Image.PSObject.Properties.Name -contains "WimMounted" -and
+        [bool]$Context.BuildState.Image.WimMounted
+    ) {
 
-        Write-Log "Une image est déjà montée." WARNING
+        Write-Log `
+            "Une image WIM est déjà indiquée comme montée dans le contexte." `
+            WARNING
 
         return $Context
 
     }
 
     # --------------------------------------------------
-    # Réutilisation d'un montage existant
+    # Analyse de l'état réel du montage WIM
     # --------------------------------------------------
 
-    $State = $Context.BuildState.Recovery.Wim
+    Write-Log `
+        "Vérification d'un éventuel montage WIM existant..." `
+        INFO
 
-		if ($null -eq $State) {
+    $State = Get-WimMountState `
+        -Context $Context
 
-			throw "Le BuildState ne contient aucun état de récupération WIM."
+    # --------------------------------------------------
+    # Réutilisation d'un montage valide
+    # --------------------------------------------------
 
-		}
+    if (
+        $null -ne $State -and
+        $State.CanReuse
+    ) {
 
-    if ($null -ne $State -and $State.CanReuse) {
+        Write-Log `
+            "Réutilisation du montage WIM existant." `
+            SUCCESS
 
-        Write-Log (
-            "Réutilisation du montage WIM existant."
-        ) SUCCESS
+        # --------------------------------------------------
+        # Vérification du chemin de montage récupéré
+        # --------------------------------------------------
+
+        if (
+            [string]::IsNullOrWhiteSpace(
+                [string]$State.MountPath
+            )
+        ) {
+
+            throw `
+                "Le montage WIM est indiqué comme réutilisable, mais son chemin est absent."
+
+        }
 
         $Context.WIM.Mount.Path = $State.MountPath
+
+        # --------------------------------------------------
+        # Mise à jour de l'état
+        # --------------------------------------------------
+
         $Context = Set-WimMountedState `
-			-Context $Context `
-			-Mounted $true
+            -Context $Context `
+            -Mounted $true
+
         $Context.WIM.Mount.ReadOnly = $ReadOnly.IsPresent
 
+        Write-Log `
+            "Montage WIM existant réutilisé avec succès." `
+            SUCCESS
+
         return $Context
+
+    }
+
+    # --------------------------------------------------
+    # Montage existant mais nécessitant un nettoyage
+    # --------------------------------------------------
+
+    if (
+        $null -ne $State -and
+        $State.NeedsCleanup
+    ) {
+
+        Write-Log (
+            "Un montage WIM existant nécessite un nettoyage : {0}" -f
+            $State.Message
+        ) WARNING
+
+        if (
+            -not [string]::IsNullOrWhiteSpace(
+                [string]$State.MountPath
+            )
+        ) {
+
+            Write-Log `
+                "Nettoyage du montage WIM existant..." `
+                INFO
+
+            try {
+
+                Dismount-DismImage `
+                    -MountPath $State.MountPath `
+                    -Discard `
+                    -ErrorAction Stop
+
+                Write-Log `
+                    "Montage WIM existant nettoyé." `
+                    SUCCESS
+
+            }
+            catch {
+
+                throw (
+                    "Impossible de nettoyer le montage WIM existant.`n" +
+                    $_.Exception.Message
+                )
+
+            }
+
+        }
+
+    }
+    else {
+
+        Write-Log `
+            "Aucun montage WIM réutilisable détecté." `
+            INFO
 
     }
 
@@ -811,17 +1414,24 @@ function Mount-Wim {
 
     if (Test-Path $MountPath) {
 
+        Write-Log (
+            "Nettoyage du dossier de montage : {0}" -f
+            $MountPath
+        ) INFO
+
         Remove-Item `
             -Path $MountPath `
             -Recurse `
-            -Force
+            -Force `
+            -ErrorAction Stop
 
     }
 
     New-Item `
         -ItemType Directory `
         -Path $MountPath `
-        -Force |
+        -Force `
+        -ErrorAction Stop |
         Out-Null
 
     # --------------------------------------------------
@@ -845,6 +1455,9 @@ function Mount-Wim {
     # Montage DISM
     # --------------------------------------------------
 
+    Write-Log `
+        "Montage DISM..." `
+        INFO
 
     try {
 
@@ -865,12 +1478,13 @@ function Mount-Wim {
     }
 
     # --------------------------------------------------
-    # Validation
+    # Validation du montage
     # --------------------------------------------------
 
     if (-not (Test-Path $MountPath)) {
 
-        throw "Le dossier de montage est introuvable."
+        throw `
+            "Le dossier de montage est introuvable après le montage DISM."
 
     }
 
@@ -880,9 +1494,8 @@ function Mount-Wim {
 
     if (-not (Test-Path $WindowsFolder)) {
 
-        throw (
+        throw `
             "Le montage semble avoir échoué : dossier Windows introuvable."
-        )
 
     }
 
@@ -891,16 +1504,117 @@ function Mount-Wim {
     # --------------------------------------------------
 
     $Context.WIM.Mount.Path = $MountPath
+
     $Context = Set-WimMountedState `
-		-Context $Context `
-		-Mounted $true
+        -Context $Context `
+        -Mounted $true
+
     $Context.WIM.Mount.ReadOnly = $ReadOnly.IsPresent
 
-    Write-Log "Image Windows montée avec succès." SUCCESS
+    # --------------------------------------------------
+	# Mise à jour de l'état de récupération
+	# --------------------------------------------------
+
+	if (
+		$null -ne $Context.BuildState -and
+		$Context.BuildState.PSObject.Properties.Name -contains "Recovery"
+	) {
+
+		# --------------------------------------------------
+		# Création de la section Recovery si nécessaire
+		# --------------------------------------------------
+
+		if ($null -eq $Context.BuildState.Recovery) {
+
+			$Context.BuildState.Recovery = [PSCustomObject]@{}
+
+		}
+
+		# --------------------------------------------------
+		# Création de l'état Recovery.Wim si nécessaire
+		# --------------------------------------------------
+
+		if (
+			$Context.BuildState.Recovery.PSObject.Properties.Name -contains "Wim" -and
+			$null -ne $Context.BuildState.Recovery.Wim
+		) {
+
+			$RecoveryState =
+				$Context.BuildState.Recovery.Wim
+
+		}
+		else {
+
+			$RecoveryState =
+				New-WimMountState
+
+			$Context.BuildState.Recovery.Wim =
+				$RecoveryState
+
+		}
+
+		# --------------------------------------------------
+		# Mise à jour de l'état
+		# --------------------------------------------------
+
+		$RecoveryState.Exists = $true
+		$RecoveryState.Valid = $true
+		$RecoveryState.CanReuse = $true
+		$RecoveryState.NeedsCleanup = $false
+
+		$RecoveryState.MountStatus = "Ok"
+
+		$RecoveryState.MountPath =
+			$Context.WIM.Mount.Path
+
+		$RecoveryState.ImagePath =
+			$Context.WIM.FullName
+
+		$RecoveryState.ImageIndex =
+			$Context.Image.Index
+
+		$RecoveryState.WindowsFolderExists =
+			Test-Path (
+				Join-Path `
+					-Path $Context.WIM.Mount.Path `
+					-ChildPath "Windows"
+			)
+
+		$RecoveryState.ImageMatches = $true
+
+		$RecoveryState.WorkspaceReady =
+			Test-Path $Context.Workspace.Sources
+
+		$RecoveryState.RegistryMounted =
+			Test-Path "Registry::HKLM\PimsOS_SOFTWARE"
+
+		$RecoveryState.Message =
+			"Montage WIM valide."
+
+	}
+
+    # --------------------------------------------------
+    # Résultat
+    # --------------------------------------------------
+
+    Write-Log `
+        "Image Windows montée avec succès." `
+        SUCCESS
+
+    Write-Log (
+        "Montage WIM : {0}" -f
+        $Context.WIM.Mount.Path
+    ) SUCCESS
+
+    Write-Log (
+        "Index : {0}" -f
+        $Context.Image.Index
+    ) INFO
 
     return $Context
-
 }
+
+
 
 # --------------------------------------------------
 # Démonte l'image Windows
@@ -921,25 +1635,105 @@ function Dismount-Wim {
     Test-WimContext `
         -Context $Context
 
-    if (-not $Context.BuildState.Image.WimMounted) {
+    # --------------------------------------------------
+    # Vérification de l'état réel du montage
+    # --------------------------------------------------
 
-        Write-Log "Aucune image Windows montée." INFO
+    $MountPath = $null
 
-        return $Context
+    if (
+        $null -ne $Context.WIM -and
+        $null -ne $Context.WIM.Mount -and
+        $Context.WIM.Mount.PSObject.Properties.Name -contains "Path"
+    ) {
+
+        $MountPath = [string]$Context.WIM.Mount.Path
 
     }
 
-    Write-Log "Démontage de l'image Windows..."
+    # --------------------------------------------------
+    # Recherche du montage réel dans DISM
+    # --------------------------------------------------
+
+    $MountedImages = @(
+        Get-WindowsImage -Mounted -ErrorAction SilentlyContinue
+    )
+
+    $Mounted = $null
+
+    if (-not [string]::IsNullOrWhiteSpace($MountPath)) {
+
+        $Mounted = $MountedImages |
+            Where-Object {
+                $_.Path -eq $MountPath
+            } |
+            Select-Object -First 1
+
+    }
 
     # --------------------------------------------------
-    # Démontage
+    # Aucun montage réel détecté
+    # --------------------------------------------------
+
+    if ($null -eq $Mounted) {
+
+        Write-Log `
+            "Aucune image Windows montée." `
+            INFO
+
+        $Context = Set-WimMountedState `
+            -Context $Context `
+            -Mounted $false
+
+        return $Context
+    }
+
+    # --------------------------------------------------
+    # Montage réel détecté
+    # --------------------------------------------------
+
+    Write-Log (
+        "Montage WIM détecté par DISM : {0}" -f
+        $Mounted.Path
+    ) INFO
+
+    Write-Log (
+        "Image : {0}" -f
+        $Mounted.ImagePath
+    ) INFO
+
+    Write-Log (
+        "Index : {0}" -f
+        $Mounted.ImageIndex
+    ) INFO
+
+    # --------------------------------------------------
+    # Utilisation du chemin réellement retourné par DISM
+    # --------------------------------------------------
+
+    $MountPath = [string]$Mounted.Path
+
+    if ([string]::IsNullOrWhiteSpace($MountPath)) {
+
+        throw `
+            "DISM indique qu'une image est montée, mais le chemin de montage est absent."
+
+    }
+
+    Write-Log `
+        "Démontage de l'image Windows..." `
+        INFO
+
+    # --------------------------------------------------
+    # Démontage DISM
     # --------------------------------------------------
 
     try {
 
         $null = Dismount-DismImage `
-			-MountPath $Context.WIM.Mount.Path `
-			-Discard:$Discard
+            -MountPath $MountPath `
+            -Discard:$Discard `
+            -ErrorAction Stop
 
     }
     catch {
@@ -952,173 +1746,79 @@ function Dismount-Wim {
     }
 
     # --------------------------------------------------
-    # Validation
+    # Validation DISM
     # --------------------------------------------------
 
-    $Mounted = Get-WindowsImage -Mounted |
-		Where-Object {
-
-			$_.Path -eq $Context.WIM.Mount.Path
-
-		}
-
-	if ($Mounted) {
-
-		throw (
-			"Le WIM est toujours enregistré par DISM " +
-			"État       : $($Mounted.MountStatus)`n" +
-			"Montage    : $($Mounted.Path)`n" +
-			"Image      : $($Mounted.ImagePath)"
-		)
-
-	}
-
-    # --------------------------------------------------
-    # Mise à jour du contexte
-    # --------------------------------------------------
-	
-	$Context.WIM.Mount.Path = $null
-
-    $Context = Set-WimMountedState `
-		-Context $Context `
-		-Mounted $false
-
-    $Context.WIM.Mount.ReadOnly = $false
-
-    Write-Log "Image Windows démontée." SUCCESS
-
-    return $Context
-
-}
-# --------------------------------------------------
-# Supprime l'image temporaire du Workspace
-# --------------------------------------------------
-
-function Remove-WorkspaceImage {
-
-    [CmdletBinding()]
-    param(
-
-        [Parameter(Mandatory)]
-        [psobject]$Context
-
+    $StillMounted = @(
+        Get-WindowsImage -Mounted `
+            -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Path -eq $MountPath
+        }
     )
 
-    Test-WimContext `
-        -Context $Context
-		
-	# --------------------------------------------------
-	# Sécurité : ne jamais supprimer un WIM encore monté
-	# --------------------------------------------------
+    if ($StillMounted.Count -gt 0) {
 
-	$Mounted = Get-WindowsImage -Mounted |
-		Where-Object {
+        $Remaining = $StillMounted[0]
 
-			$_.ImagePath -eq $Context.WIM.FullName -and
-			$_.Path -eq $Context.WIM.Mount.Path
-
-		}
-
-	if ($Mounted) {
-
-		Write-Log (
-			"Montage détecté : $($Mounted.Path)"
-		) INFO
-		Write-Log (
-			"Le WIM est encore monté. Suppression annulée."
-		) WARNING
-		
-
-		return $Context
-
-	}
-
-    if ([string]::IsNullOrWhiteSpace($Context.WIM.FullName)) {
-
-        Write-Log "Aucune image temporaire à supprimer." INFO
-
-        return $Context
+        throw (
+            "Le WIM est toujours enregistré par DISM.`n" +
+            "État       : $($Remaining.MountStatus)`n" +
+            "Montage    : $($Remaining.Path)`n" +
+            "Image      : $($Remaining.ImagePath)"
+        )
 
     }
-
-    if (-not (Test-Path $Context.WIM.FullName)) {
-
-        Write-Log "L'image temporaire n'existe plus." INFO
-
-        return $Context
-
-    }
-
-    Write-Log "Suppression de l'image temporaire..."
-
-   
-		
-	if ($Context.BuildState.Image.WimMounted) {
-
-		Write-Log (
-			"Le contexte indique que le WIM est encore monté."
-		) WARNING
-
-		return $Context
-
-	}	
-
-    try {
-
-		Remove-Item `
-			-Path $Context.WIM.FullName `
-			-Force `
-			-ErrorAction Stop
-
-	}
-    catch {
-
-        Write-Log (
-            "Impossible de supprimer l'image temporaire : " +
-            $_.Exception.Message
-        ) WARNING
-
-        return $Context
-
-    }
-	
-	# --------------------------------------------------
-	# Validation
-	# --------------------------------------------------
-
-	if (Test-Path $Context.WIM.FullName) {
-
-		Write-Log "L'image temporaire est toujours présente." WARNING
-
-		return $Context
-
-	}
 
     # --------------------------------------------------
     # Mise à jour du contexte
     # --------------------------------------------------
 
-    $Context.WIM.FullName = $null
-
-    $Context.WIM.Name = $null
-
-    $Context.WIM.Type = $null
-
-    $Context.WIM.SizeGB = 0
-
-    $Context.WIM.Images = @()
-
     $Context.WIM.Mount.Path = $null
-
-    $Context = Set-WimMountedState `
-		-Context $Context `
-		-Mounted $false
-
     $Context.WIM.Mount.ReadOnly = $false
 
-    Write-Log "[WIM] Image temporaire supprimée." SUCCESS
+    $Context = Set-WimMountedState `
+        -Context $Context `
+        -Mounted $false
+
+    # --------------------------------------------------
+    # Invalidation de l'état Recovery.Wim
+    # --------------------------------------------------
+
+    if (
+        $null -ne $Context.BuildState -and
+        $Context.BuildState.PSObject.Properties.Name -contains "Recovery" -and
+        $null -ne $Context.BuildState.Recovery -and
+        $Context.BuildState.Recovery.PSObject.Properties.Name -contains "Wim" -and
+        $null -ne $Context.BuildState.Recovery.Wim
+    ) {
+
+        $RecoveryState =
+            $Context.BuildState.Recovery.Wim
+
+        $RecoveryState.Exists = $false
+        $RecoveryState.Valid = $false
+        $RecoveryState.CanReuse = $false
+        $RecoveryState.NeedsCleanup = $false
+
+        $RecoveryState.MountStatus = $null
+        $RecoveryState.MountPath = $null
+        $RecoveryState.ImagePath = $null
+        $RecoveryState.ImageIndex = $null
+
+        $RecoveryState.WindowsFolderExists = $false
+        $RecoveryState.ImageMatches = $false
+        $RecoveryState.WorkspaceReady = $false
+        $RecoveryState.RegistryMounted = $false
+
+        $RecoveryState.Message =
+            "Aucun montage WIM actif."
+
+    }
+
+    Write-Log `
+		"Montage WIM PimsOS nettoyé avec succès." `
+		SUCCESS
 
     return $Context
-
 }
-

@@ -54,28 +54,32 @@ function Complete-Build {
         }
 
         #------------------------------------------
-        # Démonter le WIM
-        #------------------------------------------
+		# Démonter le WIM
+		#------------------------------------------
 
-        if (
-            $null -ne $Context.WIM -and
-            $null -ne $Context.BuildState.Image -and
-            $Context.BuildState.Image.WimMounted
-        ) {
+		if (
+			$null -ne $Context.WIM
+		) {
 
-            try {
+			try {
 
-                $Context = Dismount-Wim `
-                    -Context $Context
+				Write-Log `
+					"Vérification d'un éventuel montage WIM actif..." `
+					INFO
 
-            }
-            catch {
+				$Context = Dismount-Wim `
+					-Context $Context
 
-                Write-Log $_.Exception.Message ERROR
+			}
+			catch {
 
-            }
+				Write-Log `
+					"Erreur lors du démontage du WIM : $($_.Exception.Message)" `
+					ERROR
 
-        }
+			}
+
+		}
 
         <#
         #------------------------------------------

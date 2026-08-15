@@ -52,6 +52,7 @@ function Repair-BuildEnvironment {
     return $Context
 
 }
+
 # --------------------------------------------------
 # Vérification du Workspace
 # --------------------------------------------------
@@ -67,32 +68,90 @@ function Repair-Workspace {
     )
 
     Write-Log "Vérification du Workspace..."
-	
-	$Cleaned = $false
-	
+
+    $Cleaned = $false
+
+    # --------------------------------------------------
+    # Déterminer si un WIM peut être réutilisé
+    # --------------------------------------------------
+
+    $CanReuseWim = $false
+
+    if (
+        $null -ne $Context.BuildState.Recovery.Wim -and
+        $Context.BuildState.Recovery.Wim.PSObject.Properties.Name -contains "CanReuse"
+    ) {
+
+        $CanReuseWim =
+            [bool]$Context.BuildState.Recovery.Wim.CanReuse
+
+    }
+
+    # --------------------------------------------------
+    # Chemins du Workspace
+    # --------------------------------------------------
+
     $Paths = @(
-		$Context.Workspace.Sources,
-		$Context.Workspace.MountWIM
-	)
+        $Context.Workspace.Sources,
+        $Context.Workspace.MountWIM
+    )
 
-	foreach ($Path in $Paths) {
-
-		if (
-			$Context.BuildState.Recovery.Wim.CanReuse -and
-			$Path -eq $Context.Workspace.MountWIM
-		) {
-
-			Write-Log (
-				"Montage WIM conservé : $Path"
-			) INFO
-
-			continue
-
-		}
+    foreach ($Path in $Paths) {
 
         if (-not (Test-Path $Path)) {
             continue
         }
+
+        # --------------------------------------------------
+        # Montage WIM réutilisable
+        # --------------------------------------------------
+
+        if (
+            $CanReuseWim -and
+            $Path -eq $Context.Workspace.MountWIM
+        ) {
+
+            Write-Log (
+                "Montage WIM conservé : {0}" -f $Path
+            ) INFO
+
+            continue
+        }
+
+        # --------------------------------------------------
+        # Sources contenant le WIM monté
+        # --------------------------------------------------
+
+        if (
+            $CanReuseWim -and
+            $Path -eq $Context.Workspace.Sources
+        ) {
+
+            $WimPath = $Context.BuildState.Recovery.Wim.ImagePath
+
+            if (
+                -not [string]::IsNullOrWhiteSpace(
+                    [string]$WimPath
+                ) -and
+                (Test-Path $WimPath)
+            ) {
+
+                Write-Log (
+                    "WIM réutilisable détecté : {0}" -f $WimPath
+                ) INFO
+
+                Write-Log (
+                    "Sources conservées car le WIM est utilisé par DISM."
+                ) INFO
+
+                continue
+            }
+
+        }
+
+        # --------------------------------------------------
+        # Vérification du contenu
+        # --------------------------------------------------
 
         $Items = @(
             Get-ChildItem `
@@ -105,27 +164,34 @@ function Repair-Workspace {
             continue
         }
 
-        Write-Log (
-			"Nettoyage du Workspace : {0}" -f $Path
-		) WARNING
+        # --------------------------------------------------
+        # Nettoyage
+        # --------------------------------------------------
 
-		Remove-Item `
+        Write-Log (
+            "Nettoyage du Workspace : {0}" -f $Path
+        ) WARNING
+
+        Remove-Item `
             -Path (Join-Path $Path "*") `
             -Recurse `
             -Force `
             -ErrorAction Stop
 
         $Cleaned = $true
-		
-		
-		Assert-DirectoryEmpty `
-			-Path $Path
+
+        Assert-DirectoryEmpty `
+            -Path $Path
 
         Write-Log (
             "Workspace nettoyé : {0}" -f $Path
         ) SUCCESS
 
     }
+
+    # --------------------------------------------------
+    # Résultat
+    # --------------------------------------------------
 
     if ($Cleaned) {
 
@@ -139,9 +205,7 @@ function Repair-Workspace {
     }
 
     return $Context
-
 }
-
 
 # --------------------------------------------------
 # Vérification des montages DISM

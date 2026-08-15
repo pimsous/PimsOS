@@ -324,6 +324,10 @@ if (-not $volume.DriveLetter) {
     return $Context
 
 }
+# ==========================================
+# Démontage de l'image ISO
+# ==========================================
+
 function Dismount-Iso {
 
     [CmdletBinding()]
@@ -334,40 +338,198 @@ function Dismount-Iso {
 
     )
 
-    if (-not $Context.ISO.Mounted) {
+    # ------------------------------------------
+    # Validation du contexte
+    # ------------------------------------------
+
+    if ($null -eq $Context) {
+
+        throw "Le contexte Build est null."
+
+    }
+
+    if (
+        -not $Context.PSObject.Properties.Name.Contains("ISO")
+    ) {
+
+        throw "Le contexte ne contient pas la section ISO."
+
+    }
+
+    # ------------------------------------------
+    # ISO absente
+    # ------------------------------------------
+
+    if ($null -eq $Context.ISO) {
+
+        Write-Log `
+            "Aucune information ISO dans le contexte." `
+            WARNING
 
         return $Context
 
     }
 
-    Write-Log "Démontage de l'image ISO..."
+    # ------------------------------------------
+    # Vérification de l'état
+    # ------------------------------------------
 
-    try {
+    if (
+        $Context.ISO.PSObject.Properties.Name -contains "Mounted"
+    ) {
 
-		$null = Dismount-DiskImage `
-			-ImagePath $Context.ISO.FullName `
-			-ErrorAction Stop
+        if (-not [bool]$Context.ISO.Mounted) {
 
-	}
-    catch {
+            Write-Log `
+                "L'image ISO n'est pas montée." `
+                INFO
 
-        throw (
-            "Impossible de démonter l'image ISO.`n" +
-            $_.Exception.Message
-        )
+            return $Context
+
+        }
 
     }
+
+    # ------------------------------------------
+    # Récupération du chemin
+    # ------------------------------------------
+
+    $IsoPath = $null
+
+    if (
+        $Context.ISO.PSObject.Properties.Name -contains "FullName"
+    ) {
+
+        $IsoPath = [string]$Context.ISO.FullName
+
+    }
+
+    if ([string]::IsNullOrWhiteSpace($IsoPath)) {
+
+        throw `
+            "Le chemin de l'image ISO est absent du contexte."
+
+    }
+
+    Write-Log `
+        "Démontage de l'image ISO..." `
+        INFO
+
+    # ------------------------------------------
+    # Module Storage
+    # ------------------------------------------
+
+    Import-Module Storage -Force -ErrorAction Stop
+
+    # ------------------------------------------
+    # Vérification avant démontage
+    # ------------------------------------------
+
+    $Image = Get-DiskImage `
+        -ImagePath $IsoPath `
+        -ErrorAction Stop
+
+    if (-not $Image.Attached) {
+
+        Write-Log `
+            "L'image ISO est déjà démontée." `
+            INFO
+
+    }
+    else {
+
+        # --------------------------------------
+        # Démontage
+        # --------------------------------------
+
+        try {
+
+            Dismount-DiskImage `
+                -ImagePath $IsoPath `
+                -ErrorAction Stop |
+                Out-Null
+
+        }
+        catch {
+
+            throw (
+                "Impossible de démonter l'image ISO.`n" +
+                $_.Exception.Message
+            )
+
+        }
+
+        # --------------------------------------
+        # Vérification après démontage
+        # --------------------------------------
+
+        $Image = Get-DiskImage `
+            -ImagePath $IsoPath `
+            -ErrorAction Stop
+
+        if ($Image.Attached) {
+
+            throw (
+                "L'image ISO est toujours attachée après le démontage.`n" +
+                "ISO        : $IsoPath`n" +
+                "DevicePath : $($Image.DevicePath)`n" +
+                "Number     : $($Image.Number)"
+            )
+
+        }
+
+    }
+
+    # ------------------------------------------
+    # Mise à jour du contexte ISO
+    # ------------------------------------------
 
     $Context.ISO.Mounted = $false
     $Context.ISO.DriveLetter = $null
     $Context.ISO.Root = $null
     $Context.ISO.SourcesPath = $null
 
-    Write-Log "ISO démontée." SUCCESS
-	
-	$Context.BuildState.Recovery.Iso = New-IsoMountState
-	$Context.BuildState.Image.IsoMounted = $false
-	
+    # ------------------------------------------
+    # Mise à jour BuildState
+    # ------------------------------------------
+
+    if (
+        $null -ne $Context.BuildState -and
+        $Context.BuildState.PSObject.Properties.Name -contains "Recovery"
+    ) {
+
+        if (
+            $null -ne $Context.BuildState.Recovery -and
+            $Context.BuildState.Recovery.PSObject.Properties.Name -contains "Iso"
+        ) {
+
+            $Context.BuildState.Recovery.Iso =
+                New-IsoMountState
+
+        }
+
+    }
+
+    if (
+        $null -ne $Context.BuildState -and
+        $Context.BuildState.PSObject.Properties.Name -contains "Image"
+    ) {
+
+        if (
+            $null -ne $Context.BuildState.Image -and
+            $Context.BuildState.Image.PSObject.Properties.Name -contains "IsoMounted"
+        ) {
+
+            $Context.BuildState.Image.IsoMounted = $false
+
+        }
+
+    }
+
+    Write-Log `
+        "ISO démontée." `
+        SUCCESS
+
     return $Context
 
 }

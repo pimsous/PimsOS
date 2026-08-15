@@ -242,7 +242,7 @@ function Dismount-DismImage {
 
         }
 
-        Write-Log "Image Windows démontée." SUCCESS
+        
 
     }
     catch {
