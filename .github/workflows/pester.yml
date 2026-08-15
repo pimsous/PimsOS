@@ -52,7 +52,7 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
 
           Install-Module Pester `
-            -MinimumVersion 5.5 `
+            -RequiredVersion 5.8.0 `
             -Force `
             -SkipPublisherCheck
 
