@@ -3,13 +3,39 @@
 # Projet : PimsOS Builder
 # ==========================================
 
-Clear-Host
+#Requires -Version 7.0
+
+Set-StrictMode -Version Latest
+
+# --------------------------------------------------
+# Détermination du projet
+# --------------------------------------------------
 
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
 
+$ModuleManifest = Join-Path `
+    $ProjectRoot `
+    "Modules\PimsOS.psd1"
+
+# --------------------------------------------------
+# Chargement du module PimsOS
+# --------------------------------------------------
+
+if (-not (Test-Path $ModuleManifest)) {
+
+    throw "Manifest PimsOS introuvable : $ModuleManifest"
+}
+
 Import-Module `
-    "$ProjectRoot\Modules\PimsOS.psm1" `
-    -Force
+    $ModuleManifest `
+    -Force `
+    -ErrorAction Stop
+
+# --------------------------------------------------
+# En-tête
+# --------------------------------------------------
+
+Clear-Host
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -17,9 +43,11 @@ Write-Host "      Test d'intégration PimsOS" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# ----------------------------------------------------------
+# --------------------------------------------------
 # Initialisation
-# ----------------------------------------------------------
+# --------------------------------------------------
+
+$Context = $null
 
 try {
 
@@ -27,20 +55,26 @@ try {
 
     $Context = Initialize-PimsOS
 
+    if ($null -eq $Context) {
+
+        throw "Initialize-PimsOS a retourné un BuildContext null."
+
+    }
+
     Write-Host "OK" -ForegroundColor Green
 
 }
 catch {
 
     Write-Host ""
+    Write-Host "ERREUR lors de l'initialisation :" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1
-
 }
 
-# ----------------------------------------------------------
+# --------------------------------------------------
 # Vérification du BuildContext
-# ----------------------------------------------------------
+# --------------------------------------------------
 
 try {
 
@@ -76,10 +110,14 @@ try {
 catch {
 
     Write-Host ""
+    Write-Host "ERREUR lors de la vérification du BuildContext :" -ForegroundColor Red
     Write-Host $_.Exception.Message -ForegroundColor Red
     exit 1
-
 }
+
+# --------------------------------------------------
+# Résultat
+# --------------------------------------------------
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Green
