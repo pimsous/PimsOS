@@ -108,7 +108,7 @@ jobs:
       # Pester Unit Tests
       # --------------------------------------------------
 
-        - name: Run Pester unit tests
+      - name: Run Pester unit tests
         run: |
           $Config = New-PesterConfiguration
 
@@ -127,26 +127,26 @@ jobs:
 
           Write-Host "Pester unit tests : OK"
 
-        # --------------------------------------------------
-        # Test results
-        # --------------------------------------------------
+      # --------------------------------------------------
+      # Test results
+      # --------------------------------------------------
 
-          - name: Generate Pester test report
-            if: always()
-            run: |
-              $Config = New-PesterConfiguration
+      - name: Generate Pester test report
+        if: always()
+        run: |
+          $Config = New-PesterConfiguration
 
-              $Config.Run.Path = "Tests\Unit"
+          $Config.Run.Path = "Tests\Unit"
 
-              $Config.Output.Verbosity = "Normal"
+          $Config.Output.Verbosity = "Normal"
 
-              $Config.TestResult.Enabled = $true
-              $Config.TestResult.OutputFormat = "NUnitXml"
-              $Config.TestResult.OutputPath = "Tests\Pester-TestResults.xml"
+          $Config.TestResult.Enabled = $true
+          $Config.TestResult.OutputFormat = "NUnitXml"
+          $Config.TestResult.OutputPath = "Tests\Pester-TestResults.xml"
 
-              Invoke-Pester `
-                -Configuration $Config `
-                -ErrorAction Stop
+          Invoke-Pester `
+            -Configuration $Config `
+            -ErrorAction Stop
 
       # --------------------------------------------------
       # Upload test results
