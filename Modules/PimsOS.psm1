@@ -20,6 +20,7 @@ Set-StrictMode -Version Latest
 . "$PSScriptRoot\Infrastructure\Recovery.ps1"
 . "$PSScriptRoot\Infrastructure\Check.ps1"
 . "$PSScriptRoot\Infrastructure\Validation.ps1"
+. "$PSScriptRoot\Infrastructure\Service.ps1"
 
 # --------------------------------------------------
 # Core
@@ -62,7 +63,6 @@ Set-StrictMode -Version Latest
 # Package Providers
 # --------------------------------------------------
 
-. "$PSScriptRoot\Package\PackageManager.ps1"
 . "$PSScriptRoot\Package\Chocolatey.ps1"
 . "$PSScriptRoot\Package\Winget.ps1"
 
@@ -85,7 +85,6 @@ Set-StrictMode -Version Latest
 # --------------------------------------------------
 
 . "$PSScriptRoot\Actions\ActionEngine.ps1"
-
 . "$PSScriptRoot\Actions\RegistryEngine.ps1"
 . "$PSScriptRoot\Actions\ServiceEngine.ps1"
 . "$PSScriptRoot\Actions\PackageEngine.ps1"
@@ -99,11 +98,6 @@ Set-StrictMode -Version Latest
 . "$PSScriptRoot\Actions\ScheduledTaskEngine.ps1"
 . "$PSScriptRoot\Actions\ShortcutEngine.ps1"
 
-# --------------------------------------------------
-# Services Windows
-# --------------------------------------------------
-
-. "$PSScriptRoot\Actions\Service.ps1"
 
 # ==========================================
 # Initialisation de PimsOS

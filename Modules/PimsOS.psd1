@@ -6,7 +6,7 @@
 
 RootModule = 'PimsOS.psm1'
 
-ModuleVersion = '2.0.0'
+ModuleVersion = '3.0.0'
 
 GUID = 'A8C82474-5A75-4D1C-8E72-25A5BDE89C61'
 
