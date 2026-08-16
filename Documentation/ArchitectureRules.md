@@ -1,20 +1,24 @@
 # Architecture Rules
 
-> > Version : 0.4.0
+> Version technique : 3.0.0
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-07-26
+> Dernière mise à jour : 2026-08-16
 
 ---
 
 # Objectif
 
-Ce document définit les règles d'architecture que tout composant de PimsOS doit respecter.
+Ce document définit les règles d'architecture que tout composant de PimsOS Builder doit respecter.
 
 Ces règles garantissent la cohérence, la maintenabilité et l'évolutivité du projet.
 
-Elles complètent le document **Architecture.md** ainsi que les différentes **Architecture Decision Records (ADR)**.
+Elles complètent :
+
+- `Architecture.md` ;
+- `ModuleGuide.md` ;
+- les Architecture Decision Records (ADR).
 
 Le non-respect de ces règles doit être considéré comme une anomalie d'architecture.
 

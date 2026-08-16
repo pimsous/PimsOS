@@ -1,36 +1,33 @@
-# Jalons du projet
+# PimsOS Builder - Jalons du projet
 
-> Version : 0.4.0
+> Version technique : 3.0.0
 >
-> Dernière mise à jour : 2026-08-03
+> Statut : Développement / architecture stabilisée
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
 # Objectif
 
-Ce document présente les principaux jalons (Milestones) du projet **PimsOS Builder**.
+Ce document présente les principaux jalons du projet **PimsOS Builder**.
 
-Chaque jalon représente une étape majeure de l'évolution du projet.
+Chaque jalon représente une étape majeure de l'évolution du framework.
 
-Un jalon est considéré comme atteint lorsque :
-
-- les fonctionnalités prévues sont terminées ;
-- les tests sont validés ;
-- la documentation est à jour ;
-- aucune anomalie bloquante n'est présente.
+Un jalon est considéré comme atteint lorsque les objectifs définis pour celui-ci sont réalisés et validés selon les critères du projet.
 
 ---
 
-# État actuel du projet
+# État actuel des jalons
 
-| Jalon | Version | Statut |
-|--------|---------|--------|
-| Architecture du framework | v0.1 | ✅ Terminé |
-| Module PowerShell unique | v0.2 | ✅ Terminé |
-| Moteur de Build | v0.3 | ✅ Terminé |
-| Framework de configuration | v0.4 | 🚧 En cours |
-| Génération d'image ISO | v0.5 | ⏳ Prévu |
-| Première version stable | v1.0 | ⏳ Objectif |
+| Jalon | Objet | Statut |
+|--------|--------|--------|
+| Milestone 1 | Architecture du framework | ✅ Terminé |
+| Milestone 2 | Module PowerShell unique | ✅ Terminé |
+| Milestone 3 | Moteur de Build | ✅ Terminé |
+| Milestone 4 | Framework de configuration | ✅ Stabilisé |
+| Milestone 5 | Génération d'image | 🟡 En cours |
+| Milestone 6 | Première version stable | ⏳ À venir |
 
 ---
 
@@ -42,16 +39,17 @@ Définir l'architecture globale du projet.
 
 ### Réalisations
 
-- Architecture documentée
-- Architecture Rules
-- ADR
-- Module PowerShell unique
-- Documentation technique
-- Standards de développement
+- architecture modulaire ;
+- règles d'architecture ;
+- Architecture Decision Records ;
+- documentation technique ;
+- standards de développement ;
+- séparation des responsabilités ;
+- BuildContext centralisé.
 
 ### Résultat
 
-Le framework dispose d'une architecture stable servant de base à tous les développements.
+Le framework dispose d'une architecture structurée servant de base aux développements suivants.
 
 ---
 
@@ -59,19 +57,20 @@ Le framework dispose d'une architecture stable servant de base à tous les déve
 
 ## Objectif
 
-Centraliser entièrement le chargement du framework.
+Centraliser le chargement du framework dans un module PowerShell unique.
 
 ### Réalisations
 
-- Création de PimsOS.psm1
-- Chargement automatique des composants
-- API publique centralisée
-- Suppression des anciens modules indépendants
-- Initialisation unifiée
+- création de `PimsOS.psm1` ;
+- création de `PimsOS.psd1` ;
+- chargement centralisé des composants ;
+- API publique centralisée ;
+- suppression du modèle à plusieurs modules indépendants ;
+- initialisation unifiée du framework.
 
 ### Résultat
 
-Le framework est désormais chargé depuis un point d'entrée unique.
+PimsOS Builder fonctionne autour d'un module PowerShell unique.
 
 ---
 
@@ -79,26 +78,28 @@ Le framework est désormais chargé depuis un point d'entrée unique.
 
 ## Objectif
 
-Construire le moteur principal de PimsOS Builder.
+Mettre en place le moteur principal d'orchestration du Build.
 
 ### Réalisations
 
-- BuildContext
-- BuildState
-- Pipeline
-- Workflow
-- Recovery
-- Validation de l'environnement
-- Gestion ISO
-- Gestion WIM
-- Gestion des ruches du registre
-- Journalisation
-- Gestion des phases
-- Nettoyage automatique
+- BuildContext ;
+- BuildState ;
+- Workflow ;
+- Pipeline ;
+- Recovery ;
+- vérification de l'environnement ;
+- gestion ISO ;
+- gestion WIM ;
+- gestion DISM ;
+- gestion des ruches du registre ;
+- journalisation ;
+- suivi des phases ;
+- nettoyage des ressources ;
+- finalisation du Build.
 
 ### Résultat
 
-Framework capable de détecter plusieurs éditions Windows, de permettre leur sélection, d'appliquer une configuration de personnalisation et de reconstruire une image Windows avec reprise de build.
+Le framework dispose d'un moteur de Build capable d'orchestrer les principales étapes de préparation et de personnalisation d'une image Windows.
 
 ---
 
@@ -106,36 +107,60 @@ Framework capable de détecter plusieurs éditions Windows, de permettre leur s�
 
 ## Objectif
 
-Construire un moteur de personnalisation entièrement piloté par des fichiers JSON.
+Construire un moteur de personnalisation piloté par des données de configuration.
 
-### État actuel
+### Réalisations
 
-### Déjà réalisé
+- chargement des catégories ;
+- chargement des Tweaks ;
+- chargement des profils ;
+- fusion Profil + Tweaks ;
+- validation des définitions ;
+- création des Actions ;
+- ActionRegistry ;
+- ActionEngine ;
+- Engines spécialisés ;
+- Managers spécialisés ;
+- suivi des statistiques ;
+- gestion du BuildContext.
 
-- Chargement automatique des catégories
-- Chargement automatique des Tweaks
-- Chargement des profils
-- Fusion Profil + Tweaks
-- Validation complète des définitions
-- ActionRegistry
-- ActionEngine
-- RegistryEngine
-- ServiceEngine
-- PackageEngine
-- FeatureEngine
-- Architecture orientée moteurs spécialisés
+### Engines actuellement implémentés
 
-### En cours
+- RegistryEngine ;
+- ServiceEngine ;
+- PackageEngine ;
+- DriverEngine ;
+- FeatureEngine ;
+- CapabilityEngine ;
+- CommandEngine ;
+- FileEngine ;
+- FolderEngine ;
+- EnvironmentEngine ;
+- ScheduledTaskEngine ;
+- ShortcutEngine.
 
-- Finalisation des Managers
-- Intégration complète des nouveaux types d'actions
-- Statistiques détaillées
-- Amélioration des rapports
-- Extension des profils
+### Managers actuellement implémentés
 
-### Résultat attendu
+- PackageManager ;
+- DriverManager ;
+- FeatureManager ;
+- CapabilityManager ;
+- CommandManager ;
+- FileManager ;
+- FolderManager ;
+- EnvironmentManager ;
+- ScheduledTaskManager ;
+- ShortcutManager.
 
-Le moteur devra pouvoir appliquer automatiquement toute personnalisation décrite dans les fichiers JSON sans modification du code.
+### État
+
+Le framework de configuration et la chaîne Engine / Manager sont considérés comme stabilisés pour la version technique 3.0.0.
+
+La couverture des tests continue d'être étendue et certains composants d'infrastructure nécessitent encore une validation complémentaire.
+
+### Résultat
+
+Le Builder peut construire une configuration à partir des données disponibles et acheminer les Actions vers les Engines spécialisés correspondants.
 
 ---
 
@@ -143,106 +168,61 @@ Le moteur devra pouvoir appliquer automatiquement toute personnalisation décrit
 
 ## Objectif
 
-Produire automatiquement une image Windows personnalisée.
+Finaliser la chaîne permettant de produire automatiquement l'image PimsOS.
 
-### Prévu
+### Déjà disponible
 
-- Commit final du WIM
-- Reconstruction de l'ISO
-- Validation automatique
-- Génération des rapports
-- Gestion des erreurs de build
-- Nettoyage complet
+- manipulation des ISO ;
+- manipulation des WIM ;
+- opérations DISM ;
+- sélection d'une image Windows ;
+- montage et démontage des ressources ;
+- préparation du cycle de Build ;
+- gestion du nettoyage ;
+- infrastructure de finalisation.
+
+### Travaux restants
+
+- finalisation de la chaîne de production de l'ISO ;
+- finalisation de certains traitements du WIM ;
+- validation complète de bout en bout ;
+- finalisation des rapports ;
+- implémentation des providers Chocolatey et Winget ;
+- validation complète de la reprise de Build ;
+- validation de l'artefact ISO final.
 
 ### Résultat attendu
 
-Le Builder générera une image Windows prête à être installée.
+Le Builder doit être capable de produire automatiquement une ISO PimsOS complète, validée et exploitable.
 
 ---
 
-# Milestone 6 — Version 1.0
+# Milestone 6 — Première version stable
 
 ## Objectif
 
-Publier la première version stable.
+Publier une première version stable du produit.
 
 ### Conditions
 
-- Pipeline totalement fonctionnel
-- Tous les moteurs finalisés
-- Documentation complète
-- Tests validés
-- Génération ISO stable
-- API stabilisée
+- Pipeline validé de bout en bout ;
+- générateur ISO stable ;
+- composants nécessaires finalisés ;
+- tests validés ;
+- documentation synchronisée ;
+- API publique stabilisée ;
+- absence d'anomalie bloquante ;
+- Build reproductible.
+
+### Statut
+
+⏳ À venir.
 
 ---
 
-# Avancement actuel
+# État technique actuel
 
-Le projet dispose désormais de :
+La version technique actuelle du framework est :
 
-- BuildContext centralisé
-- BuildState
-- Pipeline modulaire
-- Recovery automatique
-- Validation complète des Tweaks
-- Framework de configuration
-- Profils
-- Catégories
-- ActionRegistry
-- ActionEngine
-- RegistryEngine
-- ServiceEngine
-- PackageEngine
-- FeatureEngine
-- version.json centralisant les informations du projet
-- Journalisation complète
-- Gestion des statistiques
-- Nettoyage automatique des ressources
-
-Le développement est actuellement concentré sur la finalisation du moteur de configuration et des nouveaux Managers.
-
----
-
-# Critères de validation
-
-Un jalon est terminé lorsque :
-
-- toutes les fonctionnalités prévues sont développées ;
-- les tests sont validés ;
-- la documentation est mise à jour ;
-- les ADR sont publiées si nécessaire ;
-- aucune anomalie critique n'est ouverte.
-
----
-
-# Suivi
-
-À chaque jalon terminé :
-
-- mise à jour de ProjectStatus.md ;
-- mise à jour de ReleaseNotes.md ;
-- mise à jour de Roadmap.md ;
-- mise à jour de la documentation technique ;
-- création d'un commit Git.
-
----
-
-# Documents associés
-
-- Architecture.md
-- ArchitectureRules.md
-- BuildContext.md
-- Lifecycle.md
-- ProjectStatus.md
-- ReleaseNotes.md
-- Roadmap.md
-- Documentation/ADR/
-
----
-
-# Vision
-
-L'objectif de PimsOS Builder est de proposer un moteur entièrement modulaire permettant de personnaliser différentes versions de Windows uniquement à partir de fichiers de configuration, sans modifier le code source.
-
-À terme, le framework devra être capable de construire automatiquement une image Windows complète, reproductible et entièrement personnalisable.
+```text
+3.0.0

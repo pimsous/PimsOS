@@ -42,13 +42,14 @@ Describe "Core" {
 
         }
 
-        It "Contient une section Project" {
+        It "Contient une section Build" {
 
-            $Config = Get-Config
+			$Config = Get-Config
 
-            $Config.Project | Should -Not -BeNullOrEmpty
+			$Config.Build |
+				Should -Not -BeNullOrEmpty
 
-        }
+		}
 
         It "Contient une section Paths" {
 

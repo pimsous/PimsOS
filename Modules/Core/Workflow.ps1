@@ -30,23 +30,23 @@ function Start-BuildPhase {
 
     $Phase = [PSCustomObject]@{
 
-        Id        = $Name.Replace(" ","")
+		Id        = $Name.Replace(" ","")
 
-        Name      = $Name
+		Name      = $Name
 
-        StartTime = Get-Date
+		StartTime = Get-Date
 
-        EndTime   = $null
+		EndTime   = $null
 
-        Duration  = $null
+		Duration  = $null
 
-        Success   = $true
+		Success   = $true
 
-        Steps     = @()
+		Steps = [System.Collections.Generic.List[object]]::new()
 
-        Errors    = @()
+		Errors = [System.Collections.Generic.List[object]]::new()
 
-    }
+	}
 
     $Context.Report.CurrentPhase = $Phase
 

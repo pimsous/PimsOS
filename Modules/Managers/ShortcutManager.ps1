@@ -1,7 +1,7 @@
 # ==========================================
 # Module : ShortcutManager
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.1
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -60,7 +60,7 @@ function Invoke-Shortcut {
     # Recherche du gestionnaire
     # --------------------------------------------------
 
-    if (-not $script:ShortcutProviders.ContainsKey($Action.Provider)) {
+    if (-not $script:ShortcutProviders.Contains($Action.Provider)) {
 
         throw (
             "Le fournisseur '{0}' n'est pas pris en charge." -f

@@ -1,31 +1,34 @@
-# Bien démarrer
+# PimsOS Builder - Bien démarrer
 
-> Version : 0.4.0
+> Version technique : 3.0.0
 >
-> Architecture : 2.x
+> Statut : Développement / architecture stabilisée
+>
+> Dernière mise à jour : 2026-08-16
 
 Bienvenue dans **PimsOS Builder**.
 
-Ce document explique comment préparer un environnement de développement complet afin de compiler, tester et faire évoluer le projet.
+Ce document explique comment préparer un environnement de développement, vérifier le projet, exécuter les tests et démarrer un Build.
 
 ---
 
 # Prérequis
 
-Avant de commencer, assurez-vous de disposer des éléments suivants :
+Avant de commencer, disposer au minimum des éléments suivants :
 
-| Logiciel | Version minimale |
-|-----------|------------------|
-| Windows | 11 |
-| PowerShell | 7.6 |
-| Git | 2.55 |
-| Visual Studio Code | Dernière version |
-| Extension PowerShell | Dernière version |
+| Logiciel | Version / recommandation |
+|-----------|---------------------------|
+| Windows | Windows 11 |
+| PowerShell | 7.6.x |
+| Git | Version compatible avec le dépôt |
+| Visual Studio Code | Version récente |
+| Extension PowerShell | Version récente |
 | Pester | 5.x |
+| DISM | Disponible dans Windows |
 
 Consultez également :
 
-- Prerequisites.md
+- `Prerequisites.md`
 
 ---
 
@@ -45,7 +48,7 @@ cd PimsOS
 $PSVersionTable.PSVersion
 ```
 
-Version recommandée :
+Version de référence du développement actuel :
 
 ```text
 7.6.x
@@ -67,25 +70,35 @@ git --version
 dism /?
 ```
 
+DISM doit être disponible et fonctionnel dans l'environnement Windows.
+
 ---
 
 # Vérifier Pester
 
+Afficher les versions installées :
+
 ```powershell
-Get-InstalledModule Pester
+Get-InstalledModule Pester -ErrorAction SilentlyContinue
 ```
 
-Installation si nécessaire :
+Installer Pester 5.x si nécessaire :
 
 ```powershell
 Install-Module Pester -Scope CurrentUser
+```
+
+Vérifier ensuite :
+
+```powershell
+Get-Module Pester -ListAvailable
 ```
 
 ---
 
 # Ouvrir le projet
 
-Depuis la racine :
+Depuis la racine du dépôt :
 
 ```powershell
 code .
@@ -95,132 +108,226 @@ code .
 
 # Vérifier l'arborescence
 
-La structure principale doit ressembler à :
+La structure principale du projet est notamment organisée ainsi :
 
 ```text
 PimsOS
 │
 ├── Build
-├── Classes
 ├── Config
 ├── Documentation
+├── ISO
+├── Logs
 ├── Modules
-├── Profiles
-├── Resources
+│   ├── Actions
+│   ├── Configuration
+│   ├── Core
+│   ├── Image
+│   ├── Infrastructure
+│   ├── Managers
+│   ├── Package
+│   ├── Windows
+│   ├── PimsOS.psd1
+│   └── PimsOS.psm1
+├── Output
 ├── Tests
-├── Tools
-├── Tweaks
-└── Workspace
+├── Workspace
+└── version.json
 ```
+
+Le répertoire `Classes` n'est plus utilisé comme couche de classes métier du Builder.
 
 ---
 
 # Comprendre l'architecture
 
-Le framework est organisé autour des composants suivants :
+Le framework repose sur un module PowerShell unique et une architecture en couches.
+
+Le flux logique principal est :
 
 ```text
-Infrastructure
-        │
-        ▼
-Core
-        │
-        ▼
-Configuration
-        │
-        ▼
-ActionEngine
-        │
-        ▼
-ActionRegistry
-        │
-        ▼
-Engine spécialisé
-        │
-        ▼
-Manager
-        │
-        ▼
-Modules Windows
+Infrastructure / Core / Configuration
+                │
+                ▼
+            Workflow
+                │
+                ▼
+            Pipeline
+                │
+                ▼
+          ActionEngine
+                │
+                ▼
+          ActionRegistry
+                │
+                ▼
+        Engine spécialisé
+                │
+                ▼
+             Manager
+                │
+                ▼
+        Module technique
+                │
+                ▼
+             Windows
 ```
 
-Avant de modifier le code, prendre connaissance de cette architecture.
+Avant de modifier le code, prendre connaissance des documents d'architecture.
 
 ---
 
 # Vérifier le projet
 
-Avant toute modification, exécuter :
+Avant toute modification importante, exécuter les tests :
 
 ```powershell
 Invoke-Pester
 ```
 
-Tous les tests doivent réussir.
+Pour exécuter explicitement les tests du projet :
+
+```powershell
+Pour exécuter explicitement les tests du Builder :
+
+Invoke-Pester -Path .\Tests\Unit
+Invoke-Pester -Path .\Tests\Integration
+```
+Pour exécuter les tests d'acceptance :
+
+Invoke-Pester -Path .\Tests\Acceptance
+
+Les tests obligatoires doivent être validés avant de considérer une évolution comme stable.
+
+---
+
+# Charger le module
+
+Le module PimsOS est défini par :
+
+```text
+Modules\PimsOS.psd1
+Modules\PimsOS.psm1
+```
+
+Charger le module :
+
+```powershell
+Import-Module .\Modules\PimsOS.psd1
+```
+
+Vérifier son chargement :
+
+```powershell
+Get-Module PimsOS
+```
+
+Vérifier la fonction publique :
+
+```powershell
+Get-Command Initialize-PimsOS
+```
+
+---
+
+# Point d'entrée public
+
+L'API publique actuelle du module est :
+
+```powershell
+Initialize-PimsOS
+```
+
+Exemple :
+
+```powershell
+Import-Module .\Modules\PimsOS.psd1
+
+$Context = Initialize-PimsOS
+```
+
+Le BuildContext retourné permet ensuite d'inspecter l'état du Build :
+
+```powershell
+$Context.BuildState
+```
+
+ou le rapport :
+
+```powershell
+$Context.Report
+```
 
 ---
 
 # Premier Build
 
-Le Builder détecte automatiquement les images Windows disponibles.
-
-Selon la configuration choisie, il est possible de sélectionner l'édition Windows à personnaliser.
-
-Le Builder n'est pas limité à une version spécifique de Windows.
-
-Le point d'entrée du projet est :
+Le script de lancement du projet est :
 
 ```text
 Build\Build-PimsOS.ps1
 ```
 
-Lancer :
+Lancer le Builder depuis la racine du projet :
 
 ```powershell
 .\Build\Build-PimsOS.ps1
 ```
 
-Le Builder réalise automatiquement :
+Le Builder prépare notamment :
 
-- préparation de l'environnement ;
-- Recovery ;
-- vérification des prérequis ;
-- montage de l'ISO ;
-- détection du WIM ;
-- montage DISM ;
-- chargement de la configuration ;
-- application des Tweaks ;
-- démontage des ressources ;
-- génération du rapport.
+- l'environnement ;
+- le Recovery ;
+- les vérifications des prérequis ;
+- les ressources ISO et WIM ;
+- la configuration ;
+- les personnalisations ;
+- le nettoyage et la finalisation.
+
+Le traitement exact dépend de l'état du projet et de la configuration utilisée.
 
 ---
+
 # Premier lancement
 
-Le premier lancement du Builder permet de vérifier que l'environnement est correctement configuré.
-
-Exécutez :
+Pour tester uniquement le chargement et le point d'entrée du module :
 
 ```powershell
 Import-Module .\Modules\PimsOS.psd1
 
-Initialize-PimsOS
+$Context = Initialize-PimsOS
+```
 
+Pour lancer ensuite le processus de Build complet :
+
+```powershell
 .\Build\Build-PimsOS.ps1
 ```
 
-Si toutes les vérifications sont validées, le Builder prépare automatiquement le Workspace et démarre le pipeline de build.
+`Initialize-PimsOS` et `Build-PimsOS.ps1` ne doivent pas être considérés comme deux étapes obligatoires à exécuter successivement dans le cadre d'un même Build.
+
+Le script `Build-PimsOS.ps1` constitue le lanceur du processus de Build, tandis que `Initialize-PimsOS` est l'entrée fonctionnelle publique du module.
+
+---
 
 # Premier Tweak
 
-Les personnalisations sont définies dans :
+Les personnalisations sont définies dans les ressources de configuration du projet.
 
-```text
-Tweaks/
-```
+Les Tweaks sont séparés des profils.
 
-Chaque Tweak est décrit dans un fichier JSON.
+Un Tweak contient notamment :
 
-Les profils permettent de sélectionner les Tweaks à appliquer.
+- son identifiant ;
+- sa catégorie ;
+- sa description ;
+- ses Actions ;
+- ses métadonnées ;
+- ses éventuelles contraintes de compatibilité.
+
+Les profils déterminent quelles personnalisations sont sélectionnées pour un Build.
+
+Les Tweaks ne contiennent pas de logique PowerShell exécutable.
 
 ---
 
@@ -228,12 +335,14 @@ Les profils permettent de sélectionner les Tweaks à appliquer.
 
 Avant d'écrire du code :
 
-1. identifier le module concerné ;
-2. vérifier qu'une fonctionnalité similaire n'existe pas déjà ;
-3. déterminer s'il faut créer un Engine ou un Manager ;
-4. mettre à jour le BuildContext si nécessaire ;
-5. ajouter les tests ;
-6. mettre à jour la documentation.
+1. identifier la responsabilité concernée ;
+2. vérifier qu'un composant similaire n'existe pas déjà ;
+3. déterminer la couche concernée ;
+4. définir le contrat du nouveau composant ;
+5. développer ;
+6. ajouter les tests ;
+7. mettre à jour la documentation ;
+8. vérifier les ADR si nécessaire.
 
 ---
 
@@ -241,12 +350,34 @@ Avant d'écrire du code :
 
 Les étapes sont les suivantes :
 
-1. créer un Engine dans `Modules/Actions` ;
-2. créer un Manager dans `Modules/Managers` si nécessaire ;
-3. enregistrer le nouvel Engine dans `ActionRegistry.ps1` ;
-4. mettre à jour les statistiques du BuildContext si besoin ;
-5. créer les tests Pester ;
-6. documenter la nouvelle Action.
+1. créer l'Engine spécialisé dans `Modules\Actions` ;
+2. créer ou adapter le Manager dans `Modules\Managers` si nécessaire ;
+3. enregistrer le nouveau type dans `ActionRegistry.ps1` ;
+4. ajouter les validations nécessaires ;
+5. mettre à jour le BuildContext ou les statistiques si nécessaire ;
+6. créer les tests Pester ;
+7. mettre à jour la documentation.
+
+Le flux doit respecter :
+
+```text
+Action
+    │
+    ▼
+ActionEngine
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
+```
 
 ---
 
@@ -254,15 +385,17 @@ Les étapes sont les suivantes :
 
 Avant toute contribution, il est recommandé de lire :
 
-- Architecture.md
-- ArchitectureRules.md
-- BuildContext.md
-- CodingStandards.md
-- DeveloperGuide.md
-- ModuleGuide.md
-- API.md
+- `API.md`
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `CodingStandards.md`
+- `DeveloperGuide.md`
+- `ModuleGuide.md`
+- `ProjectStructure.md`
+- `Testing.md`
 
-Ces documents décrivent le fonctionnement interne du framework.
+Ces documents décrivent l'architecture, les conventions et la stratégie de tests du framework.
 
 ---
 
@@ -271,55 +404,61 @@ Ces documents décrivent le fonctionnement interne du framework.
 Chaque évolution importante suit le processus suivant :
 
 ```text
+Besoin
+    ↓
+Analyse
+    ↓
+Conception
+    ↓
 Développement
-
-↓
-
-Compilation
-
-↓
-
+    ↓
 Tests
-
-↓
-
+    ↓
+Validation
+    ↓
 Documentation
-
-↓
-
-ADR (si nécessaire)
-
-↓
-
+    ↓
+Revue
+    ↓
 Commit Git
-
-↓
-
-Push
 ```
+
+Il n'y a pas de phase de compilation classique du framework PowerShell.
+
+La validation repose notamment sur :
+
+- le parsing PowerShell ;
+- le chargement du module ;
+- les tests Pester ;
+- les validations fonctionnelles nécessaires.
 
 ---
 
 # Bonnes pratiques
 
-Avant chaque commit :
+Avant un commit important :
 
-- exécuter le Build ;
-- lancer les tests ;
+- exécuter les tests ;
+- vérifier le chargement du module ;
 - vérifier les journaux ;
+- vérifier le Build si le changement le concerne ;
 - mettre à jour la documentation ;
-- vérifier les ADR si l'architecture a évolué.
+- vérifier les ADR si l'architecture a évolué ;
+- vérifier `git status`.
 
 ---
 
 # Besoin d'aide ?
 
-Les documents suivants constituent les principales références du projet :
+Les principales références du projet sont :
 
-- Architecture.md
-- ArchitectureRules.md
-- BuildContext.md
-- API.md
-- DeveloperGuide.md
+- `API.md`
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `DeveloperGuide.md`
+- `ModuleGuide.md`
+- `Testing.md`
+- `ProjectStatus.md`
 
-Ils décrivent l'ensemble de l'architecture et des conventions de développement utilisées par **PimsOS Builder**.
+Ces documents constituent la référence du fonctionnement et du développement de **PimsOS Builder**.

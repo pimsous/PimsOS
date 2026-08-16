@@ -8,6 +8,49 @@
 Set-StrictMode -Version Latest
 
 # --------------------------------------------------
+# Initialise les propriétés runtime d'une action
+# --------------------------------------------------
+
+function Initialize-ActionRuntimeProperties {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Action
+
+    )
+
+    # Propriétés utilisées par Invoke-Action
+    $Properties = @{
+
+        Executed       = $false
+        Success        = $false
+        Duration       = [TimeSpan]::Zero
+        Error          = $null
+        ContinueOnError = $false
+
+    }
+
+    foreach ($PropertyName in $Properties.Keys) {
+
+        $Property = $Action.PSObject.Properties[$PropertyName]
+
+        if ($null -eq $Property) {
+
+            $Action | Add-Member `
+                -MemberType NoteProperty `
+                -Name $PropertyName `
+                -Value $Properties[$PropertyName]
+
+        }
+
+    }
+
+    return $Action
+}
+
+# --------------------------------------------------
 # Applique une action
 # --------------------------------------------------
 
@@ -23,6 +66,17 @@ function Invoke-Action {
         [psobject]$Action
 
     )
+
+    # --------------------------------------------------
+    # Initialisation des propriétés runtime
+    # --------------------------------------------------
+
+    $Action = Initialize-ActionRuntimeProperties `
+        -Action $Action
+
+    # --------------------------------------------------
+    # Journalisation
+    # --------------------------------------------------
 
     Write-Log (
         "Action : {0} ({1})" -f
@@ -80,6 +134,7 @@ function Invoke-Action {
         # --------------------------------------------------
 
         if (
+            $null -ne $Context.Statistics -and
             $Context.Statistics.PSObject.Properties.Match("ActionsProcessed").Count -gt 0
         ) {
 
@@ -113,7 +168,14 @@ function Invoke-Action {
         # Statistiques
         # --------------------------------------------------
 
-        $Context.Statistics.Errors++
+        if (
+            $null -ne $Context.Statistics -and
+            $Context.Statistics.PSObject.Properties.Match("Errors").Count -gt 0
+        ) {
+
+            $Context.Statistics.Errors++
+
+        }
 
         # --------------------------------------------------
         # Rapport
@@ -154,5 +216,4 @@ function Invoke-Action {
         )
 
     }
-
 }

@@ -1,8 +1,10 @@
-# Legacy
+# PimsOS Builder - Legacy
 
-> Version : 0.4.0
+> Version technique : 3.0.0
 >
-> Architecture : 2.x
+> Statut : Référence historique
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
@@ -10,51 +12,49 @@
 
 Ce document décrit les composants historiques conservés dans le dépôt **PimsOS Builder**.
 
-Ces composants ne font plus partie de l'architecture active du Builder mais sont conservés pour :
+Ces composants ne font pas partie de l'architecture active du Builder.
 
-- préserver l'historique du projet ;
-- conserver certaines implémentations utiles ;
-- faciliter les comparaisons entre les anciennes et les nouvelles architectures.
+Ils sont conservés lorsqu'ils présentent encore une valeur historique, documentaire ou technique.
 
-Ils ne participent pas au fonctionnement du pipeline actuel.
+Ils ne participent pas au fonctionnement normal du Pipeline actuel.
 
 ---
 
 # Historique
 
-Les premières versions de PimsOS étaient constituées d'un ensemble d'outils PowerShell indépendants développés pour automatiser différentes opérations.
+Les premières versions de PimsOS étaient constituées d'un ensemble d'outils PowerShell indépendants destinés à automatiser différentes opérations.
 
-Au fil du développement, le projet a évolué vers un framework unique reposant sur :
+Au fil du développement, le projet a évolué vers un framework unique reposant notamment sur :
 
 - un BuildContext centralisé ;
-- une Build Pipeline ;
+- un BuildState ;
+- un Workflow ;
+- un Pipeline ;
 - un ActionEngine ;
 - un ActionRegistry ;
 - des Engines spécialisés ;
 - des Managers techniques.
 
-Cette évolution a rendu une partie des anciens outils obsolète.
-
-Ils ont été déplacés dans l'espace **Legacy**.
+Cette évolution a rendu certains anciens composants obsolètes ou hors du chemin d'exécution actuel.
 
 ---
 
-# Contenu du Legacy
+# Contenu historique
 
-Les composants historiques sont principalement regroupés dans :
+Les composants historiques peuvent notamment se trouver dans :
 
 ```text
 Tools/
 ```
 
-et
+et :
 
 ```text
 Tests/
-└── Legacy
+└── Legacy/
 ```
 
-Ces dossiers sont volontairement conservés dans le dépôt.
+Ces emplacements doivent être considérés comme hors du chemin d'exécution normal de PimsOS.
 
 ---
 
@@ -66,140 +66,164 @@ Le dossier :
 Tools/
 ```
 
-contient principalement :
+peut contenir des outils historiques ou auxiliaires qui ne sont pas chargés par :
 
-- l'ancien framework Migration ;
-- les scripts de publication ;
-- les outils de qualité ;
-- diverses utilitaires historiques.
+```text
+Modules\PimsOS.psm1
+```
 
-Ces outils ne sont pas chargés par **PimsOS.psm1**.
+Ces outils ne constituent pas des composants du framework actif.
 
-Ils ne participent pas au Build actuel.
+Avant toute utilisation, vérifier leur statut et leur documentation propres.
 
 ---
 
 # Migration
 
-Le framework **Migration** est désormais considéré comme un projet historique.
+Le framework ou les outils **Migration** sont considérés comme historiques.
 
-Il est conservé pour :
+Ils peuvent être conservés afin de :
 
-- comprendre certaines décisions d'architecture ;
-- réutiliser ponctuellement certains algorithmes ;
-- maintenir la compatibilité avec d'anciens travaux.
+- comprendre certaines décisions prises au cours du développement ;
+- analyser l'évolution de l'architecture ;
+- réutiliser ponctuellement une approche technique après adaptation ;
+- conserver une trace des travaux antérieurs.
 
-Il ne constitue plus une dépendance du Builder.
+Ils ne constituent pas une dépendance du Builder actuel.
+
+Tout code réutilisé doit être adapté à l'architecture actuelle avant intégration.
 
 ---
 
 # Tests Legacy
 
-Les anciens tests ont été isolés dans :
+Les anciens tests peuvent être isolés dans :
 
 ```text
 Tests/
 └── Legacy/
 ```
 
-Cette séparation permet de distinguer clairement :
+Ils ne participent pas à la validation courante du framework.
 
-- les tests du Builder actuel ;
-- les tests des anciens outils.
+Les tests du Builder actif sont exécutés depuis les répertoires de tests dédiés au framework actuel.
 
-Les tests Legacy ne participent plus à la validation du framework.
-
-Seuls les tests situés hors de ce dossier sont exécutés lors du développement courant.
+Les tests Legacy doivent être considérés comme des archives de test et non comme une référence du comportement actuel.
 
 ---
 
-# Développement actif
+# Architecture active
 
-Le développement est désormais concentré sur les composants suivants :
+Le développement actif est désormais centré sur les composants du framework principal, notamment :
 
 ```text
-Build
-Classes
-Config
-Documentation
 Modules
-Profiles
-Resources
-Tests
-Tweaks
-Workspace
+│
+├── Actions
+├── Configuration
+├── Core
+├── Image
+├── Infrastructure
+├── Managers
+├── Package
+└── Windows
 ```
 
-Ces dossiers constituent la base officielle du framework.
+Le point d'entrée du framework est :
+
+```text
+Modules\PimsOS.psm1
+```
+
+Les composants Legacy ne sont pas chargés par ce module.
 
 ---
 
 # Interdictions
 
-Aucune nouvelle fonctionnalité ne doit être développée dans :
+Aucune nouvelle fonctionnalité du Builder ne doit être développée dans les composants Legacy.
+
+En particulier :
 
 ```text
 Tools/
-```
-
-ou
-
-```text
 Tests/Legacy/
 ```
 
-Sauf nécessité exceptionnelle de maintenance.
+ne doivent pas être utilisés pour introduire une nouvelle fonctionnalité du framework principal.
 
-Toute nouvelle fonctionnalité doit être intégrée au framework principal.
+Une maintenance exceptionnelle peut être réalisée lorsqu'elle est nécessaire à la conservation ou à l'analyse d'un composant historique.
 
 ---
 
 # Politique de maintenance
 
-Les composants Legacy sont considérés comme figés.
+Les composants Legacy sont considérés comme figés fonctionnellement.
 
 Les corrections éventuelles doivent :
 
-- être exceptionnelles ;
-- être documentées ;
-- ne jamais introduire de nouvelles fonctionnalités.
+- rester exceptionnelles ;
+- être limitées à la maintenance nécessaire ;
+- ne pas introduire de nouvelle fonctionnalité dans l'architecture Legacy ;
+- être documentées lorsque leur impact est significatif.
 
-Toute évolution fonctionnelle doit être réalisée dans les composants actifs.
+Toute nouvelle fonctionnalité doit être développée dans l'architecture active.
 
 ---
 
 # Réutilisation
 
-Il est autorisé de réutiliser une implémentation provenant du Legacy à condition de :
+Une implémentation Legacy peut être étudiée ou réutilisée lorsqu'elle présente une valeur technique.
 
-- l'adapter à l'architecture actuelle ;
+Avant intégration dans le Builder actif, elle doit :
+
+- être adaptée à l'architecture actuelle ;
 - respecter les Architecture Rules ;
-- utiliser le BuildContext ;
-- écrire de nouveaux tests ;
-- documenter la migration si nécessaire.
+- utiliser les contrats actuels du BuildContext ;
+- disposer de tests adaptés ;
+- être documentée si nécessaire.
 
-Le code ne doit jamais être copié sans adaptation.
+Le code Legacy ne doit pas être copié directement dans l'architecture active sans adaptation.
 
 ---
 
 # Suppression
 
-Les composants Legacy pourront être supprimés lorsqu'ils n'apporteront plus de valeur.
+Les composants historiques pourront être supprimés lorsqu'ils n'apporteront plus de valeur.
 
-Avant toute suppression, il convient de vérifier :
+Avant toute suppression, vérifier :
 
 - qu'aucun composant actif ne les utilise ;
-- que leur contenu est devenu obsolète ;
-- que leur suppression est documentée.
+- qu'ils ne sont plus nécessaires à la maintenance historique ;
+- qu'ils ne contiennent pas une information utile à la compréhension du projet ;
+- que leur suppression est documentée lorsque nécessaire.
 
 ---
 
 # Conclusion
 
-Le dépôt conserve volontairement certains composants historiques.
+Le dépôt conserve volontairement certains composants historiques afin de préserver la mémoire technique du projet.
 
-Ils constituent une archive technique permettant de retracer l'évolution du projet.
+Ces composants permettent notamment de retracer l'évolution de PimsOS et de comprendre certaines décisions prises au cours du développement.
 
-Le développement actif est désormais entièrement centré sur **PimsOS Builder** et son architecture modulaire (BuildContext, Pipeline, ActionRegistry, Engines et Managers).
+Le développement actif est désormais centré sur **PimsOS Builder** et son architecture modulaire :
 
-Les composants Legacy ne servent plus qu'à des fins de référence, d'archivage ou d'analyse historique.
+```text
+BuildContext
+    ↓
+Workflow
+    ↓
+Pipeline
+    ↓
+ActionEngine
+    ↓
+ActionRegistry
+    ↓
+Engines spécialisés
+    ↓
+Managers
+    ↓
+Modules techniques
+```
+
+Les composants Legacy sont utilisés uniquement comme références historiques ou techniques et ne font pas partie du chemin d'exécution normal du Builder.

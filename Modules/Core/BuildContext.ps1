@@ -7,9 +7,10 @@
 
 Set-StrictMode -Version Latest
 
-# --------------------------------------------------
+
+# ==================================================
 # Etat global du Build
-# --------------------------------------------------
+# ==================================================
 
 function New-BuildState {
 
@@ -21,8 +22,13 @@ function New-BuildState {
         ObjectType = "BuildState"
 
         Initialized = $false
-		
-		Status = "NotStarted"
+
+        Status = "NotStarted"
+
+
+        # ==========================================
+        # Recovery
+        # ==========================================
 
         Recovery = [PSCustomObject]@{
 
@@ -35,6 +41,11 @@ function New-BuildState {
             Registry = $null
 
         }
+
+
+        # ==========================================
+        # Environment
+        # ==========================================
 
         Environment = [PSCustomObject]@{
 
@@ -54,6 +65,11 @@ function New-BuildState {
 
         }
 
+
+        # ==========================================
+        # Pipeline
+        # ==========================================
+
         Pipeline = [PSCustomObject]@{
 
             Started = $false
@@ -66,81 +82,151 @@ function New-BuildState {
 
         }
 
+
+        # ==========================================
+        # Image
+        # ==========================================
+
         Image = [PSCustomObject]@{
 
-			IsoMounted = $false
+            IsoMounted = $false
 
-			WimMounted = $false
+            WimMounted = $false
 
-			RegistryLoaded = $false
+            RegistryLoaded = $false
 
-			CurrentRegistryHive = $null
+            CurrentRegistryHive = $null
 
-			ConfigLoaded = $false
+            ConfigLoaded = $false
 
-			ProfileLoaded = $false
+            ProfileLoaded = $false
 
-			ProfileMerged = $false
+            ProfileMerged = $false
 
-			TweaksLoaded = $false
+            TweaksLoaded = $false
 
-			TweaksApplied = $false
+            TweaksApplied = $false
 
-		}
-		Success = $false
+        }
+
+
+        # ==========================================
+        # Etat final
+        # ==========================================
+
+        Success = $false
+
         Completed = $false
 
     }
-
 }
+
+
+# ==================================================
+# Création du BuildContext
+# ==================================================
 
 function New-BuildContext {
 
     [CmdletBinding()]
     param()
 
+
+    # --------------------------------------------------
+    # Collections internes
+    #
+    # Utilisation de List[object] afin de disposer
+    # d'objets mutables avec .Add() dans les managers.
+    # --------------------------------------------------
+
+    $WimImages = [System.Collections.Generic.List[object]]::new()
+
+    $RegistryMounted = [System.Collections.Generic.List[object]]::new()
+
+    $Packages = [System.Collections.Generic.List[object]]::new()
+
+    $Drivers = [System.Collections.Generic.List[object]]::new()
+
+    $Tweaks = [System.Collections.Generic.List[object]]::new()
+
+    $Services = [System.Collections.Generic.List[object]]::new()
+
+    $Features = [System.Collections.Generic.List[object]]::new()
+
+    $ReportPhases = [System.Collections.Generic.List[object]]::new()
+
+    $ReportWarnings = [System.Collections.Generic.List[object]]::new()
+
+    $ReportErrors = [System.Collections.Generic.List[object]]::new()
+
+    $ReportInformations = [System.Collections.Generic.List[object]]::new()
+
+
+    # --------------------------------------------------
+    # Contexte principal
+    # --------------------------------------------------
+
     return [PSCustomObject]@{
 
+
         # ==========================================
-		# Projet
-		# ==========================================
+        # Projet
+        # ==========================================
 
-		Project = [PSCustomObject]@{
+        Project = [PSCustomObject]@{
 
-			Name       = $null
-			Version    = $null
+            Name = $null
 
-			Windows = [PSCustomObject]@{
+            Version = $null
 
-				Release = $null
-				Build   = $null
 
-			}
+            Windows = [PSCustomObject]@{
 
-			Author     = $null
-			Company    = $null
-			Repository = $null
-			BuildDate  = $null
-			
-			Root       = $null
+                Release = $null
 
-			Paths = [PSCustomObject]@{
+                Build = $null
 
-				ISO    = $null
-				Logs   = $null
-				Output = $null
-				Mount  = $null
-				Temp   = $null
+            }
 
-			}
 
-			Config = $null
+            Author = $null
 
-			StartTime = Get-Date
-			EndTime   = $null
-			Duration  = $null
+            Company = $null
 
-		}
+            Repository = $null
+
+            BuildDate = $null
+
+
+            Root = $null
+
+
+            Paths = [PSCustomObject]@{
+
+                ISO = $null
+
+                Logs = $null
+
+                Output = $null
+
+                Mount = $null
+
+                Temp = $null
+
+            }
+
+
+            Config = $null
+
+
+            StartTime = Get-Date
+
+            EndTime = $null
+
+            Duration = $null
+
+        }
+
 
         # ==========================================
         # Build
@@ -148,74 +234,108 @@ function New-BuildContext {
 
         Build = [PSCustomObject]@{
 
-			Id              = [guid]::NewGuid().Guid
+            Id = [guid]::NewGuid().Guid
+
+            CreateISO = $true
+
+            CreateReport = $true
+
+            DryRun = $false
+
+            Interactive = $true
+
+        }
 
 
-			CreateISO       = $true
-			CreateReport    = $true
+        # ==========================================
+        # Etat global du Build
+        # ==========================================
 
-			DryRun          = $false
-			Interactive     = $true
+        BuildState = New-BuildState
 
-		}
 
-		# ==========================================
-		# Etat global du Build
-		# ==========================================
-
-		BuildState = New-BuildState
-		
         # ==========================================
         # Configuration
         # ==========================================
 
         Configuration = $null
-		
-		ConfigurationProfile = $null
-		
-		
-		# ==========================================
+
+        ConfigurationProfile = $null
+
+
+        # ==========================================
         # Image ISO
         # ==========================================
 
-        ISO = $null
+        ISO = [PSCustomObject]@{
+
+            Path = $null
+
+            Name = $null
+
+            FullName = $null
+
+            SizeGB = 0
+
+            Mounted = $false
+
+            MountPath = $null
+
+        }
+
+
+        # ==========================================
+        # Image WIM
+        # ==========================================
 
         WIM = [PSCustomObject]@{
 
-            Type        = $null
-            Name        = $null
-            FullName    = $null
+            Type = $null
 
-            SizeGB      = 0
+            Name = $null
 
-            Images      = @()
+            FullName = $null
+
+            SizeGB = 0
+
+
+            # Collection d'images WIM
+            Images = $WimImages
+
 
             Mount = [PSCustomObject]@{
 
-                Path        = $null
-                ReadOnly    = $false
+                Path = $null
+
+                ReadOnly = $false
 
             }
 
         }
 
+
+        # ==========================================
+        # Image sélectionnée
+        # ==========================================
+
         Image = [PSCustomObject]@{
 
-            Index           = $null
+            Index = $null
 
-            Name            = $null
+            Name = $null
 
-            Description     = $null
+            Description = $null
 
-            Size            = 0
+            Size = 0
 
-            Modified        = $false
+            Modified = $false
 
-            SelectedBy      = $null
+            SelectedBy = $null
 
-            Interactive     = $false
+            Interactive = $false
 
         }
+
 
         # ==========================================
         # Workspace
@@ -223,24 +343,24 @@ function New-BuildContext {
 
         Workspace = [PSCustomObject]@{
 
-            Root        = $null
+            Root = $null
 
-            ISO         = $null
+            ISO = $null
 
-            Sources     = $null
+            Sources = $null
 
-            MountISO    = $null
+            MountISO = $null
 
-            MountWIM    = $null
+            MountWIM = $null
 
-            Output      = $null
+            Output = $null
 
-            Temp        = $null
+            Temp = $null
 
-            Extract     = $null
+            Extract = $null
 
         }
-		
+
 
         # ==========================================
         # Registre
@@ -248,23 +368,24 @@ function New-BuildContext {
 
         Registry = [PSCustomObject]@{
 
-			Mounted = @()
+            Mounted = $RegistryMounted
 
-		}
-		
-	    # ==========================================
+        }
+
+
+        # ==========================================
         # Contenu
         # ==========================================
 
-        Packages   = @()
+        Packages = $Packages
 
-        Drivers    = @()
+        Drivers = $Drivers
 
-        Tweaks     = @()
+        Tweaks = $Tweaks
 
-        Services   = @()
+        Services = $Services
 
-        Features   = @()
+        Features = $Features
 
 
         # ==========================================
@@ -273,19 +394,20 @@ function New-BuildContext {
 
         Report = [PSCustomObject]@{
 
-            Environment    = $null
+            Environment = $null
 
-            Phases         = @()
+            Phases = $ReportPhases
 
-            CurrentPhase   = $null
+            CurrentPhase = $null
 
-            Warnings       = @()
+            Warnings = $ReportWarnings
 
-            Errors         = @()
+            Errors = $ReportErrors
 
-            Informations   = @()
+            Informations = $ReportInformations
 
         }
+
 
         # ==========================================
         # Journal
@@ -293,13 +415,14 @@ function New-BuildContext {
 
         Logger = [PSCustomObject]@{
 
-            Enabled     = $true
+            Enabled = $true
 
-            Path        = $null
+            Path = $null
 
-            Started     = $false
+            Started = $false
 
         }
+
 
         # ==========================================
         # Statistiques
@@ -307,43 +430,48 @@ function New-BuildContext {
 
         Statistics = [PSCustomObject]@{
 
-			ActionsProcessed              = 0
+            ActionsProcessed = 0
 
-			PackagesProcessed             = 0
+            PackagesProcessed = 0
 
-			DriversProcessed              = 0
+            DriversProcessed = 0
 
-			FeaturesProcessed             = 0
+            FeaturesProcessed = 0
 
-			CapabilitiesProcessed         = 0
+            CapabilitiesProcessed = 0
 
-			CommandsProcessed             = 0
+            CommandsProcessed = 0
 
-			FilesProcessed                = 0
+            FilesProcessed = 0
 
-			FoldersProcessed              = 0
+            FoldersProcessed = 0
 
-			EnvironmentVariablesProcessed = 0
+            EnvironmentVariablesProcessed = 0
 
-			ScheduledTasksProcessed       = 0
+            ScheduledTasksProcessed = 0
 
-			ShortcutsProcessed            = 0
+            ShortcutsProcessed = 0
 
-			ServicesProcessed             = 0
+            ServicesProcessed = 0
 
-			RegistryActionsProcessed      = 0
+            RegistryActionsProcessed = 0
 
-			TweaksApplied                 = 0
+            TweaksApplied = 0
 
-			Errors                        = 0
+            Errors = 0
 
-			Warnings                      = 0
+            Warnings = 0
 
-		}
+        }
 
     }
-
 }
+
+
+# ==================================================
+# Initialisation du BuildContext
+# ==================================================
+
 function Initialize-BuildContext {
 
     [CmdletBinding()]
@@ -354,119 +482,201 @@ function Initialize-BuildContext {
 
     )
 
-    # ------------------------------------------
+
+    # ==================================================
     # Informations du projet
-    # ------------------------------------------
-	
+    # ==================================================
+
     $Context.Project.Root = Get-ProjectRoot
+
+
+    # --------------------------------------------------
+    # Configuration
+    # --------------------------------------------------
 
     $Context.Configuration = Get-Config
 
-	$Context.Project.Config = $Context.Configuration
+    $Context.Project.Config = $Context.Configuration
 
-	$Version = Get-ProjectVersion
 
-	$Context.Project.Name = Get-ObjectProperty `
-		-Object $Version `
-		-Name "Project" `
-		-Default "PimsOS Builder"
+    # --------------------------------------------------
+    # Version du projet
+    # --------------------------------------------------
 
-	$Context.Project.Version = Get-ObjectProperty `
-		-Object $Version `
-		-Name "Version" `
-		-Default "0.0.0-dev"
-		
-	$Windows = Get-ObjectProperty `
-		-Object $Version `
-		-Name "Windows"
+    $Version = Get-ProjectVersion
 
-	if ($Windows) {
 
-		$Context.Project.Windows.Release = Get-ObjectProperty `
-			-Object $Windows `
-			-Name "Release"
+    $Context.Project.Name = Get-ObjectProperty `
+        -Object $Version `
+        -Name "Project" `
+        -Default "PimsOS Builder"
 
-		$Context.Project.Windows.Build = Get-ObjectProperty `
-			-Object $Windows `
-			-Name "Build"
 
-	}
+    $Context.Project.Version = Get-ObjectProperty `
+        -Object $Version `
+        -Name "Version" `
+        -Default "0.0.0-dev"
 
-	$Context.Project.Author = Get-ObjectProperty `
-		-Object $Version `
-		-Name "Author"
 
-	$Context.Project.Company = Get-ObjectProperty `
-		-Object $Version `
-		-Name "Company"
+    # --------------------------------------------------
+    # Informations Windows
+    # --------------------------------------------------
 
-	$Context.Project.Repository = Get-ObjectProperty `
-		-Object $Version `
-		-Name "Repository"
-	
-	$Context.Project.BuildDate = Get-ObjectProperty `
-		-Object $Version `
-		-Name "BuildDate"
+    $Windows = Get-ObjectProperty `
+        -Object $Version `
+        -Name "Windows"
 
-	$Context.ConfigurationProfile = Get-ObjectProperty `
-		-Object $Context.Configuration `
-		-Name "DefaultProfile"
 
-	if ([string]::IsNullOrWhiteSpace($Context.ConfigurationProfile)) {
+    if ($Windows) {
 
-		$Context.ConfigurationProfile = "Tests\Registry"
+        $Context.Project.Windows.Release =
+            Get-ObjectProperty `
+                -Object $Windows `
+                -Name "Release"
 
-	}
-    # ------------------------------------------
-    # Chemins
-    # ------------------------------------------
 
-    foreach ($PathName in @("ISO","Logs","Output","Mount","Temp")) {
-
-        $Context.Project.Paths.$PathName = Get-ProjectPath $PathName
+        $Context.Project.Windows.Build =
+            Get-ObjectProperty `
+                -Object $Windows `
+                -Name "Build"
 
     }
 
+
+    # --------------------------------------------------
+    # Informations complémentaires du projet
+    # --------------------------------------------------
+
+    $Context.Project.Author =
+        Get-ObjectProperty `
+            -Object $Version `
+            -Name "Author"
+
+
+    $Context.Project.Company =
+        Get-ObjectProperty `
+            -Object $Version `
+            -Name "Company"
+
+
+    $Context.Project.Repository =
+        Get-ObjectProperty `
+            -Object $Version `
+            -Name "Repository"
+
+
+    $Context.Project.BuildDate =
+        Get-ObjectProperty `
+            -Object $Version `
+            -Name "BuildDate"
+
+
+    # ==================================================
+    # Profil de configuration
+    # ==================================================
+
+    $Context.ConfigurationProfile =
+        Get-ObjectProperty `
+            -Object $Context.Configuration `
+            -Name "DefaultProfile"
+
+
+    if ([string]::IsNullOrWhiteSpace(
+        $Context.ConfigurationProfile
+    )) {
+
+        $Context.ConfigurationProfile =
+            "Tests\Registry"
+
+    }
+
+
+    # ==================================================
+    # Chemins du projet
+    # ==================================================
+
+    foreach ($PathName in @(
+        "ISO",
+        "Logs",
+        "Output",
+        "Mount",
+        "Temp"
+    )) {
+
+        $Context.Project.Paths.$PathName =
+            Get-ProjectPath $PathName
+
+    }
+
+
+    # ==================================================
     # Workspace
+    # ==================================================
 
-    $Context.Workspace.Root = $Context.Project.Root
+    $Context.Workspace.Root =
+        $Context.Project.Root
 
-    $Context.Workspace.ISO = $Context.Project.Paths.ISO
 
-    $Context.Workspace.Output = $Context.Project.Paths.Output
-	
-	$Context.Workspace.Sources = Join-Path `
-		$Context.Project.Root `
-		"Workspace\Sources"
+    $Context.Workspace.ISO =
+        $Context.Project.Paths.ISO
 
-    $Context.Workspace.Temp = $Context.Project.Paths.Temp
 
-    $Context.Workspace.MountWIM = Join-Path `
-        $Context.Project.Paths.Mount `
-        "WIM"
+    $Context.Workspace.Output =
+        $Context.Project.Paths.Output
 
-    $Context.Workspace.MountISO = Join-Path `
-        $Context.Project.Paths.Mount `
-        "ISO"
 
-    $Context.Workspace.Extract = Join-Path `
-        $Context.Project.Paths.Temp `
-        "Extract"
+    $Context.Workspace.Sources =
+        Join-Path `
+            $Context.Project.Root `
+            "Workspace\Sources"
 
-    # ------------------------------------------
+
+    $Context.Workspace.Temp =
+        $Context.Project.Paths.Temp
+
+
+    $Context.Workspace.MountWIM =
+        Join-Path `
+            $Context.Project.Paths.Mount `
+            "WIM"
+
+
+    $Context.Workspace.MountISO =
+        Join-Path `
+            $Context.Project.Paths.Mount `
+            "ISO"
+
+
+    $Context.Workspace.Extract =
+        Join-Path `
+            $Context.Project.Paths.Temp `
+            "Extract"
+
+
+    # ==================================================
     # Logger
-    # ------------------------------------------
+    # ==================================================
 
-    $Context.Logger.Path = Join-Path `
-        $Context.Project.Paths.Logs `
-        ("Build_{0:yyyyMMdd_HHmmss}.log" -f (Get-Date))
+    $Context.Logger.Path =
+        Join-Path `
+            $Context.Project.Paths.Logs `
+            (
+                "Build_{0:yyyyMMdd_HHmmss}.log" -f (Get-Date)
+            )
 
-    # ------------------------------------------
+
+    # ==================================================
     # Etat du Build
-    # ------------------------------------------
-	
-	$Context.BuildState.Initialized = $true
+    # ==================================================
+
+    $Context.BuildState.Initialized = $true
+
     $Context.BuildState.Status = "Initialized"
+
+
+    # ==================================================
+    # Retour du contexte
+    # ==================================================
 
     return $Context
 

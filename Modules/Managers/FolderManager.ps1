@@ -1,7 +1,7 @@
 # ==========================================
 # Module : FolderManager
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.1
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -54,7 +54,7 @@ function Invoke-Folder {
     # Recherche du gestionnaire
     # --------------------------------------------------
 
-    if (-not $script:FolderProviders.ContainsKey($Action.Provider)) {
+    if (-not $script:FolderProviders.Contains($Action.Provider)) {
 
         throw (
             "Le fournisseur '{0}' n'est pas pris en charge." -f

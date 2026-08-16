@@ -1,7 +1,7 @@
 # ==========================================
 # Module : Dism
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.1
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -25,15 +25,17 @@ function Get-DismImages {
 
     try {
 
-        return @(Get-WindowsImage `
-            -ImagePath $ImagePath `
-            -ErrorAction Stop)
+        return @(
+            Get-WindowsImage `
+                -ImagePath $ImagePath `
+                -ErrorAction Stop
+        )
 
     }
     catch {
 
         throw (
-            "Impossible de lire l'image Windows '{0}'.`n{1}" -f
+            "Impossible de lire l'image Windows '{0}'.`r`n{1}" -f
             $ImagePath,
             $_.Exception.Message
         )
@@ -53,15 +55,17 @@ function Get-DismMountedImages {
 
     try {
 
-        return @(Get-WindowsImage `
-            -Mounted `
-            -ErrorAction Stop)
+        return @(
+            Get-WindowsImage `
+                -Mounted `
+                -ErrorAction Stop
+        )
 
     }
     catch {
 
         throw (
-            "Impossible d'obtenir la liste des images montées.`n{0}" -f
+            "Impossible d'obtenir la liste des images montées.`r`n{0}" -f
             $_.Exception.Message
         )
 
@@ -97,7 +101,7 @@ function Mount-DismImage {
     # Vérifications
     # --------------------------------------------------
 
-    if (-not (Test-Path $ImagePath)) {
+    if (-not (Test-Path -LiteralPath $ImagePath)) {
 
         throw (
             "L'image Windows est introuvable : {0}" -f
@@ -106,7 +110,7 @@ function Mount-DismImage {
 
     }
 
-    if (-not (Test-Path $MountPath)) {
+    if (-not (Test-Path -LiteralPath $MountPath)) {
 
         throw (
             "Le dossier de montage est introuvable : {0}" -f
@@ -141,7 +145,7 @@ function Mount-DismImage {
     catch {
 
         throw (
-            "Impossible de monter l'image Windows.`n{0}" -f
+            "Impossible de monter l'image Windows.`r`n{0}" -f
             $_.Exception.Message
         )
 
@@ -165,7 +169,7 @@ function Save-DismImage {
 
     Write-Log "Sauvegarde de l'image Windows..."
 
-    if (-not (Test-Path $MountPath)) {
+    if (-not (Test-Path -LiteralPath $MountPath)) {
 
         throw (
             "Le dossier de montage est introuvable : {0}" -f
@@ -186,7 +190,7 @@ function Save-DismImage {
     catch {
 
         throw (
-            "Impossible de sauvegarder l'image Windows.`n{0}" -f
+            "Impossible de sauvegarder l'image Windows.`r`n{0}" -f
             $_.Exception.Message
         )
 
@@ -210,7 +214,7 @@ function Dismount-DismImage {
 
     )
 
-    if (-not (Test-Path $MountPath)) {
+    if (-not (Test-Path -LiteralPath $MountPath)) {
 
         throw (
             "Le dossier de montage est introuvable : {0}" -f
@@ -230,6 +234,8 @@ function Dismount-DismImage {
                 -Discard `
                 -ErrorAction Stop
 
+            Write-Log "Image Windows démontée sans conserver les modifications." SUCCESS
+
         }
         else {
 
@@ -240,15 +246,15 @@ function Dismount-DismImage {
                 -Save `
                 -ErrorAction Stop
 
-        }
+            Write-Log "Image Windows sauvegardée et démontée." SUCCESS
 
-        
+        }
 
     }
     catch {
 
         throw (
-            "Impossible de démonter l'image Windows.`n{0}" -f
+            "Impossible de démonter l'image Windows.`r`n{0}" -f
             $_.Exception.Message
         )
 

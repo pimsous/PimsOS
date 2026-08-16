@@ -26,7 +26,7 @@ function Invoke-RegistryAction {
 
     Write-Log (
         "Registry : {0}" -f $Action.Id
-    )
+    ) INFO
 
     # --------------------------------------------------
     # Etat du Build
@@ -37,28 +37,6 @@ function Invoke-RegistryAction {
     $Stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
     try {
-
-        # --------------------------------------------------
-        # Validation
-        # --------------------------------------------------
-
-        if ([string]::IsNullOrWhiteSpace($Action.Hive)) {
-
-            throw "Hive non défini."
-
-        }
-
-        if ([string]::IsNullOrWhiteSpace($Action.Key)) {
-
-            throw "Clé de registre non définie."
-
-        }
-
-        if ([string]::IsNullOrWhiteSpace($Action.Name)) {
-
-            throw "Nom de valeur non défini."
-
-        }
 
         # --------------------------------------------------
         # Application
@@ -74,11 +52,27 @@ function Invoke-RegistryAction {
         # Etat de l'action
         # --------------------------------------------------
 
-        $Action.Success = $true
+        if (
+            $Action.PSObject.Properties.Match("Success").Count -gt 0
+        ) {
 
-        if ($Action.PSObject.Properties.Match("Duration").Count -gt 0) {
+            $Action.Success = $true
+
+        }
+
+        if (
+            $Action.PSObject.Properties.Match("Duration").Count -gt 0
+        ) {
 
             $Action.Duration = $Stopwatch.Elapsed
+
+        }
+
+        if (
+            $Action.PSObject.Properties.Match("Error").Count -gt 0
+        ) {
+
+            $Action.Error = $null
 
         }
 
@@ -89,8 +83,11 @@ function Invoke-RegistryAction {
         $Context.BuildState.Status = "RegistryApplied"
 
         Write-Log (
-            "Action registre '$($Action.Id)' appliquée."
+            "Action registre '{0}' appliquée." -f
+            $Action.Id
         ) SUCCESS
+
+        return $Context
 
     }
     catch {
@@ -101,15 +98,25 @@ function Invoke-RegistryAction {
         # Etat de l'action
         # --------------------------------------------------
 
-        $Action.Success = $false
+        if (
+            $Action.PSObject.Properties.Match("Success").Count -gt 0
+        ) {
 
-        if ($Action.PSObject.Properties.Match("Duration").Count -gt 0) {
+            $Action.Success = $false
+
+        }
+
+        if (
+            $Action.PSObject.Properties.Match("Duration").Count -gt 0
+        ) {
 
             $Action.Duration = $Stopwatch.Elapsed
 
         }
 
-        if ($Action.PSObject.Properties.Match("Error").Count -gt 0) {
+        if (
+            $Action.PSObject.Properties.Match("Error").Count -gt 0
+        ) {
 
             $Action.Error = $_.Exception.Message
 
@@ -121,6 +128,12 @@ function Invoke-RegistryAction {
 
         $Context.BuildState.Status = "RegistryFailed"
 
+        Write-Log (
+            "Erreur lors de l'application de l'action registre '{0}' : {1}" -f
+            $Action.Id,
+            $_.Exception.Message
+        ) ERROR
+
         throw (
             "Erreur lors de l'application de l'action registre '{0}'.`n{1}" -f
             $Action.Id,
@@ -128,7 +141,5 @@ function Invoke-RegistryAction {
         )
 
     }
-
-    return $Context
 
 }

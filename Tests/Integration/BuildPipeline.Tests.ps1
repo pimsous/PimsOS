@@ -8,6 +8,7 @@ BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..").Path
 
     . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
+    . "$ProjectRoot\Modules\Core\Workflow.ps1"
     . "$ProjectRoot\Modules\Core\Pipeline.ps1"
 
 }
@@ -26,10 +27,13 @@ Describe "BuildPipeline" {
 
                 Status = "Idle"
 
+                Success   = $false
+                Completed = $false
+
                 Pipeline = [pscustomobject]@{
 
-                    Started  = $false
-                    Current  = $null
+                    Started   = $false
+                    Current   = $null
                     Completed = @()
                     Failed    = @()
 
@@ -39,6 +43,10 @@ Describe "BuildPipeline" {
 
             Report = [pscustomobject]@{
 
+                Environment = $null
+
+                Phases = @()
+
                 CurrentPhase = [pscustomobject]@{
 
                     Success = $true
@@ -46,6 +54,10 @@ Describe "BuildPipeline" {
                     Steps   = @()
 
                 }
+
+                Warnings     = @()
+                Errors       = @()
+                Informations = @()
 
             }
 

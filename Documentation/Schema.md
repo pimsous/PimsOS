@@ -1,10 +1,18 @@
-# Schémas
+# PimsOS Builder - Schémas
 
-## Objectif
+> Version technique : 3.0.0
+>
+> Statut : Référence
+>
+> Dernière mise à jour : 2026-08-16
+
+---
+
+# Objectif
 
 Ce document décrit les principaux modèles de données utilisés dans le projet **PimsOS Builder**.
 
-Il constitue la référence des objets échangés entre les différents composants du moteur de build.
+Il constitue une référence pour les objets et structures échangés entre les différents composants du moteur de Build.
 
 ---
 
@@ -18,7 +26,9 @@ Les modèles de données doivent être :
 - réutilisables ;
 - extensibles.
 
-Chaque structure possède une responsabilité unique.
+Chaque structure possède une responsabilité clairement définie.
+
+Les modèles doivent rester alignés avec les contrats réels du code et du BuildContext.
 
 ---
 
@@ -26,73 +36,75 @@ Chaque structure possède une responsabilité unique.
 
 Le `BuildContext` est l'objet central du projet.
 
-Il transporte toutes les informations nécessaires à l'exécution d'un build.
+Il transporte les informations nécessaires à l'exécution d'un Build et constitue le contrat partagé entre les composants concernés.
 
-Toutes les couches du Builder utilisent le même BuildContext afin d'échanger leurs informations.
+Toutes les couches du Builder utilisent le même BuildContext afin de partager les informations du Build.
 
 ## Principales catégories
 
 | Catégorie | Description |
 |-----------|-------------|
-| Project | Métadonnées du projet (nom, version, Windows, auteur...) |
-| Build | Paramètres du build en cours |
-| BuildState | État global du moteur de build |
-| Configuration | Configuration active issue des profils |
-| Workspace | Répertoires temporaires |
-| ISO | Image ISO source |
-| WIM | Image Windows détectée |
-| Image | Édition Windows sélectionnée |
-| Registry | Ruches du registre montées |
-| Packages | Packages à intégrer |
-| Drivers | Pilotes à intégrer |
-| Tweaks | Personnalisations disponibles |
-| Services | Services Windows |
-| Features | Fonctionnalités Windows |
+| Project | Métadonnées du projet, version et informations Windows |
+| Build | Informations relatives au Build courant |
+| BuildState | État d'exécution du Build |
+| Configuration | Configuration active issue des données de configuration et du profil |
+| ConfigurationProfile | Profil sélectionné |
+| Workspace | Répertoires et ressources temporaires |
+| ISO | Informations relatives à l'ISO source |
+| WIM | Informations relatives à l'image WIM |
+| Image | Image Windows sélectionnée |
+| Registry | Informations relatives aux ruches et opérations Registry |
+| Packages | Packages sélectionnés ou traités |
+| Drivers | Pilotes sélectionnés ou traités |
+| Tweaks | Personnalisations sélectionnées |
+| Services | Services Windows concernés |
+| Features | Fonctionnalités Windows concernées |
+| Report | Rapport d'exécution |
+| Logger | Informations du système de journalisation |
 | Statistics | Statistiques d'exécution |
-| Report | Rapport de build |
-| Logger | Journalisation |
 
 Voir également :
 
-- BuildContext.md
+- `BuildContext.md`
 
 ---
 
 # BuildState
 
-Le `BuildState` représente l'état courant du moteur de build.
+Le `BuildState` représente l'état courant de l'exécution du Build.
 
 Il permet notamment de suivre :
 
 - l'initialisation du Builder ;
 - les vérifications de l'environnement ;
 - la progression du Pipeline ;
-- le montage des images Windows ;
+- l'état des ressources montées ;
 - le chargement de la configuration ;
 - l'application des personnalisations ;
-- les opérations de Recovery.
+- les opérations de Recovery ;
+- l'état global du Build.
 
-Toutes les décisions d'exécution du Builder s'appuient sur cet objet.
+Les composants doivent utiliser le BuildState pour représenter l'état d'exécution relevant de leur responsabilité.
 
 ---
 
 # Configuration
 
-Les fichiers de configuration sont stockés au format JSON.
+Les données de configuration utilisent notamment le format JSON.
 
-Ils regroupent notamment :
+Elles regroupent les définitions nécessaires à la construction de la configuration du Build, notamment :
 
-- la configuration globale du Builder ;
-- les métadonnées du projet ;
-- les profils de personnalisation ;
-- les définitions de tweaks.
+- les catégories ;
+- les Tweaks ;
+- les profils ;
+- les métadonnées du projet lorsque définies dans `version.json`.
 
-Exemple de `version.json` :
+Exemple actuel de `version.json` :
 
 ```json
 {
     "Project": "PimsOS Builder",
-    "Version": "0.4.0",
+    "Version": "3.0.0",
     "Windows": {
         "Release": "11 25H2",
         "Build": "26100"
@@ -104,70 +116,168 @@ Exemple de `version.json` :
 }
 ```
 
-Les propriétés doivent être documentées et conserver une rétrocompatibilité lorsque cela est possible.
+Les structures de configuration doivent rester documentées et évoluer de manière contrôlée.
 
 ---
 
 # Journalisation
 
-Les entrées de journal utilisent une structure homogène.
+Les événements de journalisation utilisent une structure homogène au niveau du système de logging.
+
+Les informations associées à une entrée peuvent notamment comprendre :
 
 | Champ | Description |
 |-------|-------------|
-| Date | Date et heure |
-| Niveau | Information, Warning, Error, Success |
+| Date | Date et heure de l'événement |
+| Niveau | Niveau de journalisation |
 | Module | Composant émetteur |
 | Message | Description de l'événement |
+
+Les valeurs exactes et le format de stockage sont définis par le composant `Logger`.
 
 ---
 
 # Rapports
 
-Les rapports de build regroupent notamment :
+Les rapports de Build regroupent notamment :
 
 - la durée d'exécution ;
 - les opérations réalisées ;
+- les informations ;
 - les avertissements ;
 - les erreurs ;
 - le résultat global.
 
-Ils peuvent être produits dans plusieurs formats selon les besoins :
-
-- JSON ;
-- HTML ;
-- PDF.
+Les formats de rapport futurs ou complémentaires sont pilotés par le composant Reporting.
 
 ---
 
 # États d'exécution
 
-Les composants utilisent des états communs afin d'assurer un suivi cohérent.
+Les composants utilisent des états permettant de suivre le cycle d'exécution du Build.
 
-Exemples :
+Les valeurs doivent correspondre aux états réellement définis par le `BuildState`.
 
-- NotStarted
-- Initialized
-- Recovery
-- Environment
-- Pipeline
-- ApplyingConfiguration
-- ConfigurationApplied
-- Completed
-- Failed
+Exemples de catégories d'état :
 
-Les noms des états doivent rester cohérents dans tout le projet.
+```text
+NotStarted
+Initialized
+Recovery
+Environment
+Pipeline
+ApplyingConfiguration
+ConfigurationApplied
+Completed
+Failed
+```
+
+Les noms des états doivent rester cohérents dans l'ensemble du projet.
+
+---
+
+# Actions
+
+Les Actions représentent les opérations de personnalisation à exécuter.
+
+Une Action est traitée selon le flux :
+
+```text
+Action
+    │
+    ▼
+ActionEngine
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
+```
+
+Une Action peut notamment contenir :
+
+- un identifiant ;
+- un type ;
+- un provider lorsque nécessaire ;
+- les paramètres nécessaires à son traitement ;
+- son état d'exécution ;
+- sa durée ;
+- son erreur éventuelle.
+
+Les propriétés exactes dépendent du type d'Action.
+
+---
+
+# Tweaks
+
+Les Tweaks représentent les personnalisations disponibles dans le framework.
+
+Un Tweak peut notamment contenir :
+
+- un identifiant ;
+- une catégorie ;
+- des métadonnées ;
+- un état d'activation ;
+- des Actions ;
+- des contraintes de compatibilité.
+
+Les Tweaks constituent des données de configuration et ne contiennent pas de logique PowerShell exécutable.
+
+---
+
+# Profils
+
+Les profils déterminent les personnalisations sélectionnées pour un scénario de Build.
+
+Ils permettent de sélectionner et d'activer les Tweaks sans modifier leurs définitions sources.
+
+Le moteur de configuration produit ensuite une configuration finale destinée à l'exécution.
+
+---
+
+# Statistiques
+
+Les statistiques sont centralisées dans le BuildContext.
+
+Elles peuvent notamment comprendre :
+
+- `ActionsProcessed`
+- `PackagesProcessed`
+- `DriversProcessed`
+- `FeaturesProcessed`
+- `CapabilitiesProcessed`
+- `CommandsProcessed`
+- `FilesProcessed`
+- `FoldersProcessed`
+- `EnvironmentProcessed`
+- `ScheduledTasksProcessed`
+- `ShortcutsProcessed`
+- `ServicesProcessed`
+- `RegistryActionsProcessed`
+- `TweaksApplied`
+- `Errors`
+- `Warnings`
+
+Les statistiques sont mises à jour par les composants responsables de leur domaine.
 
 ---
 
 # Flux de données
 
-Les informations circulent entre les composants selon le principe suivant :
+Le flux général des données peut être représenté ainsi :
 
 ```text
 version.json
       │
       ▼
-Config.json
+Configuration
       │
       ▼
 Profils
@@ -182,30 +292,41 @@ BuildContext
 BuildState
       │
       ▼
-Pipeline
+Workflow / Pipeline
       │
       ▼
-Engines
+ActionEngine
       │
       ▼
-Rapport
+ActionRegistry
+      │
+      ▼
+Engines spécialisés
+      │
+      ▼
+Managers
+      │
+      ▼
+Modules techniques
 ```
 
-Tous les composants du Builder échangent leurs informations exclusivement via le BuildContext et le BuildState.
+Le BuildContext constitue le contrat central de partage de l'état et des données du Build.
 
-Les échanges directs entre composants sont interdits afin de garantir une architecture modulaire et facilement testable.
+Les composants ne doivent pas utiliser un état global pour transporter les informations d'exécution.
 
 ---
 
-# Évolution
+# Évolution des modèles
 
 Toute modification d'un modèle de données doit :
 
-1. préserver la compatibilité lorsque c'est possible ;
+1. préserver la compatibilité lorsque cela est possible ;
 2. être documentée ;
 3. être validée par les tests ;
-4. être reportée dans les notes de version si elle impacte l'API publique ;
+4. mettre à jour les documents concernés ;
 5. conserver la cohérence avec le BuildContext et le BuildState.
+
+Une modification affectant un contrat architectural doit également être évaluée au regard des Architecture Rules et des ADR.
 
 ---
 
@@ -213,7 +334,11 @@ Toute modification d'un modèle de données doit :
 
 Consulter également :
 
-- Architecture.md
-- BuildContext.md
-- API.md
-- Lifecycle.md
+- `API.md`
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `Lifecycle.md`
+- `ModuleGuide.md`
+- `Testing.md`
+- `Documentation\ADR\`

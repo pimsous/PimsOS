@@ -429,8 +429,15 @@ function Set-WimMountedState {
 
     )
 
-    Test-WimContext `
-        -Context $Context
+    # --------------------------------------------------
+    # Vérification du contexte
+    # --------------------------------------------------
+
+    if ($null -eq $Context) {
+
+        throw "Le contexte est null."
+
+    }
 
     # --------------------------------------------------
     # Vérification du BuildState
@@ -450,11 +457,16 @@ function Set-WimMountedState {
 
     }
 
+    if ($null -eq $Context.BuildState.Image) {
+
+        throw "La section Image du BuildState est null."
+
+    }
+
     # --------------------------------------------------
     # Etat principal du montage WIM
     # --------------------------------------------------
 
-    # Etat historique/interne utilisé par les autres modules.
     if (
         $Context.BuildState.Image.PSObject.Properties.Name -contains "WimMounted"
     ) {
@@ -469,9 +481,9 @@ function Set-WimMountedState {
                 -MemberType NoteProperty `
                 -Name "WimMounted" `
                 -Value $Mounted
+
     }
 
-    # Etat public utilisé par les tests d'acceptation.
     if (
         $Context.BuildState.Image.PSObject.Properties.Name -contains "Mounted"
     ) {
@@ -486,6 +498,7 @@ function Set-WimMountedState {
                 -MemberType NoteProperty `
                 -Name "Mounted" `
                 -Value $Mounted
+
     }
 
     # --------------------------------------------------
@@ -494,12 +507,34 @@ function Set-WimMountedState {
 
     if ($Mounted) {
 
+        # ----------------------------------------------
+        # MountPath
+        # ----------------------------------------------
+
+        $MountPath = $null
+
+        if (
+            $Context.PSObject.Properties.Name -contains "WIM" -and
+            $null -ne $Context.WIM -and
+            $Context.WIM.PSObject.Properties.Name -contains "Mount" -and
+            $null -ne $Context.WIM.Mount
+        ) {
+
+            if (
+                $Context.WIM.Mount.PSObject.Properties.Name -contains "Path"
+            ) {
+
+                $MountPath = $Context.WIM.Mount.Path
+
+            }
+
+        }
+
         if (
             $Context.BuildState.Image.PSObject.Properties.Name -contains "MountPath"
         ) {
 
-            $Context.BuildState.Image.MountPath =
-                $Context.WIM.Mount.Path
+            $Context.BuildState.Image.MountPath = $MountPath
 
         }
         else {
@@ -508,15 +543,36 @@ function Set-WimMountedState {
                 Add-Member `
                     -MemberType NoteProperty `
                     -Name "MountPath" `
-                    -Value $Context.WIM.Mount.Path
+                    -Value $MountPath
+
+        }
+
+        # ----------------------------------------------
+        # Index
+        # ----------------------------------------------
+
+        $ImageIndex = $null
+
+        if (
+            $Context.PSObject.Properties.Name -contains "Image" -and
+            $null -ne $Context.Image
+        ) {
+
+            if (
+                $Context.Image.PSObject.Properties.Name -contains "Index"
+            ) {
+
+                $ImageIndex = $Context.Image.Index
+
+            }
+
         }
 
         if (
             $Context.BuildState.Image.PSObject.Properties.Name -contains "Index"
         ) {
 
-            $Context.BuildState.Image.Index =
-                $Context.Image.Index
+            $Context.BuildState.Image.Index = $ImageIndex
 
         }
         else {
@@ -525,11 +581,16 @@ function Set-WimMountedState {
                 Add-Member `
                     -MemberType NoteProperty `
                     -Name "Index" `
-                    -Value $Context.Image.Index
+                    -Value $ImageIndex
+
         }
 
     }
     else {
+
+        # --------------------------------------------------
+        # Nettoyage des informations de montage
+        # --------------------------------------------------
 
         if (
             $Context.BuildState.Image.PSObject.Properties.Name -contains "MountPath"
@@ -548,7 +609,7 @@ function Set-WimMountedState {
         }
 
         # --------------------------------------------------
-        # Nettoyage de l'état lié à l'image montée
+        # Nettoyage de l'état Registre
         # --------------------------------------------------
 
         if (
@@ -567,6 +628,10 @@ function Set-WimMountedState {
 
         }
 
+        # --------------------------------------------------
+        # Nettoyage de l'état Configuration
+        # --------------------------------------------------
+
         if (
             $Context.BuildState.Image.PSObject.Properties.Name -contains "ConfigLoaded"
         ) {
@@ -574,6 +639,10 @@ function Set-WimMountedState {
             $Context.BuildState.Image.ConfigLoaded = $false
 
         }
+
+        # --------------------------------------------------
+        # Nettoyage de l'état Tweaks
+        # --------------------------------------------------
 
         if (
             $Context.BuildState.Image.PSObject.Properties.Name -contains "TweaksLoaded"
@@ -590,6 +659,10 @@ function Set-WimMountedState {
             $Context.BuildState.Image.TweaksApplied = $false
 
         }
+
+        # --------------------------------------------------
+        # Nettoyage de l'état Profile
+        # --------------------------------------------------
 
         if (
             $Context.BuildState.Image.PSObject.Properties.Name -contains "ProfileLoaded"
@@ -608,6 +681,10 @@ function Set-WimMountedState {
         }
 
     }
+
+    # --------------------------------------------------
+    # Retourne le contexte
+    # --------------------------------------------------
 
     return $Context
 }

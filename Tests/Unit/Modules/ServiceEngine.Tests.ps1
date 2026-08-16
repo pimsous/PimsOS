@@ -8,27 +8,79 @@ BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
 
     . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
-    . "$ProjectRoot\Modules\Actions\Service.ps1"
     . "$ProjectRoot\Modules\Actions\ServiceEngine.ps1"
 
+    # --------------------------------------------------
+    # Fonctions externes utilisées par ServiceEngine
+    # --------------------------------------------------
+
+    function global:Test-ServiceExists {
+        param(
+            [string]$Name
+        )
+
+        return $true
+    }
+
+    function global:Set-ServiceStartupType {
+        param(
+            [psobject]$Context,
+            [psobject]$Action
+        )
+
+        $Context.ServiceConfigured = $true
+
+        return $Context
+    }
+
+    function global:Stop-ServiceSafe {
+        param(
+            [psobject]$Context,
+            [psobject]$Action
+        )
+
+        $Context.ServiceStopped = $true
+
+        return $Context
+    }
 }
 
 Describe "ServiceEngine" {
 
     BeforeEach {
 
-        function Test-ServiceExists {
+        $script:Context = [pscustomobject]@{
 
+            ServiceConfigured = $false
+            ServiceStopped    = $false
+
+            BuildState = [pscustomobject]@{
+                Status = ""
+            }
+        }
+
+        $script:Action = [pscustomobject]@{
+
+			Id          = "DisableDiagTrack"
+			Type        = "Service"
+			Name        = "DiagTrack"
+			StartupType = "Disabled"
+			Stop        = $false
+
+			Success     = $false
+			Duration    = $null
+			Error       = $null
+		}
+
+        Mock Test-ServiceExists {
             param(
                 [string]$Name
             )
 
             return $true
-
         }
 
-        function Set-ServiceStartupType {
-
+        Mock Set-ServiceStartupType {
             param(
                 [psobject]$Context,
                 [psobject]$Action
@@ -37,11 +89,9 @@ Describe "ServiceEngine" {
             $Context.ServiceConfigured = $true
 
             return $Context
-
         }
 
-        function Stop-ServiceSafe {
-
+        Mock Stop-ServiceSafe {
             param(
                 [psobject]$Context,
                 [psobject]$Action
@@ -50,35 +100,7 @@ Describe "ServiceEngine" {
             $Context.ServiceStopped = $true
 
             return $Context
-
         }
-
-        $script:Context = [pscustomobject]@{
-
-            ServiceConfigured = $false
-            ServiceStopped    = $false
-
-            BuildState = [pscustomobject]@{
-
-                Status = ""
-
-            }
-
-        }
-
-        $script:Action = [pscustomobject]@{
-
-            Id          = "DisableDiagTrack"
-            Type        = "Service"
-
-            Name        = "DiagTrack"
-
-            StartupType = "Disabled"
-
-            Stop        = $false
-
-        }
-
     }
 
     Context "Invoke-ServiceAction" {
@@ -89,8 +111,8 @@ Describe "ServiceEngine" {
                 -Context $script:Context `
                 -Action $script:Action
 
-            $Context.ServiceConfigured | Should -BeTrue
-
+            $Context.ServiceConfigured |
+                Should -BeTrue
         }
 
         It "Passe le BuildState à ServiceApplied" {
@@ -101,7 +123,6 @@ Describe "ServiceEngine" {
 
             $Context.BuildState.Status |
                 Should -Be "ServiceApplied"
-
         }
 
         It "Arrête le service lorsque Stop est vrai" {
@@ -114,19 +135,16 @@ Describe "ServiceEngine" {
 
             $Context.ServiceStopped |
                 Should -BeTrue
-
         }
 
         It "Lève une exception si le service n'existe pas" {
 
-            function Test-ServiceExists {
-
+            Mock Test-ServiceExists {
                 param(
                     [string]$Name
                 )
 
                 return $false
-
             }
 
             {
@@ -138,10 +156,7 @@ Describe "ServiceEngine" {
             } | Should -Throw
 
             $script:Context.BuildState.Status |
-                Should -Be "ApplyingService"
-
+                Should -Be "ServiceFailed"
         }
-
     }
-
 }

@@ -10,29 +10,39 @@ Ce document décrit les règles de contribution au projet afin de garantir un d�
 
 Avant toute contribution, lire les documents suivants :
 
-- Documentation/GettingStarted.md
-- Documentation/DeveloperGuide.md
-- Documentation/CodingStandards.md
-- Documentation/Architecture.md
-- Documentation/ArchitectureRules.md
-- Documentation/BuildContext.md
-- Documentation/ProjectStatus.md
-- Documentation/Roadmap.md
+- `Documentation/GettingStarted.md`
+- `Documentation/DeveloperGuide.md`
+- `Documentation/CodingStandards.md`
+- `Documentation/Architecture.md`
+- `Documentation/ArchitectureRules.md`
+- `Documentation/BuildContext.md`
+- `Documentation/ModuleGuide.md`
+- `Documentation/ProjectStatus.md`
+- `Documentation/Testing.md`
+- `Documentation/Roadmap.md`
 
-Ils constituent la référence officielle du projet.
+Ils constituent les principales références du projet.
+
+Les décisions architecturales sont documentées dans :
+
+```text
+Documentation/ADR/
+```
 
 ---
 
 # Comprendre avant de modifier
 
-Avant toute modification :
+Avant toute modification importante :
 
 1. comprendre le fonctionnement actuel ;
 2. identifier le composant concerné ;
 3. vérifier qu'une solution similaire n'existe pas déjà ;
-4. vérifier les ADR si une décision d'architecture est concernée.
+4. vérifier les ADR lorsqu'une décision d'architecture est concernée ;
+5. vérifier les tests existants ;
+6. identifier les documents qui devront être mis à jour.
 
-Aucune modification importante ne doit être réalisée sans comprendre son impact sur le moteur de build.
+Aucune modification importante ne doit être réalisée sans comprendre son impact sur le moteur de Build.
 
 ---
 
@@ -48,75 +58,121 @@ Le développement suit les étapes suivantes :
 6. Mettre à jour la documentation.
 7. Vérifier que les tests passent.
 8. Effectuer une revue du code.
-9. Valider le Build.
-10. Effectuer le commit.
+9. Valider le Build lorsque le changement le nécessite.
+10. Vérifier l'état Git.
+11. Effectuer un commit cohérent.
 
 ---
 
 # Architecture
 
-PimsOS Builder repose sur plusieurs principes :
+PimsOS Builder repose notamment sur les principes suivants :
 
 - un module PowerShell unique (`PimsOS`) ;
-- un BuildContext unique ;
-- un BuildState unique ;
-- un Pipeline chargé uniquement d'orchestrer les étapes ;
+- un `BuildContext` unique par Build ;
+- un `BuildState` centralisé ;
+- un Workflow et un Pipeline dédiés à l'orchestration ;
+- un `ActionEngine` et un `ActionRegistry` pour le routage ;
 - des Engines spécialisés responsables de la logique métier ;
-- une séparation stricte entre les définitions (Tweaks) et la Configuration appliquée.
+- des Managers responsables des opérations techniques ;
+- une séparation entre définitions, configuration et exécution ;
+- une API publique minimale.
 
 Toute contribution doit respecter cette architecture.
+
+Les composants internes ne doivent pas créer de modules PowerShell indépendants sans décision architecturale explicite.
 
 ---
 
 # BuildContext
 
-Toutes les données transitent par le BuildContext.
+Le `BuildContext` constitue le contrat central du Build.
 
 Les contributions ne doivent pas :
 
-- utiliser de variables globales ;
-- créer d'état partagé ;
-- dupliquer des informations déjà présentes dans le BuildContext.
+- utiliser des variables globales pour transporter l'état du Build ;
+- créer un second contexte pour le même Build ;
+- dupliquer des informations déjà présentes dans le contexte ;
+- modifier arbitrairement les propriétés appartenant à un autre domaine.
 
-Toute nouvelle donnée persistante doit être intégrée au BuildContext.
+Toute nouvelle donnée partagée doit être ajoutée au BuildContext uniquement lorsqu'elle représente réellement une information ou un état partagé.
 
 ---
 
 # BuildState
 
-Le BuildState centralise l'état du moteur de build.
+Le `BuildState` centralise l'état d'exécution du Build.
 
-Les nouveaux indicateurs d'avancement doivent être ajoutés dans BuildState plutôt que dispersés dans plusieurs objets.
+Les nouveaux indicateurs d'avancement ou d'état doivent être intégrés au mécanisme existant plutôt que dispersés dans plusieurs objets.
+
+Un nouveau composant doit mettre à jour uniquement l'état relevant de sa responsabilité.
 
 ---
 
 # Configuration
 
-Les définitions de Tweaks sont immuables.
+Les définitions de Tweaks restent séparées de leur utilisation.
 
-Les profils produisent une Configuration composée de ConfigurationItems.
+Les profils déterminent les personnalisations sélectionnées.
 
-Le moteur applique uniquement cette Configuration.
+Le moteur de configuration construit ensuite une configuration destinée à l'exécution.
 
-Une contribution ne doit jamais modifier directement les définitions originales des Tweaks.
+Une contribution ne doit pas modifier directement les définitions originales des Tweaks lors de la fusion ou de l'application d'un profil.
+
+Les fichiers JSON doivent rester déclaratifs et ne doivent pas contenir de logique PowerShell exécutable.
+
+---
+
+# Actions, Engines et Managers
+
+Toute nouvelle Action doit respecter le flux :
+
+```text
+Action
+    ↓
+ActionEngine
+    ↓
+ActionRegistry
+    ↓
+Engine spécialisé
+    ↓
+Manager
+    ↓
+Module technique
+```
+
+Pour ajouter un nouveau type d'Action :
+
+1. identifier la responsabilité ;
+2. créer l'Engine spécialisé ;
+3. créer ou adapter le Manager nécessaire ;
+4. enregistrer le type dans `ActionRegistry` ;
+5. ajouter les validations ;
+6. ajouter les tests ;
+7. mettre à jour la documentation.
+
+Aucun composant ne doit contourner inutilement ce routage.
 
 ---
 
 # Compatibilité Windows
 
-PimsOS Builder a pour objectif de personnaliser plusieurs versions officielles de Windows.
+PimsOS Builder a pour objectif de personnaliser différentes versions compatibles de Windows.
 
 Les contributions doivent donc :
 
-- éviter les chemins codés en dur ;
-- éviter les numéros de build codés en dur ;
-- utiliser les informations disponibles dans BuildContext et version.json.
+- éviter les versions Windows codées en dur lorsqu'elles représentent une configuration ;
+- éviter les numéros de Build codés en dur lorsqu'ils doivent être découverts ;
+- utiliser les informations disponibles dans le BuildContext ;
+- respecter les contraintes de compatibilité déclarées par les Tweaks.
+
+Une évolution ne doit pas introduire une dépendance inutile à une version particulière de Windows.
 
 ---
 
 # Structure des commits
 
-Les messages de commit doivent être courts et explicites.
+Les messages de commit doivent être courts, explicites et cohérents.
 
 Format recommandé :
 
@@ -140,19 +196,33 @@ test(Registry): add registry engine tests
 
 Types recommandés :
 
-- feat
-- fix
-- docs
-- refactor
-- test
-- build
-- chore
+- `feat`
+- `fix`
+- `docs`
+- `refactor`
+- `test`
+- `build`
+- `chore`
+
+Éviter les messages vagues comme :
+
+```text
+update
+test
+correction
+modif
+divers
+```
+
+Un commit doit représenter une évolution logique et compréhensible.
 
 ---
 
 # Branches
 
-Convention recommandée :
+Les conventions de branches doivent rester simples et cohérentes.
+
+Exemples :
 
 ```text
 main
@@ -165,15 +235,15 @@ fix/...
 release/...
 ```
 
-Exemples :
+Exemples concrets :
 
 ```text
 feature/buildstate
-
 feature/package-engine
-
 fix/profile-merge
 ```
+
+La stratégie exacte de branches doit rester cohérente avec le dépôt et son workflow GitHub.
 
 ---
 
@@ -182,49 +252,65 @@ fix/profile-merge
 Chaque contribution doit :
 
 - respecter les Coding Standards ;
-- respecter l'architecture ;
+- respecter les Architecture Rules ;
 - rester lisible ;
-- être documentée ;
-- être testée ;
-- éviter les duplications.
+- limiter les duplications ;
+- gérer correctement les erreurs ;
+- utiliser le Logger officiel ;
+- rester testable ;
+- documenter les décisions importantes.
 
-Le code doit privilégier la simplicité et la maintenabilité.
+La simplicité et la maintenabilité sont prioritaires sur la complexité inutile.
 
 ---
 
 # Tests
 
-Avant chaque commit :
+Avant chaque commit important :
 
-- exécuter les tests concernés ;
-- exécuter l'ensemble des tests uniquement lorsque cela est nécessaire.
+- exécuter les tests directement concernés ;
+- élargir la validation lorsque l'impact du changement le justifie.
 
 Exemple :
 
 ```powershell
-Invoke-Pester
+Invoke-Pester -Path .\Tests\Unit
+Invoke-Pester -Path .\Tests\Integration
 ```
 
-Aucun test ne doit échouer.
+Pour une suite ciblée :
+
+```powershell
+Invoke-Pester -Path .\Tests\Unit
+```
+
+Aucun test obligatoire ne doit rester en échec lors de l'intégration d'une évolution.
+
+Pour une correction de bug, ajouter un test de régression lorsque cela est pertinent.
 
 ---
 
 # Documentation
 
-Toute évolution importante doit mettre à jour la documentation concernée.
+Toute évolution importante doit mettre à jour les documents concernés.
 
-Selon les cas :
+Selon le changement, cela peut inclure :
 
-- API.md
-- BuildContext.md
-- Architecture.md
-- ArchitectureRules.md
-- TechnicalDecisions.md
-- ReleaseNotes.md
-- Roadmap.md
-- ProjectStatus.md
+- `API.md`
+- `BuildContext.md`
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `DeveloperGuide.md`
+- `ModuleGuide.md`
+- `TechnicalDecisions.md`
+- `ReleaseNotes.md`
+- `Roadmap.md`
+- `ProjectStatus.md`
+- `Testing.md`
 
-La documentation doit toujours décrire le comportement réel du Builder.
+Lorsqu'une décision modifie l'architecture, une ADR doit être créée ou mise à jour selon les règles du dossier `Documentation/ADR`.
+
+La documentation doit décrire le comportement réel du Builder.
 
 ---
 
@@ -233,10 +319,59 @@ La documentation doit toujours décrire le comportement réel du Builder.
 Chaque Pull Request doit :
 
 - avoir un objectif clair ;
-- contenir des commits cohérents ;
+- contenir des changements cohérents ;
 - respecter l'architecture du projet ;
-- passer tous les tests ;
-- mettre à jour la documentation si nécessaire.
+- passer les tests concernés ;
+- mettre à jour la documentation lorsque nécessaire ;
+- expliquer les changements importants ;
+- signaler les impacts éventuels sur l'architecture ou les contrats.
+
+Une Pull Request importante doit être suffisamment ciblée pour rester facilement révisable.
+
+---
+
+# Revue de code
+
+Avant validation, vérifier :
+
+- la responsabilité du nouveau composant ;
+- les dépendances introduites ;
+- le respect du BuildContext ;
+- le respect du BuildState ;
+- le routage correct des Actions ;
+- la gestion des erreurs ;
+- la journalisation ;
+- les tests ;
+- la documentation ;
+- les impacts éventuels sur les ADR.
+
+---
+
+# Git
+
+Avant un commit :
+
+```powershell
+git status
+```
+
+Cette commande permet de vérifier les fichiers modifiés, ajoutés ou supprimés.
+
+Après le commit :
+
+```powershell
+git log --oneline -5
+```
+
+Cette commande permet de vérifier l'historique récent.
+
+Lorsque le changement est prêt à être partagé :
+
+```powershell
+git push
+```
+
+Les commits doivent rester cohérents et facilement compréhensibles plusieurs mois plus tard.
 
 ---
 
@@ -249,10 +384,25 @@ PimsOS Builder privilégie :
 - la stabilité ;
 - la maintenabilité ;
 - la testabilité ;
-- la reproductibilité.
+- la reproductibilité ;
+- la documentation.
 
-Une contribution doit toujours améliorer le projet sans augmenter inutilement sa complexité.
+Une contribution doit améliorer le projet sans augmenter inutilement sa complexité.
 
-Chaque évolution doit laisser le Builder dans un meilleur état qu'avant.
+Chaque évolution doit, autant que possible, laisser le Builder dans un état meilleur qu'avant la modification.
 
-Merci de contribuer à **PimsOS Builder**.
+---
+
+# Références
+
+Consulter également :
+
+- `Documentation/Architecture.md`
+- `Documentation/ArchitectureRules.md`
+- `Documentation/BuildContext.md`
+- `Documentation/CodingStandards.md`
+- `Documentation/DeveloperGuide.md`
+- `Documentation/ModuleGuide.md`
+- `Documentation/Testing.md`
+- `Documentation/TechnicalDecisions.md`
+- `Documentation/ADR/`

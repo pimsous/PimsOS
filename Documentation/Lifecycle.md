@@ -1,24 +1,26 @@
-# Cycle de vie
+# PimsOS Builder - Cycle de vie
 
-> Version : 0.4.0
+> Version technique : 3.0.0
 >
-> Architecture : 2.x
+> Statut : Développement / architecture stabilisée
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
 # Objectif
 
-Ce document décrit le cycle de vie complet d'une fonctionnalité au sein de **PimsOS Builder**.
+Ce document décrit le cycle de vie d'une évolution au sein de **PimsOS Builder**.
 
-Il couvre toutes les étapes, depuis l'identification d'un besoin jusqu'à la publication d'une nouvelle version.
+Il couvre les principales étapes, depuis l'identification d'un besoin jusqu'à son intégration dans le projet.
 
 Ce cycle garantit :
 
 - la cohérence de l'architecture ;
 - la qualité du code ;
-- la stabilité du pipeline ;
+- la stabilité du Builder ;
 - la traçabilité des évolutions ;
-- la reproductibilité des builds.
+- la reproductibilité des validations.
 
 ---
 
@@ -37,19 +39,22 @@ Conception
 Développement
     │
     ▼
-Validation
+Tests
     │
     ▼
-Tests
+Validation
     │
     ▼
 Documentation
     │
     ▼
-Git
+Revue
     │
     ▼
-Publication
+Commit Git
+    │
+    ▼
+Jalon / Publication
 ```
 
 ---

@@ -10,44 +10,29 @@ BeforeAll {
     . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
     . "$ProjectRoot\Modules\Windows\Registry.ps1"
     . "$ProjectRoot\Modules\Actions\RegistryEngine.ps1"
-
 }
 
 Describe "RegistryEngine" {
 
     BeforeEach {
 
-        function Set-RegistryValue {
-
-            param(
-                [psobject]$Context,
-                [psobject]$Action
-            )
-
-            $Context.RegistryApplied = $true
-
-            return $Context
-
-        }
-
         $script:Context = [pscustomobject]@{
 
             RegistryApplied = $false
 
             BuildState = [pscustomobject]@{
-
                 Status = ""
-
             }
-
         }
 
         $script:Action = [pscustomobject]@{
-
             Id = "RegistryTest"
-
         }
 
+        Mock Set-RegistryValue {
+            $Context.RegistryApplied = $true
+            return $Context
+        }
     }
 
     Context "Invoke-RegistryAction" {
@@ -58,8 +43,8 @@ Describe "RegistryEngine" {
                 -Context $script:Context `
                 -Action $script:Action
 
-            $Context.RegistryApplied | Should -BeTrue
-
+            $Context.RegistryApplied |
+                Should -BeTrue
         }
 
         It "Passe le BuildState à RegistryApplied" {
@@ -70,15 +55,12 @@ Describe "RegistryEngine" {
 
             $Context.BuildState.Status |
                 Should -Be "RegistryApplied"
-
         }
 
         It "Passe le BuildState à RegistryFailed lorsqu'une erreur survient" {
 
-            function Set-RegistryValue {
-
+            Mock Set-RegistryValue {
                 throw "Erreur"
-
             }
 
             {
@@ -91,9 +73,6 @@ Describe "RegistryEngine" {
 
             $script:Context.BuildState.Status |
                 Should -Be "RegistryFailed"
-
         }
-
     }
-
 }

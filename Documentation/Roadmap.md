@@ -1,8 +1,10 @@
-# Feuille de route
+# PimsOS Builder - Feuille de route
 
-> Version : 1.0.0
+> Version technique : 3.0.0
 >
-> Dernière mise à jour : 2026-07-26
+> Statut : Développement / architecture stabilisée
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
@@ -10,9 +12,9 @@
 
 Cette feuille de route présente les grandes orientations du projet **PimsOS Builder**.
 
-Elle décrit l'évolution du moteur de build, de l'architecture et des fonctionnalités permettant de construire des images Windows personnalisées.
+Elle décrit les évolutions prévues pour le framework, le moteur de Build et les fonctionnalités permettant de construire des images Windows personnalisées.
 
-Elle décrit les objectifs à moyen et long terme sans détailler les tâches d'implémentation.
+Elle présente les objectifs à moyen et long terme sans remplacer le backlog technique détaillé.
 
 Les évolutions importantes de l'architecture sont documentées dans les **Architecture Decision Records (ADR)**.
 
@@ -20,20 +22,20 @@ Les évolutions importantes de l'architecture sont documentées dans les **Archi
 
 # Vision
 
-PimsOS Builder a pour objectif de devenir un framework complet permettant de construire automatiquement des images Windows personnalisées à partir d'images officielles Microsoft.
+PimsOS Builder a pour objectif de devenir un framework capable de construire automatiquement des images Windows personnalisées à partir d'images compatibles.
 
-Le moteur est conçu pour être indépendant de la version de Windows ciblée et pourra prendre en charge plusieurs versions compatibles avec DISM.
+Le moteur doit rester indépendant d'une version spécifique de Windows et pouvoir évoluer avec les versions compatibles avec les mécanismes de déploiement utilisés.
 
-Le projet repose sur les principes suivants :
+Le projet repose notamment sur les principes suivants :
 
-- simplicité ;
 - modularité ;
 - automatisation ;
 - reproductibilité ;
 - maintenabilité ;
-- testabilité.
+- testabilité ;
+- séparation claire des responsabilités.
 
-À terme, la création d'une image Windows complète devra pouvoir être réalisée à partir d'une unique commande.
+À terme, la création d'une image PimsOS complète doit pouvoir être réalisée à partir d'un processus de Build automatisé et reproductible.
 
 ---
 
@@ -41,12 +43,21 @@ Le projet repose sur les principes suivants :
 
 ## Architecture
 
-✅ Finalisée
+✅ Stabilisée
 
-- Architecture validée
-- Documentation validée
-- ADR finalisées
-- Architecture gelée (Architecture Freeze)
+L'architecture 3.0.0 repose notamment sur :
+
+- un module PowerShell unique ;
+- un BuildContext centralisé ;
+- un Workflow ;
+- un Pipeline ;
+- un ActionRegistry ;
+- un ActionEngine ;
+- des Engines spécialisés ;
+- des Managers spécialisés ;
+- des modules techniques ;
+- une configuration pilotée par les données ;
+- une couverture Pester importante.
 
 ---
 
@@ -54,25 +65,26 @@ Le projet repose sur les principes suivants :
 
 🚧 En cours
 
-L'architecture étant désormais stabilisée, le développement est centré sur la construction du moteur de build.
+Les principales phases du framework sont maintenant en place :
 
-Les premières phases du pipeline sont désormais opérationnelles :
+- Recovery ;
+- vérification de l'environnement ;
+- gestion des ISO ;
+- gestion des WIM ;
+- sélection des images Windows ;
+- gestion des ruches du registre ;
+- chargement des catégories ;
+- chargement des Tweaks ;
+- chargement des profils ;
+- fusion de la configuration ;
+- validation ;
+- routage des Actions ;
+- Engines spécialisés ;
+- Managers spécialisés ;
+- reporting ;
+- nettoyage et finalisation du Build.
 
-- Recovery
-- Vérification de l'environnement
-- Gestion des ISO
-- Détection automatique des images WIM
-- Sélection interactive de l'édition Windows
-- Montage des images Windows
-- Gestion des ruches du registre
-- Chargement des définitions de tweaks
-- Chargement des profils
-- Fusion des profils avec les tweaks
-- Validation complète de la configuration
-- Application des personnalisations
-- Pipeline principal
-
-Le travail se concentre désormais sur la fiabilisation du moteur et le développement des Engines spécialisés.
+Le développement se concentre désormais sur la finalisation de la chaîne de production et la validation complète du Build de bout en bout.
 
 ---
 
@@ -86,28 +98,27 @@ Le travail se concentre désormais sur la fiabilisation du moteur et le dévelop
 - [x] Mettre en place la documentation.
 - [x] Définir les conventions de développement.
 - [x] Mettre en place les ADR.
-- [x] Construire les premiers modules techniques.
+- [x] Construire les premiers composants techniques.
 
-Statut :
+### Statut
 
 ✅ Terminée
 
 ---
 
-## Phase 2 — Migration vers le module unique
+## Phase 2 — Module PowerShell unique
 
 ### Objectifs
 
-### Objectifs
-
-- [x] Créer PimsOS.psm1.
-- [x] Centraliser les exports.
-- [x] Supprimer les NestedModules.
-- [x] Adapter Build-PimsOS.
-- [x] Introduire Initialize-PimsOS.
+- [x] Créer `PimsOS.psm1`.
+- [x] Créer `PimsOS.psd1`.
+- [x] Centraliser le chargement des composants.
+- [x] Centraliser l'API publique.
+- [x] Introduire `Initialize-PimsOS`.
+- [x] Supprimer le modèle à plusieurs modules indépendants.
 - [x] Valider le module PowerShell unique.
 
-Statut :
+### Statut
 
 ✅ Terminée
 
@@ -118,27 +129,27 @@ Statut :
 ### Objectifs
 
 - [x] Finaliser le BuildContext.
-- [x] Développer le Pipeline principal.
+- [x] Développer le BuildState.
+- [x] Développer le Pipeline.
 - [x] Développer le Workflow.
 - [x] Mettre en place Recovery.
 - [x] Gérer les images WIM.
 - [x] Gérer les ISO.
-- [x] Détecter automatiquement les éditions Windows.
-- [x] Permettre la sélection de l'édition à personnaliser.
+- [x] Détecter les images Windows.
+- [x] Permettre la sélection de l'image à personnaliser.
 - [x] Gérer les ruches du registre.
-- [x] Charger les définitions de tweaks.
+- [x] Charger les définitions de Tweaks.
 - [x] Charger les profils.
-- [x] Fusionner profils et tweaks.
+- [x] Fusionner profils et Tweaks.
 - [x] Valider la configuration.
-- [x] Appliquer les personnalisations.
-- [ ] Renforcer Test-WimMountState().
-- [ ] Finaliser BuildState.
-- [ ] Développer ActionEngine.
-- [ ] Développer les Engines spécialisés.
+- [x] Mettre en place ActionRegistry.
+- [x] Mettre en place ActionEngine.
+- [x] Développer les Engines spécialisés.
+- [x] Développer les Managers spécialisés.
 
-Statut :
+### Statut
 
-🚧 En cours
+✅ Stabilisée
 
 ---
 
@@ -146,15 +157,18 @@ Statut :
 
 ### Objectifs
 
-- [ ] Génération automatique de l'ISO.
-- [ ] Reconstruction complète des images Windows.
-- [ ] Validation automatique des builds.
-- [ ] Support de plusieurs versions de Windows.
-- [ ] Optimisation des performances.
+- [x] Préparer les images ISO.
+- [x] Manipuler les images WIM.
+- [x] Effectuer les opérations DISM nécessaires.
+- [ ] Finaliser la génération automatique de l'ISO.
+- [ ] Valider automatiquement l'ISO générée.
+- [ ] Valider un Build complet de bout en bout.
+- [ ] Améliorer la gestion des erreurs de production.
+- [ ] Optimiser les performances.
 
-Statut :
+### Statut
 
-⏳ À venir
+🟡 En cours
 
 ---
 
@@ -164,144 +178,177 @@ Statut :
 
 - [x] Profils.
 - [x] Tweaks.
-- [ ] Registre.
-- [ ] Services.
-- [ ] Fonctionnalités Windows.
-- [ ] Packages.
-- [ ] Drivers.
+- [x] RegistryEngine.
+- [x] ServiceEngine.
+- [x] FeatureEngine.
+- [x] CapabilityEngine.
+- [x] PackageEngine.
+- [x] DriverEngine.
+- [x] FileEngine.
+- [x] FolderEngine.
+- [x] EnvironmentEngine.
+- [x] ScheduledTaskEngine.
+- [x] ShortcutEngine.
+- [ ] Implémenter le provider Chocolatey.
+- [ ] Implémenter le provider Winget.
+- [ ] Compléter les fonctionnalités de personnalisation restantes.
 
-Statut :
+### Statut
 
-⏳ À venir
+🟡 En cours
 
 ---
 
-## Phase 6 — Version 1.0
+## Phase 6 — Stabilisation et qualité
 
 ### Objectifs
 
-- [ ] Documentation finalisée.
-- [ ] Couverture de tests élevée.
-- [ ] Validation complète.
-- [ ] Première image Windows générée.
-- [ ] Publication de PimsOS 1.0.
+- [x] Mettre en place une couverture Pester importante.
+- [x] Tester les Engines spécialisés.
+- [x] Tester les Managers.
+- [x] Tester Configuration.
+- [x] Tester Registry.
+- [x] Tester Workflow et composants Core.
+- [ ] Compléter les tests Recovery.
+- [ ] Compléter les tests Security.
+- [ ] Étendre les tests d'intégration.
+- [ ] Valider les Builds complets.
+- [ ] Finaliser la documentation technique.
 
-Statut :
+### Statut
+
+🟡 En cours
+
+---
+
+## Phase 7 — Première version stable
+
+### Objectifs
+
+- [ ] Pipeline validé de bout en bout.
+- [ ] Génération ISO stable.
+- [ ] Composants nécessaires finalisés.
+- [ ] Tests validés.
+- [ ] Documentation synchronisée.
+- [ ] API publique stabilisée.
+- [ ] Build reproductible.
+- [ ] Absence d'anomalie bloquante.
+- [ ] Publication d'une première version stable.
+
+### Statut
 
 ⏳ À venir
 
 ---
 
-# Modules
+# Composants restant à développer ou compléter
 
-## Terminés
+Les principaux éléments identifiés sont :
 
-- Logger
-- Check
-- AST
-- Replace
-- Backup
-- Report
-- Migration
-
----
-
-## En cours
-
-- BuildState
-- ActionEngine
-- Services Engine
-- Packages Engine
-- Drivers Engine
-- Features Engine
-
----
-
-## À développer
-
-- ServiceEngine
-- FeatureEngine
-- PackageEngine
-- DriverEngine
-- FileEngine
-- FolderEngine
+- `Converters.ps1` ;
+- `Chocolatey.ps1` ;
+- `Winget.ps1` ;
+- couverture complémentaire de `Recovery.ps1` ;
+- couverture complémentaire de `Security.ps1` ;
+- enrichissement du Reporting ;
+- finalisation de la génération ISO ;
+- validation complète de bout en bout.
 
 ---
 
 # Tests
 
-Objectifs :
+Les objectifs actuels sont :
 
-- augmenter progressivement la couverture ;
-- ajouter des tests d'intégration ;
-- préparer l'intégration continue (CI) ;
-- automatiser l'exécution des tests.
+- maintenir la couverture des composants existants ;
+- compléter les tests des composants encore partiellement couverts ;
+- étendre les tests d'intégration ;
+- ajouter des tests de régression ;
+- automatiser progressivement l'exécution des tests.
+
+Les tests Pester constituent la base de validation du framework.
 
 ---
 
 # Documentation
 
-Objectifs :
+Les objectifs actuels sont :
 
-- maintenir la documentation technique ;
-- documenter toutes les API publiques ;
-- enrichir les diagrammes d'architecture ;
-- produire une documentation utilisateur.
+- maintenir la documentation synchronisée avec le code ;
+- documenter l'API publique ;
+- documenter l'architecture ;
+- maintenir les règles d'architecture ;
+- maintenir le statut du projet ;
+- maintenir le backlog et les jalons ;
+- documenter les décisions architecturales dans les ADR.
 
 ---
 
 # Priorités actuelles
 
-## Priorité 1
+## Priorité 1 — Génération ISO
 
-Finaliser BuildState afin de centraliser entièrement l'état du moteur.
-
----
-
-## Priorité 2
-
-Développer les Engines spécialisés.
+Finaliser la chaîne permettant de produire une ISO PimsOS complète.
 
 ---
 
-## Priorité 3
+## Priorité 2 — Validation de bout en bout
 
-Automatiser complètement la génération des images Windows.
-
----
-
-## Priorité 4
-
-Étendre le support à plusieurs versions de Windows.
+Réaliser et valider un Build complet depuis l'ISO source jusqu'à l'artefact final.
 
 ---
 
-## Priorité 5
+## Priorité 3 — Providers packages
 
-Préparer la première version publique de PimsOS Builder.
+Implémenter les providers :
+
+- Chocolatey ;
+- Winget.
+
+---
+
+## Priorité 4 — Couverture et stabilité
+
+Compléter :
+
+- Recovery ;
+- Security ;
+- reporting ;
+- tests d'intégration ;
+- tests de régression.
+
+---
+
+## Priorité 5 — Documentation et release
+
+Maintenir la documentation synchronisée et préparer les conditions nécessaires à une première release stable.
 
 ---
 
 # Prochain objectif technique
 
-Le prochain objectif est de finaliser le moteur de build.
+Le prochain objectif technique majeur est la **finalisation de la chaîne de production de l'image PimsOS**.
 
-Les travaux prévus sont :
+Les travaux prioritaires sont :
 
-- finalisation de BuildState ;
-- développement des Engines spécialisés ;
-- génération automatique de l'image ISO ;
-- amélioration des performances ;
-- préparation du support multi-version de Windows.
+- finaliser le traitement du WIM ;
+- finaliser la reconstruction de l'ISO ;
+- valider le Build complet ;
+- vérifier les artefacts générés ;
+- compléter les rapports ;
+- vérifier le nettoyage final ;
+- documenter le processus de production.
 
-# Hors périmètre
+---
 
-À ce stade, les fonctionnalités suivantes ne sont pas prévues :
+# Hors périmètre actuel
+
+À ce stade, les éléments suivants ne constituent pas une priorité du développement :
 
 - interface graphique complète ;
-- prise en charge des versions de Windows non compatibles avec DISM ;
 - support d'autres systèmes d'exploitation ;
-- déploiement distribué.
+- déploiement distribué ;
+- versions de Windows incompatibles avec les mécanismes techniques utilisés par le Builder.
 
 Ces éléments pourront être réévalués ultérieurement.
 
@@ -313,18 +360,22 @@ La feuille de route est revue à chaque jalon majeur.
 
 Les fonctionnalités terminées sont reportées dans :
 
-- ReleaseNotes.md
-- Milestones.md
-- ProjectStatus.md
+- `ReleaseNotes.md` ;
+- `Milestones.md` ;
+- `ProjectStatus.md`.
+
+Les évolutions architecturales importantes sont documentées dans les ADR.
 
 ---
 
 # Documents associés
 
-- Architecture.md
-- ArchitectureRules.md
-- ProjectStatus.md
-- Lifecycle.md
-- Milestones.md
-- ReleaseNotes.md
-- Documentation/ADR/
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `ProjectStatus.md`
+- `ProjectStructure.md`
+- `Lifecycle.md`
+- `Milestones.md`
+- `ReleaseNotes.md`
+- `Testing.md`
+- `Documentation\ADR\`

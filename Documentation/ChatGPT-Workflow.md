@@ -1,8 +1,10 @@
-# ChatGPT Workflow - Projet PimsOS
+# PimsOS Builder - ChatGPT Workflow
 
-> Version : 2.0.0
+> Version technique : 3.0.0
 >
-> Dernière mise à jour : 2026-07-26
+> Statut : Référence de travail
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
@@ -10,39 +12,29 @@
 
 Nous développons le projet **PimsOS Builder**.
 
-PimsOS Builder est un moteur de personnalisation Windows permettant de construire des images Windows personnalisées à partir d'images officielles Microsoft.
+PimsOS Builder est un framework PowerShell permettant de construire et personnaliser des images Windows à partir de données de configuration et de composants spécialisés.
 
-Le développement du projet est également un support d'apprentissage de PowerShell.
+Le développement du projet constitue également un support d'apprentissage de PowerShell.
 
-Notre objectif est de construire un projet :
+L'objectif est de construire un projet :
 
 - propre ;
 - stable ;
 - maintenable ;
 - documenté ;
 - testable ;
-- compréhensible.
+- compréhensible ;
+- reproductible.
 
-Le développement du projet est également un support d'apprentissage de PowerShell.
-
-Les explications sont aussi importantes que le résultat.
+Les explications sont importantes au même titre que le résultat technique.
 
 ---
-
-# Open Source
-
-Toujours privilégier :
-
-- une documentation claire ;
-- des messages d'erreur compréhensibles ;
-- des exemples simples ;
-- des API stables ;
-- une architecture facilement compréhensible par un nouveau contributeur.
 
 # Principe de développement
 
 Toujours privilégier :
 
+```text
 Documentation
     ↓
 Architecture
@@ -51,139 +43,169 @@ Développement
     ↓
 Tests
     ↓
+Validation
+    ↓
 Git
     ↓
 GitHub
+```
 
-Ne jamais inverser cet ordre sans raison justifiée.
+Ne pas inverser cet ordre sans raison justifiée.
+
+---
 
 # Compatibilité Windows
 
-PimsOS Builder n'est pas limité à une seule version de Windows.
+PimsOS Builder ne doit pas être limité à une seule version de Windows.
 
-Le Builder doit pouvoir personnaliser plusieurs versions officielles de Windows.
+Le Builder doit pouvoir traiter les versions Windows compatibles avec les mécanismes techniques utilisés par le projet.
 
 Toute nouvelle fonctionnalité doit donc :
 
-- éviter les chemins codés en dur ;
-- éviter les numéros de build codés en dur ;
-- utiliser les informations contenues dans version.json et BuildContext ;
-- rester compatible avec plusieurs versions de Windows lorsque cela est possible.
+- éviter les valeurs de version codées en dur lorsqu'elles sont configurables ;
+- éviter les numéros de Build codés en dur lorsqu'ils doivent être découverts ;
+- utiliser le BuildContext et les données de configuration ;
+- respecter les contraintes de compatibilité des Tweaks ;
+- préserver l'architecture générale du Builder.
+
+---
 
 # Début de chaque nouvelle session
 
-Lorsque je fournis ce document au début d'une nouvelle conversation :
-
-Commencer systématiquement par :
+Lorsque ce document est utilisé au début d'une nouvelle conversation :
 
 1. Lire `Documentation/ProjectStatus.md`.
 2. Lire `Documentation/Roadmap.md`.
-3. Lire les ADR si elles sont nécessaires à la tâche.
-4. Respecter toutes les règles décrites dans ce document.
-5. Vérifier si le dépôt Git est dans un état propre (`git status`) avant de commencer une nouvelle modification.
+3. Lire `Documentation/Backlog.md` si nécessaire.
+4. Lire les ADR nécessaires à la tâche.
+5. Respecter les Architecture Rules.
+6. Vérifier le contexte réel du dépôt avant toute modification.
+7. Vérifier l'état Git lorsque cela est possible.
 
-Ne jamais commencer directement à modifier du code.
-
-Toujours commencer par comprendre le contexte du projet.
+Ne jamais commencer directement à modifier du code sans comprendre le contexte.
 
 ---
-## Lecture obligatoire
 
-Avant de proposer une modification ou un diagnostic, ChatGPT doit :
+# Lecture obligatoire
 
-- Lire toute la documentation nécessaire au sujet traité.
-- Vérifier les décisions d'architecture déjà actées.
-- Identifier les contraintes déjà validées.
-- Ne jamais proposer une solution qui contredit une décision documentée sans expliquer pourquoi cette décision devrait être remise en question.
+Avant de proposer une modification ou un diagnostic :
+
+- lire la documentation nécessaire au sujet traité ;
+- vérifier les décisions d'architecture déjà actées ;
+- identifier les contraintes déjà validées ;
+- vérifier le code réel concerné ;
+- vérifier les tests existants lorsque nécessaire ;
+- ne jamais proposer une solution qui contredit une décision documentée sans le signaler explicitement.
+
+---
 
 # Reprise du contexte
 
-Au début de chaque séance :
-
-Faire un résumé très court indiquant :
+Au début d'une séance de travail, fournir un résumé très court indiquant :
 
 - où nous en sommes ;
 - ce qui a été terminé ;
 - ce qui reste à faire ;
 - l'objectif de la séance.
 
+Le résumé ne doit pas remplacer la vérification du contexte réel du projet.
+
 ---
 
 # Architecture
 
-L'architecture de PimsOS est désormais considérée comme stable.
+L'architecture de PimsOS Builder 3.0.0 est considérée comme stabilisée.
+
+Le framework repose notamment sur :
+
+- un module PowerShell unique ;
+- un BuildContext central ;
+- un BuildState ;
+- un Workflow ;
+- un Pipeline ;
+- un ActionRegistry ;
+- un ActionEngine ;
+- des Engines spécialisés ;
+- des Managers ;
+- des modules techniques.
 
 Ne proposer une évolution de l'architecture que si :
 
-- un problème réel apparaît pendant le développement ;
-- plusieurs solutions ont été étudiées ;
-- le bénéfice est démontré.
+- un problème réel apparaît ;
+- plusieurs solutions sont étudiées lorsque cela est utile ;
+- le bénéfice est démontré ;
+- l'impact est compris ;
+- la décision est documentée.
 
-Ne jamais proposer une refonte uniquement parce qu'une autre approche semble plus élégante.
-
-Toute modification d'architecture doit :
+Toute modification architecturale importante doit :
 
 1. être discutée ;
 2. être justifiée ;
 3. être validée ;
-4. être documentée dans une ADR ;
-5. être implémentée seulement après validation.
+4. être documentée dans une ADR lorsque nécessaire ;
+5. être implémentée après validation.
 
 ---
 
 # Documentation
 
-La documentation constitue la référence du projet.
+La documentation constitue une référence du projet.
 
-Les documents suivants sont considérés comme stables :
+Les documents principaux comprennent notamment :
 
-- Architecture.md
-- ArchitectureRules.md
-- ADR
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `CodingStandards.md`
+- `DeveloperGuide.md`
+- `ModuleGuide.md`
+- `ProjectStatus.md`
+- `ProjectStructure.md`
+- `Roadmap.md`
+- `Milestones.md`
+- `ReleaseNotes.md`
+- `Testing.md`
+- `TechnicalDecisions.md`
+- `API.md`
 
-Ne proposer une modification documentaire que lorsqu'un besoin réel apparaît.
+La documentation doit décrire le comportement réel du projet.
 
-La documentation accompagne le développement.
+Avant de considérer une évolution comme terminée, vérifier :
 
-Elle ne doit pas évoluer sans raison.
+- que les documents concernés sont à jour ;
+- que les exemples correspondent au code ;
+- que les anciennes informations obsolètes ont été supprimées.
 
 ---
 
 # Gestion du projet
 
-Avant de commencer un nouveau développement, identifier dans quel document il doit être suivi.
+Avant de commencer un nouveau développement, identifier où le travail doit être suivi.
 
-Utiliser les documents suivants :
+Utiliser :
 
-- CurrentSprint.md : travail en cours ;
-- Backlog.md : idées et améliorations futures ;
-- Milestones.md : jalons majeurs ;
-- Roadmap.md : vision à moyen et long terme.
+- `Backlog.md` pour les idées et travaux futurs ;
+- `Milestones.md` pour les jalons ;
+- `Roadmap.md` pour les orientations à moyen et long terme ;
+- `ProjectStatus.md` pour l'état actuel du projet.
 
-Ne jamais laisser une nouvelle idée importante sans l'affecter à l'un de ces documents.
+Le Backlog ne doit pas être traité comme un engagement immédiat de développement.
 
-Le Sprint reste toujours prioritaire sur le Backlog.
-
-# Synchronisation de la documentation
-
-Avant de considérer une fonctionnalité comme terminée, vérifier que :
-
-- le code est à jour ;
-- la documentation décrit le comportement réel du projet ;
-- les exemples correspondent au code actuel ;
-- les anciennes informations ont été supprimées.
-
-La documentation ne doit jamais décrire un fonctionnement qui n'existe plus.
+---
 
 # Synchronisation
 
-Après chaque étape importante :
+Après une étape importante :
 
-1. Vérifier git status.
-2. Effectuer un commit.
-3. Vérifier git log.
-4. Pousser les modifications sur GitHub.
-5. Vérifier que le dépôt distant est synchronisé.
+1. vérifier l'état des fichiers modifiés ;
+2. vérifier les tests ;
+3. mettre à jour la documentation ;
+4. vérifier `git status` ;
+5. créer un commit cohérent lorsque l'étape est stable ;
+6. vérifier l'historique récent ;
+7. pousser vers GitHub lorsque l'évolution est prête.
+
+---
 
 # Ma façon de travailler
 
@@ -199,7 +221,7 @@ Toujours expliquer :
 - ce que nous allons vérifier ;
 - le résultat attendu.
 
-Ne jamais supposer que je connais déjà un concept.
+Ne jamais supposer qu'un concept est déjà connu.
 
 ---
 
@@ -210,50 +232,40 @@ Toujours travailler dans cet ordre :
 1. Comprendre le problème.
 2. Vérifier avec des preuves.
 3. Identifier précisément la cause.
-4. Proposer une seule correction.
+4. Proposer une seule correction à la fois.
 5. Tester.
-6. Analyser.
-7. Continuer uniquement lorsque tout est validé.
+6. Analyser le résultat.
+7. Continuer uniquement lorsque le résultat est validé.
 
-Ne jamais effectuer plusieurs modifications importantes simultanément.
+Ne pas effectuer plusieurs modifications importantes simultanément.
 
-Je préfère avancer lentement sans créer de régressions.
+La priorité est la stabilité et la limitation des régressions.
 
 ---
 
 # Choix des solutions
 
-Lorsqu'il existe plusieurs solutions :
-
-Toujours privilégier :
+Lorsqu'il existe plusieurs solutions, privilégier :
 
 - la plus simple ;
 - la moins risquée ;
 - la plus facile à maintenir ;
 - la plus cohérente avec l'architecture existante.
 
-Ne proposer une solution plus complexe que lorsqu'elle apporte un bénéfice démontré.
+Une solution plus complexe doit être proposée seulement lorsqu'elle apporte un bénéfice démontrable.
 
-Toujours expliquer :
+Lorsqu'un choix important est proposé, expliquer :
 
-- pourquoi cette solution est retenue ;
+- pourquoi il est retenu ;
 - ses avantages ;
 - ses inconvénients ;
-- pourquoi les autres solutions ne sont pas retenues.
+- les raisons pour lesquelles les autres solutions ne sont pas retenues.
 
 ---
 
 # Justification des décisions
 
-Toute proposition importante doit être justifiée.
-
-Les arguments doivent être techniques et vérifiables.
-
-Éviter les arguments du type :
-
-- c'est plus moderne ;
-- c'est plus élégant ;
-- je préfère.
+Les propositions importantes doivent être justifiées par des arguments techniques vérifiables.
 
 Privilégier :
 
@@ -262,135 +274,149 @@ Privilégier :
 - meilleure testabilité ;
 - compatibilité ;
 - performances ;
-- réduction des risques.
+- réduction des risques ;
+- cohérence avec l'architecture existante.
+
+Éviter les justifications purement stylistiques.
 
 ---
 
 # Vérifications
 
-Ne jamais supposer.
+Ne jamais supposer lorsqu'une vérification est possible.
 
-Toujours vérifier avec PowerShell.
+Toujours privilégier les preuves issues du dépôt et de l'environnement.
 
-Les preuves sont prioritaires sur les hypothèses.
+Commandes utiles :
 
-Privilégier :
+```powershell
+Get-Command
+Get-Content
+Select-String
+Import-Module
+Invoke-Pester
+git status
+git log --oneline -5
+```
 
-- Get-Command
-- Get-Content
-- Select-String
-- Import-Module
-- Invoke-Pester
-- Git
-
-Toujours expliquer ce que permet de vérifier chaque commande.
+Toujours expliquer brièvement ce que chaque commande permet de vérifier.
 
 ---
 
 # Qualité
 
-Avant de terminer une fonctionnalité, vérifier également :
+Avant de terminer une fonctionnalité, vérifier :
 
-- PSScriptAnalyzer
-- Pester
-- Git Status
-- Documentation
-- CHANGELOG
-- Release Notes
+- PSScriptAnalyzer lorsqu'il est disponible dans le workflow ;
+- Pester ;
+- `git status` ;
+- la documentation ;
+- `ReleaseNotes.md` lorsque le changement le justifie ;
+- `TechnicalDecisions.md` lorsque la décision doit être conservée.
 
-Une fonctionnalité n'est considérée comme terminée que lorsque ces éléments sont cohérents.
+Une fonctionnalité n'est considérée comme terminée que lorsque les éléments nécessaires sont cohérents.
+
+---
 
 # Modules PowerShell
 
 En cas de comportement inattendu :
 
-Toujours vérifier dans cet ordre :
+1. vérifier le contenu réel du fichier ;
+2. vérifier les fonctions réellement chargées ;
+3. vérifier les doublons éventuels ;
+4. vérifier les exports du module ;
+5. vérifier l'ordre de chargement dans `PimsOS.psm1`.
 
-1. le contenu réel du fichier ;
-2. les fonctions réellement chargées ;
-3. les doublons ;
-4. les exports du module.
+Ne jamais conclure avant d'avoir comparé le fichier source et le module chargé.
 
-Ne jamais conclure avant d'avoir comparé le fichier et le module chargé.
-
-Rappel :
-
-PowerShell utilise toujours la dernière définition d'une fonction.
+Rappel : dans un même scope, une définition ultérieure peut remplacer une définition précédente.
 
 ---
 
 # Objets métier
 
-Les objets métier sont créés par leurs constructeurs dédiés.
+Les objets métier utilisent les constructeurs officiels du projet lorsqu'ils existent.
 
 Exemples :
 
-- New-BuildContext
-- New-BuildState
-- New-Tweak
-- New-Action
-- New-ConfigurationItem
+- `New-BuildContext`
+- `New-BuildState`
+- `New-Tweak`
+- `New-Action`
+- `New-ConfigurationItem`
 
-Ne jamais construire directement un PSCustomObject lorsqu'un constructeur officiel existe déjà.
+Ne pas construire directement un `PSCustomObject` lorsqu'un constructeur officiel existe déjà.
 
-Les constructeurs constituent le contrat officiel des objets du projet.
+Les constructeurs constituent les contrats de création des objets concernés.
+
+---
 
 # Recovery
 
-Le projet PimsOS dispose d'un mécanisme de reprise de build.
+Le projet PimsOS dispose d'un mécanisme de reprise de Build.
 
-Avant de créer un nouveau montage DISM, toujours vérifier si un build précédent peut être réutilisé.
+Avant de créer un nouveau montage DISM, vérifier si les ressources d'un Build précédent doivent être traitées par Recovery.
 
-La validation d'un build doit toujours passer par :
+La validation de l'état d'un montage WIM est centralisée dans :
 
-- Test-WimMountState()
+```powershell
+Test-WimMountState()
+```
 
-Cette fonction constitue l'unique point de décision permettant de déterminer si un build peut être repris.
+Cette décision ne doit pas être dupliquée dans le Pipeline ou le Workflow.
 
-Ne jamais dupliquer cette logique ailleurs dans le projet.
+Lorsqu'un état invalide est détecté, le Recovery doit :
 
-Si Test-WimMountState retourne un montage invalide :
-
-- démonter le montage ;
+- traiter les ressources concernées ;
+- démonter ce qui doit l'être ;
 - nettoyer l'environnement ;
-- reconstruire le build.
+- permettre de repartir sur une base cohérente.
 
-Le pipeline ne doit jamais prendre cette décision lui-même.
+---
 
 # BuildContext
 
-Le BuildContext constitue la source de vérité du moteur de build.
+Le BuildContext constitue le contrat central du Build.
 
 Avant de proposer une modification :
 
 1. identifier la propriété concernée ;
-2. vérifier si elle existe déjà dans BuildContext ;
-3. ne jamais créer une nouvelle propriété sans vérifier qu'une propriété équivalente n'existe pas déjà.
+2. vérifier si elle existe déjà ;
+3. ne pas créer une nouvelle propriété lorsqu'une propriété équivalente existe déjà ;
+4. vérifier si l'information doit réellement être partagée.
 
-Toute nouvelle information du moteur de build doit être intégrée dans BuildContext plutôt que dans une variable locale persistante.
+Toute donnée d'état du Build qui doit être partagée entre plusieurs composants doit être intégrée au contrat approprié du BuildContext ou du BuildState.
+
+---
 
 # BuildState
 
-BuildState représente l'état courant du moteur de build.
+Le BuildState représente l'état courant de l'exécution.
 
 Lorsqu'une nouvelle fonctionnalité modifie l'état du Build :
 
-- utiliser BuildState ;
-- ne pas créer de nouveaux indicateurs dispersés dans plusieurs objets.
+- utiliser le BuildState ;
+- ne pas créer des indicateurs dispersés dans plusieurs objets ;
+- conserver une convention d'état cohérente.
 
-Les changements d'état doivent rester centralisés afin de simplifier le suivi du Pipeline.
+Les changements d'état doivent rester centralisés et compréhensibles.
+
+---
 
 # Configuration
 
-Les Tweaks constituent la définition officielle des personnalisations.
+Les Tweaks constituent les définitions des personnalisations.
 
-Ils ne doivent jamais être modifiés pendant la fusion d'un profil.
+Ils ne doivent pas être modifiés lors de la fusion d'un profil.
 
-Les profils produisent une Configuration composée de ConfigurationItems.
+Les profils permettent de sélectionner les personnalisations.
 
-Le moteur applique uniquement cette Configuration.
+Le moteur construit ensuite une configuration destinée à l'exécution.
 
-Les définitions originales doivent rester immuables.
+Les définitions sources doivent rester intactes.
+
+---
 
 # Débogage
 
@@ -408,21 +434,20 @@ Toujours expliquer :
 
 # Analyse
 
-Toujours analyser :
+Toujours analyser, lorsque disponible :
 
 - les sorties PowerShell ;
 - les erreurs ;
 - les logs ;
 - les résultats Pester ;
-- Git.
+- l'état Git ;
+- le contenu réel des fichiers concernés.
 
-Une conclusion doit toujours reposer sur une preuve.
+Une conclusion doit reposer sur une preuve.
 
-Si une information manque :
+Si une information manque, demander ou effectuer la vérification nécessaire.
 
-demander une vérification.
-
-Ne jamais deviner.
+Ne jamais présenter une hypothèse comme une conclusion.
 
 ---
 
@@ -432,14 +457,13 @@ Ne proposer un refactoring que s'il apporte un bénéfice réel.
 
 Par exemple :
 
-- suppression de duplication ;
+- suppression d'une duplication ;
 - simplification importante ;
 - correction d'un défaut ;
-- amélioration de la maintenabilité.
+- amélioration de la maintenabilité ;
+- amélioration de la testabilité.
 
-Ne jamais refactorer uniquement pour modifier le style du code.
-
-Lorsqu'une solution fonctionne correctement, ne pas proposer de la remplacer sans raison technique démontrée.
+Ne pas refactorer uniquement pour modifier le style d'un code qui fonctionne correctement.
 
 ---
 
@@ -452,7 +476,9 @@ Avant de proposer :
 - un nouveau framework ;
 - une nouvelle architecture ;
 
-vérifier si le besoin ne peut pas être couvert avec les composants déjà présents dans le projet.
+vérifier si le besoin peut être couvert par les composants déjà présents dans le projet.
+
+Toute nouvelle dépendance doit être justifiée.
 
 ---
 
@@ -460,47 +486,56 @@ vérifier si le besoin ne peut pas être couvert avec les composants déjà pré
 
 Toujours fournir :
 
-- le bloc complet ;
-- son emplacement exact ;
-- une explication détaillée.
+- le fichier concerné ;
+- l'emplacement exact de la modification ;
+- le bloc complet à remplacer lorsque cela est nécessaire ;
+- une explication adaptée au niveau de compréhension ;
+- les commandes permettant de vérifier le résultat.
 
-Je dois pouvoir effectuer un simple copier/coller.
+La modification doit être réalisable avec un copier/coller fiable lorsque le contexte s'y prête.
 
 ---
-## Vérification d'architecture
+
+# Vérification d'architecture
 
 Avant chaque proposition de modification :
 
-1. Identifier le composant concerné.
-2. Vérifier que la modification respecte l'architecture actuelle.
-3. Vérifier qu'elle ne contredit pas une décision déjà documentée.
-4. Si une contradiction existe, arrêter le diagnostic et signaler la décision concernée avant toute proposition.
-5. Vérifier si une logique similaire existe déjà dans le projet avant de créer une nouvelle fonction.
-
-6. Centraliser les décisions importantes dans une seule fonction responsable.
+1. identifier le composant concerné ;
+2. vérifier que la modification respecte l'architecture actuelle ;
+3. vérifier qu'elle ne contredit pas une décision documentée ;
+4. en cas de contradiction, signaler la décision concernée avant toute modification ;
+5. vérifier si une logique similaire existe déjà ;
+6. centraliser les décisions importantes dans une fonction ou un composant responsable.
 
 Exemple :
 
-- validation d'un montage DISM → Test-WimMountState()
+```text
+validation d'un montage DISM
+        ↓
+Test-WimMountState()
+```
 
-Le pipeline ne doit faire qu'orchestrer les étapes.
+Le Pipeline doit principalement orchestrer les étapes et ne pas dupliquer les décisions centralisées.
 
+---
 
 # Tests
 
 Après chaque modification :
 
-Lancer uniquement les tests concernés.
-
-Ne lancer l'ensemble des tests que lorsque cela est nécessaire.
+- lancer d'abord les tests directement concernés ;
+- analyser leur résultat ;
+- lancer une validation plus large lorsque l'impact le justifie.
 
 Toujours expliquer ce que les tests permettent de vérifier.
 
+Une correction de bug doit être accompagnée d'un test de régression lorsque cela est pertinent.
+
 ---
 
-# Qualité
+# Qualité du dépôt
 
-Chaque modification doit laisser le projet dans un meilleur état qu'avant.
+Chaque modification doit laisser le projet dans un état au moins aussi propre qu'avant.
 
 Éviter :
 
@@ -508,7 +543,8 @@ Chaque modification doit laisser le projet dans un meilleur état qu'avant.
 - les TODO oubliés ;
 - les fonctions inutilisées ;
 - les duplications ;
-- les avertissements ignorés.
+- les avertissements ignorés ;
+- la documentation obsolète.
 
 ---
 
@@ -516,29 +552,27 @@ Chaque modification doit laisser le projet dans un meilleur état qu'avant.
 
 Lorsque le projet évolue significativement, vérifier également :
 
-- README.md
-- CHANGELOG.md
-- ReleaseNotes.md
-- GitHub Issues
-- GitHub Actions
+- `README.md` ;
+- `CHANGELOG.md` ;
+- `ReleaseNotes.md` ;
+- GitHub Issues ;
+- GitHub Actions.
 
-Toute nouvelle fonctionnalité importante doit être compatible avec la publication sur GitHub.
+Toute nouvelle fonctionnalité importante doit rester compatible avec le mode de publication du projet.
+
+---
 
 # Git
 
 Git constitue le filet de sécurité du projet.
 
-Chaque étape importante du développement doit pouvoir être retrouvée facilement dans l'historique.
+Chaque étape importante doit pouvoir être retrouvée facilement dans l'historique.
 
 ## Commits
 
-Avant une modification importante :
+Avant une modification importante, créer si nécessaire un commit de sécurité.
 
-- proposer un commit de sécurité.
-
-Après chaque étape stable :
-
-- proposer un commit.
+Après chaque étape stable, créer un commit cohérent.
 
 Un commit doit représenter une seule évolution logique du projet.
 
@@ -557,38 +591,46 @@ Utiliser les préfixes suivants :
 | refactor | Refactoring sans modification du comportement |
 | test | Ajout ou modification de tests |
 | docs | Documentation |
-| build | Scripts de build et pipeline |
-| chore | Maintenance, nettoyage, sauvegarde |
+| build | Scripts de Build et Pipeline |
+| chore | Maintenance et nettoyage |
 
 Exemples :
 
 ```text
-feat(Migration): remplacement des classes par des PSCustomObject
-
-fix(Report): correction de Get-ReportStatistics
-
-refactor(Backup): simplification de Get-BackupStatistics
-
-test(Migration): validation complète (265/265)
-
+feat: ajout d'un nouvel Engine
+fix: correction du routage d'une Action
+refactor: simplification d'un Manager
+test: ajout des tests du PackageManager
 docs: mise à jour de l'architecture
-
-build: migration vers le module PimsOS unique
-
-chore: point de sauvegarde avant migration du Builder
+build: évolution du script de Build
+chore: nettoyage du dépôt
 ```
+
+Les messages de type :
+
+```text
+update
+test
+correction
+modif
+divers
+```
+
+doivent être évités.
+
+Chaque commit doit rester compréhensible plusieurs mois plus tard.
 
 ---
 
 ## Vérifications Git
 
-Avant de proposer un commit important :
-
-Toujours vérifier :
+Avant un commit important :
 
 ```powershell
 git status
 ```
+
+Cette commande permet de vérifier les fichiers modifiés, ajoutés ou supprimés.
 
 Après le commit :
 
@@ -596,54 +638,33 @@ Après le commit :
 git log --oneline -5
 ```
 
-Expliquer ce que permettent de vérifier ces commandes.
-
----
-
-## Philosophie Git
-
-Privilégier :
-
-- des commits petits ;
-- des commits cohérents ;
-- des messages explicites ;
-- un historique facile à comprendre.
-
-Éviter les messages de commit du type :
-
-- update
-- test
-- correction
-- modif
-- divers
-
-Chaque commit doit pouvoir être compris plusieurs mois plus tard sans relire le code.
+Cette commande permet de vérifier l'historique récent.
 
 ---
 
 # Documentation du projet
 
-Lorsqu'une découverte importante est faite :
+Lorsqu'une décision technique importante est prise, vérifier si elle doit être ajoutée à :
 
-Proposer une mise à jour de :
+```text
+Documentation\TechnicalDecisions.md
+```
 
-- TechnicalDecisions.md
+Lorsqu'une fonctionnalité importante est terminée, mettre à jour si nécessaire :
 
-Lorsqu'une fonctionnalité importante est terminée :
+```text
+Documentation\ProjectStatus.md
+```
 
-Proposer une mise à jour de :
+Si la planification évolue, mettre à jour :
 
-- ProjectStatus.md
+```text
+Documentation\Roadmap.md
+Documentation\Backlog.md
+Documentation\Milestones.md
+```
 
-Si la planification évolue :
-
-Proposer une mise à jour de :
-
-- Roadmap.md
-
-Lorsqu'une décision modifie l'architecture :
-
-Créer ou mettre à jour une ADR.
+Lorsqu'une décision modifie l'architecture, créer ou mettre à jour une ADR.
 
 ---
 
@@ -654,14 +675,15 @@ Lorsqu'une fonctionnalité est terminée :
 - vérifier les tests ;
 - nettoyer le code ;
 - supprimer les commentaires temporaires ;
-- mettre à jour la documentation si nécessaire ;
-- proposer un commit Git.
+- mettre à jour la documentation nécessaire ;
+- vérifier les fichiers modifiés ;
+- proposer ou effectuer un commit Git cohérent.
 
 ---
 
 # Explications
 
-À chaque réponse :
+À chaque réponse technique :
 
 Toujours expliquer :
 
@@ -674,58 +696,48 @@ Adapter le niveau d'explication à un débutant.
 
 ---
 
-# Si tu n'es pas certain
+# Si une information manque
 
 Ne jamais deviner.
 
-Dire clairement que l'information manque.
+Dire clairement lorsqu'une information manque.
 
-Proposer les vérifications nécessaires.
+Effectuer ou demander les vérifications nécessaires.
 
 Une hypothèse n'est jamais une conclusion.
 
-Une conclusion doit toujours être appuyée par une preuve observable.
+Une conclusion doit être appuyée par une preuve observable.
 
 ---
 
 # Fin de séance
 
-Lorsque la séance se termine :
+Lorsque la séance se termine, vérifier :
 
-Toujours rappeler de :
-
-□ Vérifier que les tests sont au vert.
-
-□ Vérifier git status.
-
-□ Effectuer un commit Git si une étape stable est terminée.
-
-□ Vérifier l'historique récent avec git log --oneline -5.
-
-□ Mettre à jour ProjectStatus.md.
-
-□ Vérifier si les nouvelles décisions techniques doivent être intégrées au Workflow.
-
-□ Vérifier si une fonction est devenue le point central d'une fonctionnalité et doit être documentée.
-
-□ Mettre à jour TechnicalDecisions.md si nécessaire.
-
-□ Vérifier Roadmap.md.
-
-□ Vérifier si une ADR doit être créée.
-
-□ Faire une sauvegarde complète du projet.
+- les tests sont au vert ;
+- `git status` est compris ;
+- un commit est effectué si une étape stable est terminée ;
+- l'historique récent est vérifié ;
+- `ProjectStatus.md` est mis à jour si nécessaire ;
+- `TechnicalDecisions.md` est mis à jour si nécessaire ;
+- `Roadmap.md` et `Backlog.md` sont mis à jour si nécessaire ;
+- une ADR est créée si l'architecture a changé ;
+- les documents concernés sont synchronisés ;
+- les changements importants sont sauvegardés.
 
 ---
-## Clôture obligatoire
 
-Avant de considérer une session comme terminée, ChatGPT doit vérifier que :
+# Clôture obligatoire
+
+Avant de considérer une session comme terminée, vérifier que :
 
 - la documentation technique est à jour ;
 - les décisions d'architecture prises pendant la session sont documentées ;
-- les changements de workflow sont documentés ;
+- les changements de workflow importants sont documentés ;
 - les TODO et la roadmap sont mis à jour si nécessaire ;
-- les fichiers de documentation concernés sont synchronisés avec le code.
+- les fichiers documentaires concernés sont synchronisés avec le code.
+
+---
 
 # Philosophie
 
@@ -735,7 +747,7 @@ Nous privilégions toujours :
 - les preuves avant les suppositions ;
 - les petites corrections avant les grandes réécritures ;
 - la stabilité avant les nouvelles fonctionnalités ;
-- le développement avant les refontes.
+- le développement avant les refontes inutiles.
 
 Chaque étape doit laisser le projet dans un meilleur état qu'avant.
 
@@ -745,14 +757,14 @@ Chaque étape doit laisser le projet dans un meilleur état qu'avant.
 
 L'objectif n'est pas uniquement de produire un logiciel fonctionnel.
 
-Je veux également :
+Le projet doit également permettre de :
 
 - comprendre PowerShell ;
 - comprendre l'architecture ;
-- apprendre de bonnes pratiques de développement ;
+- appliquer de bonnes pratiques de développement ;
 - construire un projet professionnel ;
 - limiter les régressions ;
 - documenter correctement le projet ;
-- améliorer progressivement mes compétences de développeur.
+- améliorer progressivement les compétences de développement.
 
 Le développement de PimsOS doit rester méthodique, reproductible, durable et agréable à maintenir.

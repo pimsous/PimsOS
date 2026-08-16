@@ -1,62 +1,99 @@
-# PimsOS Builder
+# PimsOS Builder - Architecture
 
 > Documentation de l'architecture logicielle
-
-Version : 0.4.0
-Architecture : 2.x
+>
+> Version technique : 3.0.0
+>
+> Statut : Développement / architecture stabilisée
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
 # Sommaire
 
 - Présentation
+- État architectural actuel
 - Philosophie
 - Objectifs
 - Principes d'architecture
+- Architecture du module PimsOS
 - Vue d'ensemble
 - Architecture logique
 - Les couches du Builder
+- Engines spécialisés
+- Managers
+- Modules techniques
 - Flux d'exécution
 - Communication entre les composants
 - Dépendances
-- Décisions d'architecture (ADR)
+- BuildContext
+- ActionRegistry
+- Recovery
+- Décisions d'architecture
 - Documentation associée
+- Conclusion
 
 ---
 
 # Présentation
 
-PimsOS Builder est un framework PowerShell permettant de créer une image Windows personnalisée à partir d'une image ISO officielle Microsoft.
+PimsOS Builder est un framework PowerShell permettant de construire et de personnaliser des images Windows à partir d'images sources compatibles.
 
-Le projet automatise l'ensemble du processus de personnalisation d'une image Windows tout en conservant une architecture :
+Le projet automatise progressivement les différentes étapes du processus de Build tout en conservant une architecture :
 
 - modulaire ;
 - testable ;
 - extensible ;
-- maintenable.
+- maintenable ;
+- indépendante d'une version précise de Windows ciblée.
 
-Le Builder ne modifie jamais directement l'image ISO d'origine.
+Le Builder ne doit pas modifier directement les ressources sources lorsqu'une copie de travail est nécessaire.
 
-Toutes les opérations sont réalisées sur une copie de travail afin de garantir l'intégrité des fichiers source.
+Les opérations de modification sont réalisées dans l'environnement de travail du Build afin de préserver les ressources sources.
 
 ---
-## État actuel du projet
 
-Depuis la version 0.4.0, PimsOS Builder dispose d'une architecture modulaire complète reposant sur un moteur d'exécution orienté Actions.
+# État architectural actuel
 
-Le pipeline est désormais capable de :
+La version technique actuelle du framework est :
 
-- monter automatiquement une image ISO ;
-- détecter et copier l'image Windows (WIM) ;
-- monter l'image avec DISM ;
-- charger les ruches du registre hors ligne ;
-- construire une configuration à partir des fichiers JSON et des profils ;
-- valider l'ensemble des définitions ;
-- appliquer les personnalisations via des Engines spécialisés ;
-- démonter proprement toutes les ressources ;
-- produire un BuildContext complet ainsi qu'un rapport de build.
+```text
+3.0.0
+```
 
-L'architecture est conçue pour permettre l'ajout de nouveaux types d'Actions sans modifier les composants existants.
+L'architecture est considérée comme stabilisée.
+
+Le framework dispose notamment de :
+
+- un module PowerShell unique ;
+- un BuildContext centralisé ;
+- un BuildState ;
+- un Workflow ;
+- un Pipeline ;
+- un ActionRegistry ;
+- un ActionEngine ;
+- des Engines spécialisés ;
+- des Managers spécialisés ;
+- des composants techniques pour les images, le registre et l'environnement ;
+- une couverture de tests Pester importante.
+
+Le pipeline prend notamment en charge :
+
+- la préparation de l'environnement ;
+- la vérification des prérequis ;
+- la gestion des ressources ISO et WIM ;
+- le chargement de la configuration ;
+- la sélection et la fusion des profils et Tweaks ;
+- la validation de la configuration ;
+- l'exécution des Actions via les Engines spécialisés ;
+- le nettoyage et la finalisation du Build.
+
+La génération complète de l'ISO finale ainsi que certains providers et composants restent en cours de finalisation.
+
+L'architecture est conçue pour permettre l'ajout de nouveaux types d'Actions avec un impact limité sur les composants existants.
+
+---
 
 # Philosophie
 
@@ -66,29 +103,31 @@ L'architecture de PimsOS repose sur quelques principes simples qui guident l'ens
 
 Chaque composant possède une responsabilité clairement définie.
 
-Un composant ne doit réaliser qu'une seule tâche et la réaliser correctement.
+Un composant ne doit pas réaliser plusieurs responsabilités indépendantes.
 
 ---
 
 ## Modularité
 
-Les fonctionnalités sont isolées dans des composants indépendants.
+Les fonctionnalités sont isolées dans des composants spécialisés.
 
-L'ajout d'une nouvelle fonctionnalité ne doit pas nécessiter la modification des composants existants.
+L'ajout d'une nouvelle fonctionnalité doit rester aussi localisé que possible.
 
 ---
 
 ## Séparation des responsabilités
 
-Chaque couche de l'application possède un rôle précis.
+Chaque couche possède un rôle précis.
 
-Les composants communiquent uniquement via leurs interfaces publiques et le BuildContext.
+Les Engines portent la logique métier de leur domaine.
+
+Les Managers et modules techniques encapsulent les opérations techniques.
 
 ---
 
 ## Testabilité
 
-Tous les composants doivent pouvoir être testés indépendamment.
+Les composants doivent pouvoir être testés indépendamment lorsque cela est pertinent.
 
 Les tests unitaires font partie intégrante du développement.
 
@@ -96,7 +135,7 @@ Les tests unitaires font partie intégrante du développement.
 
 ## Extensibilité
 
-L'architecture doit permettre l'ajout de nouveaux moteurs, modules ou composants avec un impact minimal sur le reste du projet.
+L'architecture doit permettre l'ajout de nouveaux Engines, Managers, providers et types d'Actions sans modifier inutilement les composants existants.
 
 ---
 
@@ -105,9 +144,10 @@ L'architecture doit permettre l'ajout de nouveaux moteurs, modules ou composants
 Le projet privilégie :
 
 - un code lisible ;
-- des interfaces stables ;
-- une documentation complète ;
-- une architecture cohérente.
+- des contrats clairs ;
+- une documentation synchronisée ;
+- une architecture cohérente ;
+- des changements localisés.
 
 ---
 
@@ -115,65 +155,79 @@ Le projet privilégie :
 
 Le développement de PimsOS poursuit plusieurs objectifs.
 
-PimsOS Builder constitue le moteur de construction du projet.
-
-Son architecture est indépendante de la version de Windows ciblée.
-
-Le Builder sélectionne dynamiquement une image Windows (édition et version), applique une configuration, puis génère une image Windows personnalisée.
-
-L'image produite est appelée **PimsOS**.
-
 ## Construire une image Windows personnalisée
 
-Créer automatiquement une image Windows adaptée aux besoins de l'utilisateur.
+Créer automatiquement une image adaptée aux besoins de l'utilisateur.
 
 ---
 
 ## Industrialiser les personnalisations
 
-Toutes les personnalisations sont décrites sous forme de données.
+Les personnalisations sont décrites sous forme de données de configuration.
 
-Aucune logique métier n'est présente dans les fichiers JSON.
+Aucune logique métier exécutable ne doit être placée dans les fichiers JSON.
 
 ---
 
 ## Garantir la reproductibilité
 
-Deux builds utilisant les mêmes paramètres doivent produire le même résultat.
+Deux Builds réalisés avec les mêmes données, les mêmes paramètres et le même environnement compatible doivent viser un résultat reproductible.
 
 ---
 
 ## Faciliter la maintenance
 
-Chaque framework est indépendant.
+Les composants du framework sont séparés par responsabilité.
 
-Les évolutions peuvent être réalisées avec un impact limité sur le reste du projet.
+Les évolutions doivent pouvoir être réalisées avec un impact limité sur le reste du projet.
 
 ---
 
 ## Centraliser les échanges
 
-Toutes les informations échangées pendant le build transitent par un BuildContext unique.
+Les informations partagées pendant le Build transitent par un BuildContext unique.
 
 ---
 
 # Principes d'architecture
 
-L'architecture de PimsOS repose sur plusieurs règles fondamentales.
+L'architecture de PimsOS repose notamment sur les principes suivants :
+
+- module PowerShell unique ;
+- API publique minimale ;
+- BuildContext centralisé ;
+- BuildState centralisé pour l'état d'exécution ;
+- séparation Workflow / Pipeline ;
+- ActionRegistry pour le routage ;
+- séparation Engine / Manager ;
+- modules techniques spécialisés ;
+- dépendances descendantes ;
+- absence de dépendance circulaire ;
+- validation des données avant exécution ;
+- journalisation centralisée ;
+- tests automatisés.
+
+Les règles détaillées sont définies dans :
+
+```text
+Documentation\ArchitectureRules.md
+```
+
+---
 
 # Architecture du module PimsOS
 
 L'architecture de PimsOS repose sur un module PowerShell unique.
 
-Le projet n'est pas constitué d'une collection de modules indépendants, mais d'un framework unique composé de composants internes.
+Le projet n'est pas constitué d'une collection de modules PowerShell indépendants, mais d'un framework unique composé de composants internes.
 
-Cette organisation simplifie les dépendances, améliore la maintenabilité et garantit une API publique cohérente.
+Cette organisation simplifie les dépendances, facilite le chargement et permet de conserver une API publique cohérente.
 
 ---
 
 ## Module unique
 
-Le seul module PowerShell public du projet est :
+Le module public du projet est :
 
 ```text
 PimsOS
@@ -187,19 +241,20 @@ Tous les composants internes appartiennent à ce module.
 
 Le manifeste décrit le module.
 
-Il contient uniquement :
+Il contient notamment :
 
 - les métadonnées ;
 - la version ;
-- les dépendances externes.
+- les paramètres du module ;
+- l'identification du module.
 
-Il ne contient aucune logique métier.
+Il ne contient pas la logique métier du Builder.
 
 ---
 
 ## Rôle de PimsOS.psm1
 
-PimsOS.psm1 constitue le point d'entrée du framework.
+`PimsOS.psm1` constitue le point d'entrée du framework.
 
 Il est responsable :
 
@@ -207,10 +262,17 @@ Il est responsable :
 - de l'initialisation du framework ;
 - de l'exposition de l'API publique.
 
+L'API publique actuelle est volontairement minimale et expose :
+
+```powershell
+Initialize-PimsOS
+```
+
 ---
 
 ## Organisation des composants
 
+```text
 PimsOS
 │
 ├── Build
@@ -219,173 +281,190 @@ PimsOS
 ├── ISO
 ├── Logs
 ├── Modules
-│   ├── PimsOS.psd1
-│   ├── PimsOS.psm1
+│   ├── Actions
+│   ├── Configuration
+│   ├── Core
+│   ├── Image
 │   ├── Infrastructure
-│ 	├── Core
-│ 	├── Configuration
-│ 	├── Image
-│ 	├── Windows
-│ 	├── Actions
-│ 	├── Managers
-│ 	└── Package
+│   ├── Managers
+│   ├── Package
+│   ├── Windows
+│   ├── PimsOS.psd1
+│   └── PimsOS.psm1
 ├── Output
-└── Tests
+├── Tests
+├── Workspace
+└── version.json
+```
 
 ---
 
 ## API publique
 
-Toutes les fonctions publiques sont exportées uniquement depuis PimsOS.psm1.
+Les fonctions publiques sont exportées uniquement depuis `PimsOS.psm1`.
 
 Les composants internes ne doivent pas définir leur propre API publique.
+
+Les fonctions internes ne deviennent pas publiques simplement parce qu'elles sont chargées dans le module.
 
 ---
 
 ## Composants internes
 
-Les composants internes :
+Les composants internes comprennent notamment :
 
-- Logger
-- Workflow
-- Registry
-- Image
-- Report
-- Check
+- Core ;
+- Configuration ;
+- Infrastructure ;
+- Image ;
+- Actions ;
+- Managers ;
+- Package ;
+- Windows.
 
-ne sont pas destinés à être importés individuellement.
+Ils ne sont pas destinés à être importés individuellement.
 
-Ils collaborent librement au sein du module PimsOS.
+Ils sont chargés par `PimsOS.psm1` et constituent les composants internes du module PimsOS.
 
-## Architecture en couches
+---
+
+# Architecture en couches
 
 Chaque couche possède une responsabilité unique.
 
-Une couche ne doit jamais contourner une autre couche.
+Une couche ne doit pas contourner inutilement une autre couche.
 
----
+Le flux logique principal est :
 
-## Composants indépendants
+```text
+Workflow
+    │
+    ▼
+Pipeline
+    │
+    ▼
+ActionEngine
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
+    │
+    ▼
+Windows
+```
 
-Les composants communiquent uniquement :
-
-- via le BuildContext ;
-- via leurs interfaces publiques.
-
-Les dépendances circulaires sont interdites.
-
----
-
-## Logique métier séparée
-
-Les règles métier sont implémentées dans les composants.
-
-Les fichiers JSON ne contiennent que des données.
-
----
-
-## Modules techniques spécialisés
-
-Les opérations Windows sont exclusivement réalisées par des modules spécialisés.
-
-Les composants ne réalisent jamais directement d'appels aux API Windows.
-
----
-
-## BuildContext central
-
-Le BuildContext constitue l'objet central du Builder.
-
-Il est créé une seule fois puis enrichi progressivement tout au long du pipeline.
-
-Les détails de son fonctionnement sont décrits dans **BuildContext.md** ainsi que dans les ADR correspondantes.
+Les composants Core et Infrastructure fournissent les services nécessaires autour de ce flux.
 
 ---
 
 # Vue d'ensemble
 
-Le fonctionnement général de PimsOS est résumé par le schéma suivant.
+Le fonctionnement général de PimsOS peut être résumé ainsi :
 
 ```text
-              Utilisateur
-				  │
-				  ▼
-			Build-PimsOS.ps1
-				  │
-				  ▼
-			Import-Module PimsOS
-				  │
-				  ▼
-			PimsOS.psm1
-				  │
-				  ├─────────────┐
-				  │             │
-				  ▼             ▼
-			Infrastructure    Core
-				  │             │
-				  ├──────┬──────┤
-				  ▼      ▼      ▼
-			Configuration Windows Image
-				  │
-				  ▼
-			Actions
-				  │
-				  ▼
-			BuildContext
-				  │
-				  ▼
-			Pipeline de Build
-				  │
-				  ▼
-			Windows
+Utilisateur
+    │
+    ▼
+Build-PimsOS.ps1
+    │
+    ▼
+Import-Module PimsOS
+    │
+    ▼
+PimsOS.psm1
+    │
+    ▼
+Initialize-PimsOS
+    │
+    ▼
+BuildContext
+    │
+    ├───────────────┬────────────────┐
+    ▼               ▼                ▼
+Infrastructure     Core        Configuration
+    │               │                │
+    └───────────────┴────────────────┘
+                    │
+                    ▼
+                 Workflow
+                    │
+                    ▼
+                 Pipeline
+                    │
+                    ▼
+               ActionEngine
+                    │
+                    ▼
+               ActionRegistry
+                    │
+                    ▼
+             Engine spécialisé
+                    │
+                    ▼
+                  Manager
+                    │
+                    ▼
+             Module technique
+                    │
+                    ▼
+                 Windows
 ```
-
-Chaque couche possède une responsabilité clairement définie.
 
 Cette organisation permet :
 
 - un faible couplage entre composants ;
 - une forte modularité ;
-- une excellente testabilité ;
+- une bonne testabilité ;
 - une maintenance simplifiée ;
-- une grande extensibilité.
+- une extensibilité maîtrisée.
 
-Les détails de chaque composant sont décrits dans les chapitres suivants.
+---
 
 # Architecture logique
 
 PimsOS Builder est organisé selon une architecture en couches.
 
-Chaque couche possède une responsabilité clairement définie et ne communique qu'avec les couches qui lui sont directement associées.
+Chaque couche possède une responsabilité clairement définie.
 
 ```text
 Utilisateur
-      │
-      ▼
-Build-PimsOS.ps1
-
-↓
-
-PimsOS.psm1
-
-↓
-
+    │
+    ▼
+Initialize-PimsOS
+    │
+    ▼
+BuildContext
+    │
+    ▼
 Workflow
-
-↓
-
+    │
+    ▼
 Pipeline
-
-↓
-
-Engines
-
-↓
-
-Modules Windows
-
-↓
-
+    │
+    ▼
+ActionEngine
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
+    │
+    ▼
 Windows
 ```
 
@@ -393,36 +472,28 @@ Cette organisation garantit :
 
 - une séparation stricte des responsabilités ;
 - un faible couplage ;
-- une forte cohérence ;
-- une excellente testabilité.
+- une forte cohésion ;
+- une bonne testabilité.
 
 ---
 
 # Les couches du Builder
 
-## Build
+## Entrée du Builder
 
-Le Build constitue le point d'entrée du projet.
+Le script de lancement prépare l'environnement nécessaire au démarrage du framework.
 
-Son unique responsabilité est de récupérer les paramètres utilisateur puis de démarrer le Builder.
+Le point d'entrée fonctionnel du module reste :
 
-Le Build ne contient aucune logique métier.
-
-**Entrées**
-
-- Paramètres utilisateur
-
-**Sorties**
-
-- Initialisation du Builder
+```powershell
+Initialize-PimsOS
+```
 
 ---
 
 ## Builder
 
-Le Builder est implémenté au sein du module PimsOS. Il orchestre le pipeline de construction et prépare l'environnement avant le lancement du Workflow.
-
-Le Builder est l'orchestrateur principal du projet.
+Le Builder est implémenté au sein du module PimsOS et constitue l'orchestrateur principal du projet.
 
 Il prépare l'environnement avant le lancement du Workflow.
 
@@ -430,38 +501,22 @@ Il est notamment responsable de :
 
 - l'initialisation du projet ;
 - la création du BuildContext ;
-- le chargement de la configuration ;
+- l'initialisation du Logger ;
 - la vérification de l'environnement ;
-- l'initialisation des composants ;
-- le démarrage du Workflow.
+- le démarrage du Workflow ;
+- la finalisation du Build.
 
-Le Builder ne réalise jamais directement une opération Windows.
-
-**Voir également**
-
-- BuildContext.md
-- ADR-0002
-- ADR-0004
+Le Builder ne réalise pas directement les opérations techniques Windows.
 
 ---
 
 ## Workflow
 
-Le Workflow commence désormais systématiquement par une phase **Recovery**.
-
-Cette phase est responsable de :
-
-- détecter les ressources déjà montées ;
-- nettoyer les montages invalides ;
-- préparer une reprise de build si elle est possible.
-
-Le Workflow reste purement déclaratif : il décrit uniquement les grandes étapes d'un build.
-
 Le Workflow décrit les grandes phases d'un Build.
 
-Il ne contient aucune logique technique.
+Il reste principalement déclaratif et ne doit pas contenir de logique technique détaillée.
 
-Il définit uniquement l'ordre général des traitements.
+La phase Recovery intervient en amont afin d'identifier et de traiter les ressources éventuellement laissées par un Build précédent.
 
 Exemple :
 
@@ -493,7 +548,7 @@ Commit
 Cleanup
 ```
 
-Chaque phase est ensuite confiée au Pipeline.
+Chaque phase est ensuite traitée par les composants appropriés.
 
 ---
 
@@ -501,208 +556,180 @@ Chaque phase est ensuite confiée au Pipeline.
 
 Le Pipeline exécute les différentes étapes définies par le Workflow.
 
-Ses responsabilités sont :
+Ses responsabilités sont notamment :
 
 - exécuter les étapes dans le bon ordre ;
 - propager le BuildContext ;
-- assurer le suivi de l'exécution ;
-- gérer les erreurs ;
+- suivre l'état d'exécution ;
+- gérer les erreurs au niveau de l'orchestration ;
 - journaliser les étapes.
 
-Le Pipeline ne connaît jamais les détails des personnalisations.
-Le Pipeline orchestre uniquement les différentes étapes du build.
+Le Pipeline ne connaît pas les détails des personnalisations.
 
-Les décisions techniques (par exemple la réutilisation d'un montage WIM) sont déléguées à des composants spécialisés.
+Les décisions techniques doivent être déléguées à des composants spécialisés.
 
-Ainsi, le Pipeline ne contient aucune logique de décision métier.
+Par exemple, la décision de réutiliser un montage WIM est centralisée par :
 
-**Voir également**
+```powershell
+Test-WimMountState()
+```
 
-- ADR-0004
-- ADR-0008
-
----
-
-## Engine
-
-L'Engine représente le cœur de la logique métier.
-
-Il reçoit les objets créés à partir des fichiers JSON et détermine quel moteur spécialisé doit traiter chaque Action.
-
-Il ne réalise jamais directement une opération Windows.
-
-Ses responsabilités sont :
-
-- analyser les Actions ;
-- sélectionner le moteur adapté ;
-- transmettre le BuildContext ;
-- récupérer le résultat.
+Le Pipeline orchestre et ne doit pas dupliquer cette décision.
 
 ---
 
-## ActionEngine
+# Engine
 
-ActionEngine centralise le routage des Actions.
+L'Engine représente la logique de traitement des Actions.
 
-Le routage repose désormais sur un registre central (`ActionRegistry`) qui associe dynamiquement chaque type d'Action à son Engine spécialisé.
+Il reçoit les objets construits à partir de la configuration et utilise le routage centralisé pour déterminer quel Engine spécialisé doit traiter chaque Action.
 
-Cette architecture permet d'ajouter un nouveau type d'Action sans modifier l'Engine principal.
+Il ne réalise pas directement les opérations Windows.
 
-Pour chaque Action, il sélectionne automatiquement l'Engine spécialisé correspondant.
+---
+
+# ActionEngine
+
+`ActionEngine` centralise le routage des Actions.
+
+Le routage repose sur `ActionRegistry`, qui associe les types d'Actions aux Engines spécialisés.
+
+Cette architecture permet d'ajouter un nouveau type d'Action sans modifier la logique de routage principale.
 
 Exemple :
 
 ```text
-Registry  ─────► RegistryEngine
-
-Service   ─────► ServiceEngine
-
-Feature   ─────► FeatureEngine
-
-Package   ─────► PackageEngine
+Registry   ─────► RegistryEngine
+Service    ─────► ServiceEngine
+Feature    ─────► FeatureEngine
+Package    ─────► PackageEngine
+Driver     ─────► DriverEngine
+Command    ─────► CommandEngine
 ```
 
 Cette couche permet :
 
-- d'isoler les moteurs spécialisés ;
-- d'ajouter facilement de nouveaux types d'Actions ;
-- de limiter le couplage entre les composants.
+- d'isoler les Engines spécialisés ;
+- d'ajouter de nouveaux types d'Actions ;
+- de limiter le couplage.
 
 ---
 
 # Les Engines spécialisés
 
-Chaque Engine est spécialisé dans un domaine fonctionnel unique.
+Chaque Engine est spécialisé dans un domaine fonctionnel.
 
-Tous les Engines respectent la même interface :
+Les Engines utilisent un contrat commun :
 
 **Entrées**
 
-- BuildContext
-- Action
+- BuildContext ;
+- Action.
 
 **Sortie**
 
-- BuildContext
+- BuildContext.
 
-Les principaux Engines actuellement prévus sont :
+Les Engines actuellement implémentés sont :
 
 | Engine | Responsabilité |
 |---------|----------------|
 | RegistryEngine | Registre Windows |
 | ServiceEngine | Services Windows |
-| PackageEngine | Installation de logiciels |
-| DriverEngine | Gestion des pilotes |
+| PackageEngine | Packages |
+| DriverEngine | Pilotes |
 | FeatureEngine | Fonctionnalités Windows |
 | CapabilityEngine | Windows Capabilities |
 | CommandEngine | Exécution de commandes |
-| FileEngine | Copie, suppression et modification de fichiers |
-| FolderEngine | Gestion des dossiers |
+| FileEngine | Opérations sur les fichiers |
+| FolderEngine | Opérations sur les dossiers |
 | EnvironmentEngine | Variables d'environnement |
 | ScheduledTaskEngine | Tâches planifiées |
 | ShortcutEngine | Raccourcis Windows |
 
-Chaque nouveau type d'Action devra disposer de son propre Engine.
+Chaque nouveau type d'Action doit être accompagné d'un Engine spécialisé lorsque le domaine le justifie.
 
 ---
-## Les Managers
 
-Les Engines ne réalisent jamais directement les opérations Windows.
+# Les Managers
 
-Ils délèguent les traitements techniques à des Managers spécialisés.
+Les Engines ne réalisent pas directement les opérations techniques Windows.
 
-Managers actuellement disponibles :
+Ils délèguent les traitements aux Managers spécialisés.
 
-- PackageManager
-- DriverManager
-- FeatureManager
-- CapabilityManager
-- CommandManager
-- FileManager
-- FolderManager
-- EnvironmentManager
-- ScheduledTaskManager
-- ShortcutManager
+Managers actuellement implémentés :
 
-Chaque Manager encapsule les appels système nécessaires à son domaine fonctionnel.
+- PackageManager ;
+- DriverManager ;
+- FeatureManager ;
+- CapabilityManager ;
+- CommandManager ;
+- FileManager ;
+- FolderManager ;
+- EnvironmentManager ;
+- ScheduledTaskManager ;
+- ShortcutManager.
+
+Les Managers encapsulent les opérations techniques et la résolution des providers de leur domaine.
+
+Ils disposent de tests unitaires dédiés.
+
+---
 
 # Les modules techniques
 
-## Recovery
+Les modules techniques constituent la couche qui interagit directement avec les technologies Windows.
 
-Le mécanisme Recovery constitue le point d'entrée technique du pipeline.
+Ils encapsulent les opérations techniques utilisées par le framework.
 
-Il vérifie notamment :
-
-- les montages DISM ;
-- les images ISO ;
-- les ruches du registre ;
-- le Workspace.
-
-La décision de reprendre ou non un build est entièrement centralisée dans :
-
-Test-WimMountState()
-
-À terme, cette fonction retournera un objet de diagnostic complet décrivant l'état du build et les actions à effectuer.
-
-Les modules techniques constituent la seule couche autorisée à communiquer directement avec Windows.
-
-Ils encapsulent toutes les API Windows utilisées par le projet.
-
-Ils ignorent totalement :
-
-- les profils ;
-- les catégories ;
-- les Tweaks ;
-- les Actions ;
-- les fichiers JSON.
-
-Ils réalisent uniquement des opérations techniques.
-
-Exemples :
+Exemples actuels :
 
 | Module | Responsabilité |
 |---------|----------------|
 | Registry.ps1 | Registre Windows |
 | Service.ps1 | Services Windows |
-| Dism.ps1 | Gestion DISM |
+| Dism.ps1 | Opérations DISM |
 | Wim.ps1 | Images WIM |
 | Iso.ps1 | Images ISO |
-| Chocolatey.ps1 | Gestionnaire Chocolatey |
-| Winget.ps1 | Gestionnaire Winget |
+| Recovery.ps1 | Récupération et préparation de l'environnement |
 
-Les modules techniques ne doivent contenir aucune logique métier.
+Les providers de packages suivants existent dans l'organisation du projet :
 
-Ils sont conçus pour être réutilisables et facilement testables.
+| Provider | État |
+|----------|------|
+| Chocolatey.ps1 | Architecture prévue, implémentation à finaliser |
+| Winget.ps1 | Architecture prévue, implémentation à finaliser |
+
+Les modules techniques ne doivent pas contenir de logique métier liée aux profils, Tweaks ou Actions.
 
 ---
 
 # Principes de fonctionnement
 
-Toutes les personnalisations suivent le même parcours.
+Les personnalisations suivent le parcours suivant :
 
 ```text
-Configuration JSON
-        │
-        ▼
-Workflow
-        │
-        ▼
-Pipeline
-        │
-        ▼
-Engine
-        │
-        ▼
+Configuration
+    │
+    ▼
+Action
+    │
+    ▼
 ActionEngine
-        │
-        ▼
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
 Engine spécialisé
-        │
-        ▼
+    │
+    ▼
+Manager
+    │
+    ▼
 Module technique
-        │
-        ▼
+    │
+    ▼
 Windows
 ```
 
@@ -713,192 +740,238 @@ Cette architecture garantit :
 - une maintenance simplifiée ;
 - une forte extensibilité.
 
+---
+
 # Flux d'exécution
 
-Toutes les personnalisations suivent le même cycle de traitement.
+Le cycle général du Build est :
 
 ```text
-Utilisateur
-      │
-      ▼
-Build-PimsOS.ps1
-      │
-      ▼
-Import-Module PimsOS
-      │
-      ▼
 Initialize-PimsOS
-	  │
-      ▼
-Création du BuildContext
-      │
-      ▼
-Chargement de la configuration
-      │
-      ▼
-Chargement des profils
-      │
-      ▼
-Chargement des catégories
-      │
-      ▼
-Création des objets Tweak
-      │
-      ▼
-Création des Actions
-      │
-      ▼
-Validation
-      │
-      ▼
-Workflow
-      │
-      ▼
-Pipeline
-      │
-      ▼
-Engine
-      │
-      ▼
+    │
+    ▼
+New-BuildContext
+    │
+    ▼
+Initialize-BuildContext
+    │
+    ▼
+Recovery
+    │
+    ▼
+Environment Checks
+    │
+    ▼
+Workflow / Pipeline
+    │
+    ▼
+Configuration
+    │
+    ▼
 ActionEngine
-      │
-      ▼
+    │
+    ▼
 ActionRegistry
-      │
-      ▼
+    │
+    ▼
 Engine spécialisé
-      │
-      ▼
+    │
+    ▼
 Manager
-      │
-      ▼
+    │
+    ▼
 Module technique
-      │
-      ▼
+    │
+    ▼
 Windows
+    │
+    ▼
+Complete-Build
 ```
 
-Chaque étape produit des objets qui sont transmis à la suivante via le BuildContext.
-
-Cette organisation garantit une exécution prévisible et reproductible.
+Chaque étape utilise le BuildContext approprié.
 
 ---
 
 # Communication entre les composants
 
-Les composants de PimsOS communiquent exclusivement selon les règles suivantes.
+Les composants de PimsOS communiquent selon les règles suivantes.
 
 ## Communication interne au module
 
 Tous les composants internes appartiennent au module PimsOS.
 
-Ils partagent le même espace de noms et peuvent collaborer directement.
+Ils partagent le même espace d'exécution et peuvent collaborer au sein du module.
 
 Aucun composant interne ne doit être importé individuellement.
 
-Les composants internes ne doivent jamais utiliser
-Import-Module pour communiquer entre eux.
+Les composants internes ne doivent jamais utiliser :
 
-Toute collaboration s'effectue directement
-au sein du module PimsOS.
+```powershell
+Import-Module
+```
+
+pour charger un autre composant interne.
+
+Ils sont chargés par `PimsOS.psm1`.
+
+---
 
 ## Communication descendante
 
-Une couche ne communique qu'avec la couche immédiatement inférieure.
+Le flux normal des dépendances est descendant :
 
 ```text
-Builder
-    │
-    ▼
 Workflow
     │
     ▼
 Pipeline
     │
     ▼
-Engine
+ActionEngine
     │
     ▼
-ActionEngine
+ActionRegistry
     │
     ▼
 Engine spécialisé
     │
     ▼
+Manager
+    │
+    ▼
 Module technique
 ```
 
-Une couche ne doit jamais contourner une couche intermédiaire.
+Une couche ne doit pas contourner inutilement une couche intermédiaire.
 
 ---
 
 ## Communication via le BuildContext
 
-Toutes les informations nécessaires à l'exécution transitent par le BuildContext.
+Les informations nécessaires au partage de l'état et des données du Build transitent par le BuildContext.
 
 Aucun composant ne doit utiliser :
 
-- des variables globales ;
-- des états partagés ;
-- des échanges implicites.
+- une variable globale ;
+- un état global implicite ;
+- un mécanisme de partage caché.
 
-Le BuildContext constitue l'unique source de vérité pendant toute l'exécution du Build.
+Les variables `script:` peuvent exister pour l'état interne limité d'un composant, par exemple une table de providers, mais elles ne doivent pas servir de substitut au BuildContext.
 
-Pour plus d'informations, consulter :
-
-- BuildContext.md
-- ADR-0002
-- ADR-0010
+Le BuildContext constitue le contrat central du Build.
 
 ---
 
-## Dépendances
+# Dépendances
 
-Les dépendances suivent également une structure strictement descendante.
+Les dépendances suivent une structure descendante :
 
 ```text
-Build
-    │
-    ▼
-Builder
-    │
-    ▼
 Workflow
     │
     ▼
 Pipeline
     │
     ▼
-Engine
-    │
-    ▼
 ActionEngine
     │
     ▼
-Engines spécialisés
+ActionRegistry
     │
     ▼
-Modules techniques
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
 ```
 
 Les dépendances circulaires sont interdites.
 
-Chaque composant ne dépend que des éléments nécessaires à sa responsabilité.
-
-Cette organisation facilite :
-
-- les tests unitaires ;
-- le remplacement d'un composant ;
-- l'ajout de nouvelles fonctionnalités ;
-- la maintenance du projet.
-
-Le module PimsOS constitue la racine de toutes les dépendances.
+Le module PimsOS constitue la racine de chargement des composants internes.
 
 Les composants internes ne sont pas des modules PowerShell indépendants.
-Ils sont chargés par PimsOS.psm1.
-Le manifeste PimsOS.psd1 ne décrit pas les dépendances internes.
 
-Celles-ci sont gérées exclusivement par PimsOS.psm1.
+Ils sont chargés par :
+
+```text
+PimsOS.psm1
+```
+
+Le manifeste `PimsOS.psd1` décrit le module public et ses métadonnées ; il ne constitue pas le système de chargement des composants internes.
+
+---
+
+# BuildContext
+
+Le BuildContext constitue le contrat central entre les composants du framework.
+
+Il est créé au début du Build puis enrichi progressivement.
+
+Il contient notamment :
+
+- les informations du projet ;
+- les informations de version ;
+- les chemins de travail ;
+- le BuildState ;
+- les statistiques ;
+- les rapports ;
+- les configurations ;
+- les ressources montées ;
+- les objets métier tels que Tweaks et Actions.
+
+Chaque étape du Pipeline met à jour le contexte relevant de sa responsabilité.
+
+Aucun état global supplémentaire ne doit être créé pour transporter les informations du Build.
+
+Les détails du modèle sont documentés dans :
+
+- `BuildContext.md` ;
+- `Schema.md` ;
+- `ADR-0002` ;
+- `ADR-0010`.
+
+---
+
+# ActionRegistry
+
+`ActionRegistry` centralise l'association entre les types d'Actions et leurs Engines spécialisés.
+
+Son objectif est de permettre au moteur de résoudre un Engine sans coder cette association directement dans chaque appelant.
+
+Pour ajouter un nouveau type d'Action :
+
+1. créer l'Engine spécialisé ;
+2. définir son contrat ;
+3. enregistrer le type dans `ActionRegistry` ;
+4. ajouter les tests correspondants ;
+5. mettre à jour la documentation lorsque nécessaire.
+
+---
+
+# Recovery
+
+Le mécanisme Recovery constitue le point d'entrée technique pour la récupération et la préparation de l'environnement.
+
+Il vérifie et traite notamment :
+
+- les montages DISM ;
+- les ressources ISO ;
+- les ruches du registre ;
+- le Workspace.
+
+La décision de réutiliser un montage WIM est centralisée dans :
+
+```powershell
+Test-WimMountState()
+```
+
+Le mécanisme Recovery est implémenté.
+
+Sa couverture de tests et certains diagnostics détaillés restent à compléter.
 
 ---
 
@@ -915,7 +988,7 @@ Les ADR actuellement publiées sont :
 | ADR-0001 | Architecture modulaire |
 | ADR-0002 | BuildContext central |
 | ADR-0003 | Organisation des composants |
-| ADR-0004 | Pipeline de build |
+| ADR-0004 | Pipeline de Build |
 | ADR-0005 | Journalisation centralisée |
 | ADR-0006 | Configuration JSON |
 | ADR-0007 | Stratégie de tests |
@@ -923,75 +996,85 @@ Les ADR actuellement publiées sont :
 | ADR-0009 | Dépendances entre composants |
 | ADR-0010 | Cycle de vie du BuildContext |
 | ADR-0011 | Contrats entre composants |
-| ADR-0012 | Module PowerShell unique
+| ADR-0012 | Module PowerShell unique |
 
-Toute évolution importante de l'architecture devra faire l'objet d'une nouvelle ADR.
+Toute évolution importante de l'architecture doit être accompagnée d'une nouvelle ADR lorsque nécessaire.
 
 ---
 
 # Documentation associée
 
-Le présent document décrit uniquement l'architecture générale de PimsOS.
+Le présent document décrit l'architecture générale de PimsOS.
 
-Les aspects détaillés sont documentés dans les fichiers suivants.
+Les aspects détaillés sont documentés dans :
 
 ## Documentation technique
 
-- API.md
-- BuildContext.md
-- CodingStandards.md
-- DeveloperGuide.md
-- GettingStarted.md
-- Lifecycle.md
-- ModuleGuide.md
-- Prerequisites.md
-- ProjectStructure.md
-- Roadmap.md
-- Schema.md
-- Testing.md
+- `API.md`
+- `BuildContext.md`
+- `CodingStandards.md`
+- `DeveloperGuide.md`
+- `GettingStarted.md`
+- `Lifecycle.md`
+- `ModuleGuide.md`
+- `Prerequisites.md`
+- `ProjectStatus.md`
+- `ProjectStructure.md`
+- `Roadmap.md`
+- `Schema.md`
+- `Testing.md`
+- `TechnicalDecisions.md`
 
 ## Gouvernance
 
-- CONTRIBUTING.md
-- SECURITY.md
-- SUPPORT.md
-- CHANGELOG.md
+- `CHANGELOG.md`
+- `README.md`
 
 ## Architecture
 
-- Documentation/ADR/
+- `Documentation\ADR\`
 
 ---
-# BuildContext
-
-Le BuildContext constitue désormais le contrat unique entre tous les composants du framework.
-
-Il contient notamment :
-
-- les informations du projet ;
-- les informations de version ;
-- les chemins de travail ;
-- l'état du build (`BuildState`) ;
-- les statistiques ;
-- les rapports ;
-- les configurations ;
-- les ressources montées ;
-- les objets métier (Tweaks, Actions, Packages, Drivers, Services, Features).
-
-Chaque étape du pipeline enrichit progressivement ce contexte sans jamais créer d'état global supplémentaire.
 
 # Conclusion
 
 L'architecture de PimsOS repose sur une séparation stricte des responsabilités et sur un module PowerShell unique.
 
-Le module PimsOS centralise le chargement des composants internes, expose l'API publique et garantit un espace de noms commun à l'ensemble du framework.
+Le module PimsOS centralise le chargement des composants internes, expose l'API publique et fournit un espace d'exécution commun aux différents composants du framework.
+
+Le flux principal est :
+
+```text
+BuildContext
+    │
+    ▼
+Workflow
+    │
+    ▼
+Pipeline
+    │
+    ▼
+ActionEngine
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
+```
 
 Cette architecture permet :
 
 - une maintenance simplifiée ;
-- une excellente testabilité ;
+- une bonne testabilité ;
 - une forte extensibilité ;
 - une évolution maîtrisée ;
-- la suppression des problèmes de portée entre composants.
+- une gestion cohérente des responsabilités.
 
-Les décisions structurantes sont documentées dans les ADR afin de garantir la pérennité de l'architecture et de faciliter les évolutions futures.
+Les décisions structurantes sont documentées dans les ADR afin de préserver la cohérence de l'architecture au fil des évolutions.

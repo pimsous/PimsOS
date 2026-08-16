@@ -1,7 +1,7 @@
 # ==========================================
 # Module : Configuration
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.2
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -43,7 +43,7 @@ function Get-Configuration {
     # Validation
     # --------------------------------------------------
 
-    Test-TweakDefinitions `
+    $null = Test-TweakDefinitions `
         -Context $Context `
         -Tweaks $Tweaks
 
@@ -90,6 +90,10 @@ function Get-Configuration {
     $Context.BuildState.Image.ProfileLoaded = $true
     $Context.BuildState.Image.ProfileMerged = $true
     $Context.BuildState.Image.ConfigLoaded = $true
+
+    # --------------------------------------------------
+    # Journal
+    # --------------------------------------------------
 
     Write-Log (
         "{0} tweak(s) sélectionné(s)." -f @($Configuration).Count

@@ -902,14 +902,3 @@ function Invoke-BuildPipeline {
 
     return $Context
 }
-
-
-# ==========================================
-# Export des fonctions
-# ==========================================
-
-Export-ModuleMember -Function @(
-    "Invoke-BuildStep",
-    "Get-BuildPipeline",
-    "Invoke-BuildPipeline"
-)

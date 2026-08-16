@@ -1,8 +1,10 @@
-# Décisions techniques
+# PimsOS Builder - Décisions techniques
 
-> Version : 2.0.0
+> Version : 3.0.0
 >
-> Dernière mise à jour : 2026-08-03
+> Statut : Référence
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
@@ -361,14 +363,263 @@ Les objets de configuration sont indépendants des définitions originales afin 
 
 ---
 
+## 2026-08-16
+
+### Stabilisation des Engines spécialisés
+
+#### Contexte
+
+Les différents types d'Actions nécessitaient des Engines dédiés afin d'éviter de concentrer toute la logique dans l'ActionEngine principal.
+
+#### Décision
+
+Chaque type d'Action important possède désormais un Engine spécialisé.
+
+Les Engines suivent un contrat commun :
+
+```text
+Context + Action
+        ↓
+traitement
+        ↓
+Context
+```
+
+Les Engines assurent la logique métier de leur domaine et délèguent les opérations techniques aux Managers.
+
+#### Composants concernés
+
+- ActionEngine
+- ActionRegistry
+- RegistryEngine
+- ServiceEngine
+- PackageEngine
+- DriverEngine
+- FeatureEngine
+- CapabilityEngine
+- CommandEngine
+- FileEngine
+- FolderEngine
+- EnvironmentEngine
+- ScheduledTaskEngine
+- ShortcutEngine
+
+---
+
+## 2026-08-16
+
+### Standardisation du cycle de vie des Actions
+
+#### Contexte
+
+Les Engines spécialisés devaient avoir un comportement homogène concernant l'état d'une Action et l'état du Build.
+
+#### Décision
+
+Les Engines spécialisés suivent désormais un cycle de traitement commun :
+
+```text
+Application
+    │
+    ▼
+Traitement
+    │
+    ▼
+Succès
+```
+
+En cas d'erreur :
+
+```text
+Application
+    │
+    ▼
+Erreur
+    │
+    ▼
+Échec
+```
+
+Lorsque les propriétés correspondantes existent sur l'Action, le traitement met également à jour :
+
+- `Success`
+- `Duration`
+- `Error`
+
+Les statistiques correspondantes sont mises à jour lorsque le compteur existe dans le BuildContext.
+
+#### Composants concernés
+
+- ActionEngine
+- RegistryEngine
+- ServiceEngine
+- PackageEngine
+- DriverEngine
+- FeatureEngine
+- CapabilityEngine
+- CommandEngine
+- FileEngine
+- FolderEngine
+- EnvironmentEngine
+- ScheduledTaskEngine
+- ShortcutEngine
+
+---
+
+## 2026-08-16
+
+### Standardisation des providers des Managers
+
+#### Contexte
+
+Les Managers doivent pouvoir sélectionner un fournisseur technique sans intégrer directement toute la logique d'exécution dans leur propre implémentation.
+
+#### Décision
+
+Les Managers utilisent une table de correspondance permettant d'associer :
+
+```text
+Provider
+    │
+    ▼
+Handler
+```
+
+Le traitement d'un provider suit le principe :
+
+1. validation du provider ;
+2. validation des paramètres nécessaires ;
+3. résolution du handler ;
+4. vérification de l'existence du handler ;
+5. exécution du handler ;
+6. retour du BuildContext.
+
+Les Managers qui le prévoient peuvent également enregistrer et réinitialiser leurs providers.
+
+#### Composants concernés
+
+- CapabilityManager
+- CommandManager
+- DriverManager
+- EnvironmentManager
+- FeatureManager
+- FileManager
+- FolderManager
+- PackageManager
+- ScheduledTaskManager
+- ShortcutManager
+
+---
+
+## 2026-08-16
+
+### Correction de l'utilisation des dictionnaires ordonnés PowerShell
+
+#### Contexte
+
+Les tests des Managers ont révélé une incompatibilité entre certaines tables de providers définies comme dictionnaires ordonnés et l'utilisation de :
+
+```powershell
+.ContainsKey()
+```
+
+Un `OrderedDictionary` ne fournit pas cette méthode sous la forme utilisée dans l'implémentation initiale.
+
+#### Décision
+
+Les recherches de providers doivent utiliser une méthode compatible avec le type réel de collection utilisé.
+
+Cette règle est protégée par les tests unitaires des Managers concernés.
+
+#### Composants concernés
+
+- CommandManager
+- EnvironmentManager
+- FileManager
+- FolderManager
+- ScheduledTaskManager
+- ShortcutManager
+
+---
+
+## 2026-08-16
+
+### API publique minimale
+
+#### Contexte
+
+Le module PimsOS contient de nombreux composants internes qui ne doivent pas automatiquement devenir des éléments de l'API publique.
+
+#### Décision
+
+L'API publique reste volontairement minimale.
+
+La fonction actuellement exportée est :
+
+```powershell
+Initialize-PimsOS
+```
+
+Les Engines, Managers, composants Core, Configuration, Infrastructure, Image et Windows restent internes au module :
+
+```text
+PimsOS.psm1
+```
+
+Cette séparation permet de faire évoluer l'implémentation interne sans créer de contrat public pour chaque fonction interne.
+
+#### Composants concernés
+
+- PimsOS.psd1
+- PimsOS.psm1
+- API publique
+- Core
+- Configuration
+- Engines
+- Managers
+
+---
+
+## 2026-08-16
+
+### Couverture de tests des Engines et Managers
+
+#### Contexte
+
+La stabilisation des Engines et Managers nécessitait une validation homogène de leurs contrats et de leurs comportements.
+
+#### Décision
+
+Les composants importants doivent disposer de tests unitaires couvrant notamment :
+
+- le fonctionnement nominal ;
+- les paramètres obligatoires ;
+- les erreurs attendues ;
+- les changements d'état ;
+- les statistiques lorsqu'elles sont concernées ;
+- la propagation des erreurs ;
+- la transmission du contexte et de l'Action.
+
+Les dépendances techniques peuvent être simulées lorsque l'exécution réelle n'est pas nécessaire au test du contrat.
+
+#### Composants concernés
+
+- Engines spécialisés
+- Managers
+- Configuration
+- Registry
+- Core
+
+---
+
 # Références
 
-- Architecture.md
-- ArchitectureRules.md
-- BuildContext.md
-- CodingStandards.md
-- Lifecycle.md
-- Documentation/ADR/
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `CodingStandards.md`
+- `Lifecycle.md`
+- `Documentation/ADR/`
 
 ---
 

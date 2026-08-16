@@ -8,7 +8,7 @@ BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
 
     . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
-    . "$ProjectRoot\Modules\Actions\Service.ps1"
+    . "$ProjectRoot\Modules\Infrastructure\Service.ps1"
 
 }
 

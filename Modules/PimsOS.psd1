@@ -86,12 +86,21 @@ PrivateData = @{
 
         ReleaseNotes = @'
 
-Version 2.0.0
+Version 3.0.0
 
-- Nouvelle architecture modulaire
+- Architecture PimsOS unifiée autour du module PowerShell unique
 - BuildContext centralisé
-- Initialisation unifiée
-- Préparation de la suppression de Bootstrap
+- Workflow et Pipeline stabilisés
+- ActionRegistry et routage des Actions
+- Engines spécialisés
+- Managers spécialisés
+- Amélioration de la couverture de tests Pester
+- Stabilisation de la gestion des images WIM et ISO
+- Stabilisation de la configuration et du cycle de Build
+
+Statut :
+Développement / architecture stabilisée
+Release complète : non finalisée
 
 '@
 

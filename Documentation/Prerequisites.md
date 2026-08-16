@@ -1,64 +1,80 @@
-# Prérequis
+# PimsOS Builder - Prérequis
 
-> Version : 0.4.0
+> Version technique : 3.0.0
 >
-> Dernière mise à jour : 2026-08-03
+> Statut : Référence
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
 # Objectif
 
-Ce document décrit les logiciels, outils et versions nécessaires au développement et à l'utilisation de **PimsOS Builder**.
+Ce document décrit les logiciels, outils et conditions nécessaires au développement et à l'utilisation de **PimsOS Builder**.
 
-Le Builder vérifie automatiquement une partie de ces prérequis avant chaque build.
+Le Builder vérifie automatiquement une partie des prérequis avant l'exécution du Build.
 
 ---
 
 # Système d'exploitation
 
-Le développement est officiellement supporté sur :
+L'environnement de développement de référence actuel utilise :
 
-- Windows 11 24H2
-- Windows 11 25H2
+```text
+Windows 11
+Release : 25H2
+Build   : 26100
+```
 
-L'architecture du projet est conçue pour permettre la prise en charge de nouvelles versions de Windows sans modification majeure du moteur.
+Le projet est conçu pour ne pas dépendre d'une version unique de Windows.
+
+Les informations relatives à l'image réellement traitée doivent être découvertes à partir de l'image Windows et du BuildContext ou provenir de la configuration appropriée.
 
 ---
 
 # PowerShell
 
-## Version minimale
+## Version minimale du framework
+
+Le module PimsOS nécessite :
 
 ```text
-PowerShell 7.4 LTS
+PowerShell 7.0+
 ```
 
-## Version recommandée
+## Version de référence du développement
+
+L'environnement de développement actuel utilise :
 
 ```text
-PowerShell 7.6 ou supérieur
+PowerShell 7.6.x
 ```
 
-Le développement sous Windows PowerShell 5.1 n'est pas supporté.
+Windows PowerShell 5.1 n'est pas l'environnement de développement de référence du projet.
 
-Le Builder vérifie automatiquement la version de PowerShell au démarrage.
+Vérifier la version :
+
+```powershell
+$PSVersionTable.PSVersion
+```
 
 ---
 
 # Git
 
-Version minimale :
-
-```text
-2.50
-```
-
 Git est utilisé pour :
 
 - le suivi des versions ;
 - les commits ;
-- la gestion des branches ;
+- les branches ;
+- le dépôt du projet ;
 - les publications.
+
+Vérifier son installation :
+
+```powershell
+git --version
+```
 
 Configuration recommandée :
 
@@ -67,57 +83,52 @@ git config --global user.name "Votre Nom"
 git config --global user.email "vous@example.com"
 ```
 
-Le Builder vérifie automatiquement la présence de Git.
+La version exacte de Git n'est pas considérée comme une contrainte architecturale du Builder.
 
 ---
 
 # Visual Studio Code
 
-Dernière version stable recommandée.
+Visual Studio Code constitue l'environnement de développement recommandé.
 
-Extensions conseillées :
+Extensions utiles :
 
-- PowerShell
-- GitLens
-- EditorConfig
-- Markdown All in One
+- PowerShell ;
+- GitLens ;
+- EditorConfig ;
+- Markdown All in One.
+
+Les extensions ne sont pas nécessaires au fonctionnement du Builder lui-même.
 
 ---
 
 # Pester
 
-Version minimale :
+Les tests automatisés utilisent :
 
 ```text
-5.x
+Pester 5.x
 ```
 
-Installation :
+Vérifier les versions disponibles :
+
+```powershell
+Get-Module Pester -ListAvailable
+```
+
+Installer Pester si nécessaire :
 
 ```powershell
 Install-Module Pester -Scope CurrentUser
 ```
 
-Les tests utilisent exclusivement Pester.
-
----
-
-# Windows ADK
-
-Certaines fonctionnalités nécessitent le Windows ADK.
-
-Il fournit notamment :
-
-- Oscdimg
-- les outils de déploiement Windows
-
-L'ADK sera utilisé lors de la génération finale des images ISO.
+Les tests du framework doivent être exécutés avec Pester 5.x.
 
 ---
 
 # DISM
 
-DISM doit être disponible sur le système.
+DISM doit être disponible dans l'environnement Windows.
 
 Vérification :
 
@@ -125,37 +136,77 @@ Vérification :
 dism /?
 ```
 
-Le Builder vérifie automatiquement sa disponibilité.
+DISM est utilisé pour les opérations de déploiement et de modification des images Windows.
+
+---
+
+# Windows ADK
+
+Certaines opérations de génération d'images peuvent nécessiter des outils fournis par le **Windows ADK**.
+
+Les outils concernés peuvent notamment inclure :
+
+- les outils de déploiement Windows ;
+- `Oscdimg` pour certaines opérations de génération d'ISO.
+
+L'ADK est principalement pertinent pour la phase de génération finale des artefacts.
 
 ---
 
 # Droits administrateur
 
-Le Builder doit être exécuté avec des privilèges administrateur.
+Certaines opérations du Builder nécessitent des privilèges administrateur, notamment celles qui concernent :
 
-Cette vérification est réalisée automatiquement au démarrage.
+- DISM ;
+- le montage d'images ;
+- le registre offline ;
+- certaines opérations système.
+
+Le Builder vérifie les droits nécessaires dans le cadre de ses contrôles d'environnement.
+
+Le niveau de privilège requis dépend de l'étape exécutée.
 
 ---
 
-# Image Windows
+# Image Windows source
 
-Une image Windows officielle est nécessaire.
+Un média Windows compatible est nécessaire pour réaliser un Build complet.
 
-Le Builder détecte automatiquement :
+Selon le scénario pris en charge, le Builder peut travailler avec les ressources d'une image Windows et notamment :
 
-- install.wim ;
-- install.esd ;
-- les éditions disponibles.
+```text
+install.wim
+install.esd
+```
 
-L'utilisateur choisit ensuite l'édition à personnaliser.
+Les éditions disponibles sont découvertes à partir de l'image.
 
-À terme, le Builder permettra de personnaliser différentes versions de Windows à partir du même moteur.
+Le Builder sélectionne ensuite l'image ou l'édition à personnaliser selon le processus de Build.
+
+Les médias sources ne doivent pas être modifiés directement lorsque le processus utilise une copie de travail dans le Workspace.
+
+---
+
+# Espace disque
+
+Le Build utilise un Workspace temporaire pour :
+
+- les ressources ISO ;
+- les copies WIM ;
+- les images montées ;
+- les fichiers temporaires ;
+- les artefacts intermédiaires ;
+- les résultats du Build.
+
+Un espace disque suffisant doit donc être disponible avant de commencer un Build.
+
+La disponibilité de l'espace disque fait partie des vérifications d'environnement.
 
 ---
 
 # Version du projet
 
-Les informations de version sont centralisées dans :
+Les informations générales du projet sont centralisées dans :
 
 ```text
 version.json
@@ -163,47 +214,92 @@ version.json
 
 Ce fichier contient notamment :
 
-- la version du Builder ;
-- les versions de Windows supportées ;
+- le nom du projet ;
+- la version ;
+- la release Windows de référence ;
+- le Build Windows de référence ;
 - l'auteur ;
+- l'entreprise ;
 - le dépôt Git.
+
+La version technique actuelle du framework est :
+
+```text
+3.0.0
+```
 
 ---
 
 # Vérifications automatiques
 
-Avant chaque Build, PimsOS vérifie automatiquement :
+Avant l'exécution du Build, PimsOS réalise des contrôles d'environnement.
+
+Ces contrôles portent notamment sur :
 
 - la version de PowerShell ;
-- les droits administrateur ;
-- Git ;
-- DISM ;
-- l'image ISO ;
+- les privilèges administrateur lorsqu'ils sont nécessaires ;
+- la présence de Git ;
+- la présence de DISM ;
+- les ressources d'entrée nécessaires ;
 - l'espace disque disponible.
 
-Le Build est interrompu si un prérequis obligatoire est absent.
+D'autres contrôles peuvent être ajoutés selon les étapes du Build.
+
+Un Build est interrompu lorsqu'un prérequis obligatoire n'est pas satisfait.
 
 ---
 
 # Encodage
 
-Tous les fichiers du projet utilisent :
+Les fichiers texte du projet utilisent :
 
-- UTF-8
-- sans BOM
-- fins de ligne CRLF
+- UTF-8 ;
+- sans BOM.
+
+Les conventions de fin de ligne doivent rester cohérentes avec les règles du dépôt et de l'environnement de développement.
 
 ---
 
-# Compatibilité officielle
+# Compatibilité de développement
 
-| Composant | Version minimale | Version recommandée |
-|-----------|------------------|---------------------|
-| Windows | 11 24H2 | 11 25H2 et versions futures |
-| PowerShell | 7.4 LTS | 7.6+ |
-| Git | 2.50 | Dernière version stable |
-| Pester | 5.x | Dernière version stable |
-| Visual Studio Code | Stable | Dernière version stable |
+| Composant | Référence actuelle |
+|-----------|--------------------|
+| Windows | Windows 11 25H2 |
+| Build Windows | 26100 |
+| PowerShell | 7.6.x |
+| Pester | 5.x |
+| Git | Version compatible avec le dépôt |
+| Visual Studio Code | Version stable récente |
+
+Ces valeurs décrivent l'environnement de référence du développement et ne constituent pas toutes des contraintes codées en dur dans le framework.
+
+---
+
+# Avant un premier Build
+
+Vérifier au minimum :
+
+```powershell
+$PSVersionTable.PSVersion
+git --version
+dism /?
+Get-Module Pester -ListAvailable
+```
+
+Vérifier également que :
+
+- les privilèges nécessaires sont disponibles ;
+- le média Windows source est accessible ;
+- l'espace disque nécessaire est disponible ;
+- le dépôt est correctement cloné ;
+- les tests passent.
+
+Exécuter les tests :
+
+```powershell
+Invoke-Pester -Path .\Tests\Unit
+Invoke-Pester -Path .\Tests\Integration
+```
 
 ---
 
@@ -211,16 +307,18 @@ Tous les fichiers du projet utilisent :
 
 Consulter également :
 
-- GettingStarted.md
-- DeveloperGuide.md
-- BuildContext.md
-- Architecture.md
-- CodingStandards.md
+- `GettingStarted.md`
+- `DeveloperGuide.md`
+- `BuildContext.md`
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `CodingStandards.md`
+- `Testing.md`
 
 ---
 
 # Conclusion
 
-Le respect de ces prérequis garantit le bon fonctionnement du Builder ainsi que la reproductibilité des builds.
+Le respect des prérequis permet de disposer d'un environnement cohérent pour développer et exécuter **PimsOS Builder**.
 
-La majorité de ces vérifications est désormais réalisée automatiquement lors de l'initialisation du pipeline.
+Le projet vérifie automatiquement une partie des prérequis avant les opérations de Build et peut interrompre l'exécution lorsqu'une condition obligatoire n'est pas satisfaite.

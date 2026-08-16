@@ -1,43 +1,70 @@
-# ADR-0009 — Gestion des dépendances entre frameworks
+# ADR-0009 — Gestion des dépendances entre composants
 
 - **Statut** : Acceptée
 - **Date** : 2026-07-19
+- **Dernière mise à jour** : 2026-08-16
 - **Décideur** : Pims
-- **Impact** : Tous les frameworks
+- **Impact** : Architecture interne du framework
 
 ---
 
 # Contexte
 
-PimsOS repose sur une architecture composée de frameworks indépendants.
+L'architecture initiale de PimsOS reposait sur plusieurs frameworks indépendants.
 
-Au fil de l'évolution du projet, de nouvelles fonctionnalités seront ajoutées.
+L'architecture actuelle a évolué vers un **module PowerShell unique** contenant plusieurs composants internes organisés par responsabilité.
 
-Sans règles concernant les dépendances, les frameworks pourraient progressivement dépendre les uns des autres de manière désordonnée.
+Cette organisation nécessite néanmoins des règles explicites concernant les dépendances entre composants afin d'éviter :
 
-Les conséquences seraient :
-
-- dépendances circulaires ;
-- chargement complexe ;
-- faible testabilité ;
-- maintenance difficile.
+- les dépendances circulaires ;
+- les couplages inutiles ;
+- les chargements complexes ;
+- les difficultés de test ;
+- les dépendances implicites ;
+- les violations des responsabilités des couches.
 
 ---
 
 # Décision
 
-Chaque framework possède une responsabilité clairement définie.
+Les dépendances entre composants suivent une direction définie par l'architecture.
 
-Les dépendances entre frameworks sont limitées et orientées.
+Le flux de dépendance de référence est :
 
-Un framework ne peut dépendre que :
+```text
+Workflow
+    │
+    ▼
+Pipeline
+    │
+    ▼
+ActionEngine
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
+    │
+    ▼
+Windows
+```
 
-- des bibliothèques PowerShell ;
-- des modules techniques internes ;
-- du BuildContext ;
-- des interfaces publiques d'un autre framework.
+Les composants `Core`, `Configuration` et `Infrastructure` fournissent les services nécessaires aux autres parties du framework selon leurs responsabilités.
 
-Il ne doit jamais accéder aux fonctions privées d'un autre framework.
+Tous les composants appartiennent au module :
+
+```text
+PimsOS
+```
+
+Ils ne constituent pas des modules PowerShell indépendants.
 
 ---
 
@@ -48,67 +75,148 @@ Les dépendances doivent être :
 - explicites ;
 - minimales ;
 - unidirectionnelles ;
-- documentées.
+- justifiées ;
+- compatibles avec la responsabilité du composant ;
+- facilement testables.
 
-Chaque nouvelle dépendance doit être justifiée.
-
----
-
-# Architecture
-
-```text
-                 Builder
-                    │
-                    ▼
-                Pipeline
-                    │
-     ┌──────────────┼──────────────┐
-     ▼              ▼              ▼
-Configuration    Workspace      Validation
-     │              │              │
-     ▼              ▼              ▼
- Image         Packages       Drivers
-     │              │              │
-     └──────────────┼──────────────┘
-                    ▼
-                 Logger
-```
-
-Le Pipeline coordonne les frameworks.
-
-Les frameworks ne se pilotent jamais directement entre eux.
+Une nouvelle dépendance ne doit pas être ajoutée uniquement pour contourner une mauvaise séparation des responsabilités.
 
 ---
 
 # Dépendances autorisées
 
-Les frameworks peuvent utiliser :
+Un composant peut utiliser :
 
+- les fonctions et contrats internes du module nécessaires à sa responsabilité ;
 - le BuildContext ;
-- les fonctions publiques d'un autre framework, lorsque cela est justifié ;
-- les modules techniques partagés.
+- le BuildState lorsque l'état d'exécution est concerné ;
+- les composants situés dans les couches autorisées par l'architecture ;
+- les bibliothèques et commandes système nécessaires à son fonctionnement technique.
+
+Les Engines spécialisés utilisent les Managers de leur domaine.
+
+Les Managers utilisent les providers ou modules techniques nécessaires.
 
 ---
 
 # Dépendances interdites
 
-Les frameworks ne doivent jamais :
+Les composants ne doivent jamais :
 
-- appeler une fonction privée d'un autre framework ;
-- modifier directement les données internes d'un autre framework ;
-- créer une dépendance circulaire.
+- créer une dépendance circulaire ;
+- contourner inutilement une couche ;
+- accéder à une responsabilité appartenant à une couche supérieure ;
+- dupliquer les fonctions d'un autre composant pour éviter une dépendance ;
+- utiliser un état global pour contourner le BuildContext.
+
+Les composants internes ne doivent pas utiliser :
+
+```powershell
+Import-Module
+```
+
+pour charger un autre composant interne de PimsOS.
+
+Le chargement des composants est centralisé dans :
+
+```text
+PimsOS.psm1
+```
+
+---
+
+# Architecture des dépendances
+
+Le modèle de référence est :
+
+```text
+Core / Infrastructure
+          │
+          ▼
+    Configuration
+          │
+          ▼
+       Workflow
+          │
+          ▼
+       Pipeline
+          │
+          ▼
+    ActionEngine
+          │
+          ▼
+    ActionRegistry
+          │
+          ▼
+ Engine spécialisé
+          │
+          ▼
+       Manager
+          │
+          ▼
+ Module technique
+```
+
+Les relations exactes peuvent varier selon le domaine, mais elles doivent toujours respecter les responsabilités et la direction générale des couches.
+
+---
+
+# ActionRegistry
+
+`ActionRegistry` constitue un point central de résolution des Engines spécialisés.
+
+Un appelant ne doit pas contourner le registre pour résoudre directement un Engine lorsqu'il s'agit du routage normal d'une Action.
+
+Le parcours attendu est :
+
+```text
+Action
+   ↓
+ActionEngine
+   ↓
+ActionRegistry
+   ↓
+Engine spécialisé
+```
+
+Cette règle limite le couplage entre l'appelant et les Engines spécialisés.
+
+---
+
+# BuildContext comme contrat commun
+
+Le BuildContext constitue un mécanisme commun de partage des données du Build.
+
+Il ne doit pas être utilisé pour masquer une dépendance directe qui devrait être exprimée par un contrat de composant.
+
+Le BuildContext transporte l'état et les données partagés ; il ne remplace pas les responsabilités des composants.
 
 ---
 
 # Inversion de dépendance
 
-Lorsqu'un framework doit collaborer avec un autre, il privilégie :
+Lorsqu'une collaboration doit être introduite entre deux composants, privilégier lorsque c'est pertinent :
 
-- une interface publique ;
-- le BuildContext ;
-- un contrat clairement documenté.
+- un contrat clairement défini ;
+- une fonction interne bien identifiée ;
+- le BuildContext pour les données réellement partagées ;
+- un point central de résolution comme l'ActionRegistry pour le routage des Actions.
 
-Cela réduit le couplage.
+Une dépendance doit être conçue pour rester remplaçable et testable lorsque cela apporte une valeur réelle.
+
+---
+
+# Chargement des composants
+
+Le chargement des composants internes est centralisé par :
+
+```text
+Modules\PimsOS.psm1
+```
+
+L'ordre de chargement doit permettre aux fonctions utilisées par les composants dépendants d'être disponibles au moment de leur exécution.
+
+Les composants ne doivent pas implémenter leur propre système de chargement.
 
 ---
 
@@ -118,14 +226,16 @@ Cela réduit le couplage.
 
 - architecture plus lisible ;
 - faible couplage ;
-- meilleure réutilisabilité ;
-- tests simplifiés ;
-- évolution indépendante des frameworks.
+- dépendances prévisibles ;
+- tests facilités ;
+- évolution plus localisée ;
+- réduction des dépendances implicites.
 
 ## Inconvénients
 
-- nécessité de concevoir des interfaces publiques stables ;
-- discipline de développement plus stricte.
+- nécessité de respecter les couches ;
+- conception plus rigoureuse des contrats ;
+- ajout d'une nouvelle dépendance nécessitant une analyse préalable.
 
 ---
 
@@ -133,43 +243,99 @@ Cela réduit le couplage.
 
 ## Dépendances libres
 
-Rejetée.
+Rejetées.
 
-Le projet deviendrait rapidement difficile à maintenir.
+Sans direction de dépendance, les composants pourraient progressivement créer des relations circulaires et devenir difficiles à maintenir.
 
 ---
 
-## Framework monolithique
+## Appels directs entre tous les composants
 
-Rejetée.
+Rejetés.
 
-Elle contredit l'architecture modulaire adoptée.
+Une telle organisation augmenterait fortement le couplage et rendrait les contrats moins lisibles.
+
+---
+
+## Frameworks PowerShell indépendants
+
+Non retenus comme modèle actuel.
+
+L'architecture actuelle conserve la séparation des responsabilités au sein du module PimsOS unique.
 
 ---
 
 # Règles
 
-Toute nouvelle dépendance doit répondre aux critères suivants :
+Toute nouvelle dépendance doit :
 
-- apporte une réelle valeur ;
-- ne crée pas de dépendance circulaire ;
-- reste documentée ;
-- est couverte par des tests.
+- être nécessaire ;
+- respecter les couches ;
+- ne pas créer de cycle ;
+- être cohérente avec la responsabilité du composant ;
+- être testable ;
+- être documentée lorsque son impact est important.
+
+Avant de créer une nouvelle dépendance, vérifier qu'un composant existant ne fournit pas déjà la capacité recherchée.
 
 ---
 
-# Impact
+# Tests
 
-Cette décision garantit que les frameworks restent indépendants tout au long de la vie du projet.
+Les tests doivent notamment permettre de détecter :
 
-Elle favorise une architecture modulaire, extensible et maintenable.
+- les dépendances implicites ;
+- les appels impossibles ;
+- les contrats incorrects ;
+- les résolutions de provider incorrectes ;
+- les violations du routage des Actions lorsque cela est testable.
+
+Une évolution de dépendance importante doit être accompagnée des tests correspondants.
+
+---
+
+# Évolution
+
+Toute modification importante du modèle de dépendances doit être évaluée au regard de :
+
+- `Architecture.md` ;
+- `ArchitectureRules.md` ;
+- `ModuleGuide.md` ;
+- `ADR-0001` ;
+- `ADR-0003` ;
+- `ADR-0012`.
+
+Lorsqu'une évolution modifie réellement l'architecture des dépendances, une nouvelle ADR doit être créée ou la décision existante doit être mise à jour.
+
+---
+
+# Décision finale
+
+PimsOS conserve une organisation modulaire interne tout en utilisant un module PowerShell unique.
+
+Les dépendances suivent une direction descendante et restent limitées aux responsabilités nécessaires.
+
+Le principe de référence est :
+
+```text
+Orchestration
+    ↓
+Routage
+    ↓
+Logique métier
+    ↓
+Opérations techniques
+```
+
+Les dépendances circulaires et les contournements de couches sont interdits.
 
 ---
 
 # Références
 
-- ADR-0001 — Architecture modulaire
-- ADR-0002 — BuildContext central
-- ADR-0003 — Organisation des frameworks
-- ADR-0004 — Pipeline de build
-- Documentation/Architecture.md
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `ModuleGuide.md`
+- `ADR-0001-ModularArchitecture.md`
+- `ADR-0003-FrameworkStructure.md`
+- `ADR-0012-ModuleUnique.md`

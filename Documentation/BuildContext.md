@@ -1,22 +1,22 @@
-# BuildContext
+# PimsOS Builder - BuildContext
 
-> Version : 0.4.0
+> Version technique : 3.0.0
 >
-> Architecture : 2.x
+> Statut : Développement / architecture stabilisée
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
 # Présentation
 
-Le **BuildContext** est le contrat unique utilisé par l'ensemble des composants de **PimsOS Builder**.
+Le **BuildContext** est le contrat central utilisé par les composants de **PimsOS Builder**.
 
-Il est créé une seule fois au démarrage du Builder puis enrichi progressivement jusqu'à la fin du pipeline.
+Il est créé au démarrage du Builder puis enrichi progressivement tout au long du cycle de Build.
 
-Aucun composant ne partage de données par des variables globales.
+Le BuildContext permet de partager l'état et les données nécessaires entre les différents composants sans utiliser d'état global pour transporter les informations du Build.
 
-Toutes les informations transitent exclusivement par le BuildContext.
-
-Chaque Engine, Manager et module technique reçoit le même objet et ne modifie que les informations qui lui appartiennent.
+Les Engines, Managers et autres composants reçoivent le contexte nécessaire à leur traitement et mettent à jour les informations relevant de leur responsabilité.
 
 ---
 
@@ -24,16 +24,19 @@ Chaque Engine, Manager et module technique reçoit le même objet et ne modifie 
 
 Le BuildContext permet de :
 
-- centraliser l'ensemble des données du Build ;
-- partager un état unique entre les composants ;
-- supprimer les dépendances implicites ;
+- centraliser les données du Build ;
+- partager un état commun entre les composants ;
+- réduire les dépendances implicites ;
 - faciliter les tests unitaires ;
-- faciliter le débogage ;
-- garantir une architecture modulaire.
+- faciliter le diagnostic et le débogage ;
+- maintenir une architecture modulaire ;
+- conserver un contrat commun entre les différentes couches.
 
 ---
 
 # Cycle de vie
+
+Le cycle de vie général du BuildContext est :
 
 ```text
 Initialize-PimsOS
@@ -48,7 +51,10 @@ Initialize-BuildContext
 Recovery
         │
         ▼
-Environment
+Environment Checks
+        │
+        ▼
+Workflow
         │
         ▼
 Pipeline
@@ -69,11 +75,12 @@ Engine spécialisé
 Manager
         │
         ▼
-Modules Windows
+Module technique
         │
         ▼
 Complete-Build
-```
+```text
+
 
 Le même BuildContext est utilisé pendant toute l'exécution.
 

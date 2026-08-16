@@ -1,157 +1,201 @@
-# Backlog
+# PimsOS Builder - Backlog
 
-> Version : 1.0.0
+> Version : 2.0.0
 >
-> Dernière mise à jour : 2026-08-06
+> Statut : Référence
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
 # Objectif
 
-Ce document centralise les évolutions envisagées pour **PimsOS Builder** qui ne font pas partie du sprint en cours.
+Ce document centralise les évolutions envisagées pour **PimsOS Builder** qui ne sont pas encore intégrées au développement courant.
 
-Il permet de conserver les idées d'amélioration sans perturber le développement en cours.
+Le Backlog permet de conserver les idées, améliorations et travaux futurs sans les considérer comme des engagements de réalisation.
 
-Les éléments présents dans ce document ne constituent pas des engagements de réalisation.
-
-Ils sont réévalués à chaque nouveau sprint.
+Les éléments sont réévalués régulièrement en fonction des priorités du projet, des jalons et de l'état réel du framework.
 
 ---
 
 # Priorité élevée
 
-## GitHub
+## Génération d'image
 
-- [X] Mettre en place un workflow GitHub Actions (CI).
-- [ ] Créer un workflow Release.
-- [X] Ajouter CodeQL.
-- [X] Configurer Dependabot.
-- [X] Ajouter les badges GitHub dans README.
-- [X] Ajouter les modèles Issue.
-- [X] Ajouter le modèle Pull Request.
+- [ ] Finaliser la reconstruction automatique de l'ISO.
+- [ ] Valider automatiquement l'ISO générée.
+- [ ] Réaliser un Build complet de bout en bout.
+- [ ] Vérifier les artefacts de sortie.
+- [ ] Finaliser le nettoyage après génération.
+- [ ] Améliorer la gestion des erreurs pendant la production de l'image.
 
 ---
 
-## Qualité
+## Providers de packages
 
-- [ ] Ajouter un fichier `.editorconfig`.
+- [ ] Implémenter le provider Chocolatey.
+- [ ] Implémenter le provider Winget.
+- [ ] Ajouter les tests des providers.
+- [ ] Valider leur intégration avec `PackageManager`.
+
+---
+
+## Tests et qualité
+
+- [ ] Compléter la couverture de `Recovery.ps1`.
+- [ ] Compléter la couverture de `Security.ps1`.
+- [ ] Ajouter ou compléter les tests d'intégration.
+- [ ] Ajouter des scénarios de régression supplémentaires.
+- [ ] Ajouter une couverture de code exploitable dans la CI.
 - [ ] Intégrer PSScriptAnalyzer dans la CI.
+- [ ] Vérifier automatiquement le chargement du module PimsOS dans la CI.
 - [ ] Publier les résultats Pester dans GitHub Actions.
-- [ ] Vérifier automatiquement le chargement du module PimsOS.
-- [ ] Ajouter une couverture de code.
-
----
-
-## Documentation
-
-- [ ] Ajouter des diagrammes Mermaid.
-- [ ] Générer automatiquement la documentation API.
-- [ ] Créer un Wiki GitHub.
-- [ ] Ajouter des captures d'écran.
-- [ ] Documenter les Engines.
 
 ---
 
 # Priorité moyenne
 
-## Build
+## Recovery et diagnostic
 
-- [ ] Finaliser BuildState.
-- [ ] Recovery V2.
-- [ ] Diagnostic complet de Test-WimMountState().
-- [ ] Validation avancée du Pipeline.
-- [ ] Journalisation enrichie.
+- [ ] Améliorer `Test-WimMountState()`.
+- [ ] Ajouter un diagnostic détaillé de l'état des ressources.
+- [ ] Améliorer la détection des ressources laissées par un Build précédent.
+- [ ] Renforcer les scénarios de récupération.
+- [ ] Ajouter des tests de reprise de Build.
 
 ---
 
-## Engines
+## Reporting
 
-- [ ] ServiceEngine.
-- [ ] FeatureEngine.
-- [ ] PackageEngine.
-- [ ] DriverEngine.
-- [ ] FileEngine.
-- [ ] FolderEngine.
-- [ ] EnvironmentEngine.
-- [ ] ScheduledTaskEngine.
-- [ ] ShortcutEngine.
+- [ ] Enrichir les informations du rapport.
+- [ ] Améliorer la restitution des statistiques.
+- [ ] Ajouter des rapports plus détaillés pour les erreurs.
+- [ ] Préparer les futurs formats de rapport.
+- [ ] Évaluer les besoins d'un rapport HTML.
 
 ---
 
 ## Configuration
 
-- [ ] Validation avancée des profils.
-- [ ] Validation des catégories.
-- [ ] Validation des actions.
-- [ ] Vérification des dépendances.
-
----
-
-# Priorité faible
-
-## Interface
-
-- [ ] Tableau de bord de Build.
-- [ ] Interface graphique.
-- [ ] Assistant de configuration.
-
----
-
-## Distribution
-
-- [ ] Génération automatique des Releases GitHub.
-- [ ] Publication automatique des artefacts.
-- [ ] Signature automatique des builds.
-- [ ] Génération des sommes SHA256.
+- [ ] Étendre la validation des profils.
+- [ ] Étendre la validation des catégories.
+- [ ] Renforcer la validation des Actions.
+- [ ] Ajouter des contrôles de dépendances.
+- [ ] Étendre les possibilités de configuration des profils.
+- [ ] Ajouter de nouvelles catégories de personnalisation.
 
 ---
 
 ## Documentation
 
-- [ ] FAQ.
-- [ ] Tutoriels.
-- [ ] Exemples de profils.
-- [ ] Guide de personnalisation.
+- [ ] Ajouter des diagrammes Mermaid lorsque cela apporte une réelle valeur.
+- [ ] Générer automatiquement une partie de la documentation API.
+- [ ] Ajouter des exemples de profils.
+- [ ] Ajouter des exemples de configurations.
+- [ ] Documenter les scénarios de personnalisation courants.
+- [ ] Enrichir les guides utilisateur.
+
+---
+
+# Priorité faible
+
+## Qualité et automatisation
+
+- [ ] Ajouter un fichier `.editorconfig`.
+- [ ] Renforcer les contrôles automatiques du dépôt.
+- [ ] Ajouter des contrôles supplémentaires dans la CI.
+- [ ] Automatiser davantage les validations avant release.
+
+---
+
+## Distribution
+
+- [ ] Créer un workflow GitHub Actions dédié aux Releases.
+- [ ] Publier automatiquement les artefacts.
+- [ ] Signer automatiquement les artefacts lorsque la stratégie de distribution sera définie.
+- [ ] Générer automatiquement les sommes SHA256.
+- [ ] Automatiser la génération des notes de release.
+
+---
+
+## Interface
+
+- [ ] Étudier un tableau de bord du Build.
+- [ ] Étudier une interface graphique.
+- [ ] Étudier un assistant de configuration.
+
+Ces éléments ne sont pas prioritaires pour la version technique 3.0.0.
 
 ---
 
 # Idées
 
-Cette section permet de conserver les idées qui pourront être étudiées ultérieurement.
+Cette section conserve les idées qui pourront être étudiées ultérieurement.
 
 Exemples :
 
-- Support de nouvelles versions de Windows.
-- Nouveaux moteurs de personnalisation.
-- Optimisations du pipeline.
-- Nouvelles catégories de Tweaks.
+- support de nouvelles versions de Windows ;
+- nouveaux types d'Actions ;
+- nouveaux Engines ;
+- nouveaux providers ;
+- nouvelles catégories de Tweaks ;
+- optimisation du pipeline ;
+- amélioration des diagnostics ;
+- automatisation supplémentaire du Build.
 
-Ces éléments ne sont pas planifiés à ce stade.
+Ces éléments ne constituent pas des engagements de réalisation.
 
 ---
 
-# Gestion
+# Éléments déjà réalisés
 
-Le Backlog est revu :
+Les éléments suivants étaient présents dans l'ancien Backlog mais sont désormais considérés comme réalisés et ne doivent plus rester dans le Backlog actif :
 
-- au début de chaque sprint ;
-- à la fin de chaque sprint ;
-- avant chaque jalon important.
+- BuildState ;
+- ActionEngine ;
+- ServiceEngine ;
+- FeatureEngine ;
+- PackageEngine ;
+- DriverEngine ;
+- FileEngine ;
+- FolderEngine ;
+- EnvironmentEngine ;
+- ScheduledTaskEngine ;
+- ShortcutEngine ;
+- Configuration ;
+- ActionRegistry ;
+- Managers spécialisés.
 
-Les éléments retenus sont ensuite intégrés dans :
+Ces éléments sont désormais suivis dans :
 
-- CurrentSprint.md
-- Roadmap.md
-- Milestones.md
+- `ProjectStatus.md` ;
+- `Milestones.md` ;
+- `ReleaseNotes.md`.
 
-selon leur importance.
+---
+
+# Gestion du Backlog
+
+Le Backlog est réévalué :
+
+- lors des jalons importants ;
+- lors de la planification d'un nouveau cycle de développement ;
+- lorsque l'état du projet change de manière significative.
+
+Les éléments sélectionnés comme prioritaires sont ensuite intégrés dans :
+
+- `Roadmap.md` ;
+- `Milestones.md` ;
+- les travaux de développement correspondants.
+
+Le Backlog ne remplace pas la Roadmap et ne constitue pas une liste d'engagements.
 
 ---
 
 # Philosophie
 
-Toutes les idées sont les bienvenues.
+Le Backlog permet de conserver une vision à moyen et long terme du projet sans perturber les priorités immédiates.
 
-Le Backlog permet de conserver une vision à long terme du projet sans perturber le développement en cours.
+Les éléments les plus importants doivent être déplacés vers la Roadmap ou un jalon avant leur réalisation.
 
-Le sprint reste toujours prioritaire sur le Backlog.
+Toute tâche terminée doit être retirée du Backlog actif et reflétée dans la documentation de statut du projet.

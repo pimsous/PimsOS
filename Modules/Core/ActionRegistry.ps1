@@ -1,7 +1,7 @@
 # ==========================================
 # Module : ActionRegistry
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.1
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -12,15 +12,45 @@ Set-StrictMode -Version Latest
 # --------------------------------------------------
 
 $script:ActionRegistry = @{
-
     Registry = "Invoke-RegistryAction"
     Service  = "Invoke-ServiceAction"
+}
 
+# --------------------------------------------------
+# Journalisation sécurisée
+#
+# Le module PimsOS fournit normalement Write-Log.
+# Les tests unitaires peuvent toutefois charger ce
+# fichier indépendamment.
+# --------------------------------------------------
+
+function Write-ActionRegistryLog {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [string]$Message,
+
+        [Parameter()]
+        [string]$Level = "INFO"
+
+    )
+
+    if (
+        Get-Command `
+            -Name "Write-Log" `
+            -CommandType Function `
+            -ErrorAction SilentlyContinue
+    ) {
+
+        Write-Log $Message $Level
+    }
 }
 
 # --------------------------------------------------
 # Réinitialise le registre des moteurs
-# Utilisé uniquement par les tests
+# Utilisé notamment par les tests
 # --------------------------------------------------
 
 function Reset-ActionRegistry {
@@ -29,14 +59,13 @@ function Reset-ActionRegistry {
     param()
 
     $script:ActionRegistry = @{
-
         Registry = "Invoke-RegistryAction"
         Service  = "Invoke-ServiceAction"
-
     }
 
-    Write-Log "Registre des moteurs réinitialisé." INFO
-
+    Write-ActionRegistryLog `
+        -Message "Registre des moteurs réinitialisé." `
+        -Level "INFO"
 }
 
 # --------------------------------------------------
@@ -56,17 +85,14 @@ function Get-ActionHandler {
     if ([string]::IsNullOrWhiteSpace($Type)) {
 
         throw "Le type d'action est vide."
-
     }
 
     if (-not $script:ActionRegistry.ContainsKey($Type)) {
 
         return $null
-
     }
 
     return $script:ActionRegistry[$Type]
-
 }
 
 # --------------------------------------------------
@@ -86,36 +112,43 @@ function Register-ActionHandler {
 
     )
 
+    # ------------------------------------------
+    # Validation du type
+    # ------------------------------------------
+
     if ([string]::IsNullOrWhiteSpace($Type)) {
 
         throw "Le type d'action est vide."
-
     }
+
+    # ------------------------------------------
+    # Validation du moteur
+    # ------------------------------------------
 
     if ([string]::IsNullOrWhiteSpace($Handler)) {
 
         throw "Le nom du moteur est vide."
-
     }
 
     # ------------------------------------------
     # Vérifie que le moteur existe
     # ------------------------------------------
 
-    if (-not (Get-Command `
-        -Name $Handler `
-        -CommandType Function `
-        -ErrorAction SilentlyContinue)) {
+    if (-not (
+        Get-Command `
+            -Name $Handler `
+            -CommandType Function `
+            -ErrorAction SilentlyContinue
+    )) {
 
         throw (
             "Le moteur '{0}' est introuvable." -f
             $Handler
         )
-
     }
 
     # ------------------------------------------
-    # Déjà enregistré ?
+    # Vérifie les doublons
     # ------------------------------------------
 
     if ($script:ActionRegistry.ContainsKey($Type)) {
@@ -124,7 +157,6 @@ function Register-ActionHandler {
             "Le moteur d'action '{0}' est déjà enregistré." -f
             $Type
         )
-
     }
 
     # ------------------------------------------
@@ -133,12 +165,13 @@ function Register-ActionHandler {
 
     $script:ActionRegistry[$Type] = $Handler
 
-    Write-Log (
-        "Moteur enregistré : {0} -> {1}" -f
-        $Type,
-        $Handler
-    ) SUCCESS
-
+    Write-ActionRegistryLog `
+        -Message (
+            "Moteur enregistré : {0} -> {1}" -f
+            $Type,
+            $Handler
+        ) `
+        -Level "SUCCESS"
 }
 
 # --------------------------------------------------
@@ -150,9 +183,7 @@ function Get-RegisteredActionHandlers {
     [CmdletBinding()]
     param()
 
-    return $script:ActionRegistry.GetEnumerator() |
-        Sort-Object Name
-
+    return $script:ActionRegistry
 }
 
 # --------------------------------------------------
@@ -169,6 +200,10 @@ function Test-ActionHandler {
 
     )
 
-    return $script:ActionRegistry.ContainsKey($Type)
+    if ([string]::IsNullOrWhiteSpace($Type)) {
 
+        return $false
+    }
+
+    return $script:ActionRegistry.ContainsKey($Type)
 }

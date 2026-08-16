@@ -1,4 +1,3 @@
-
 # ==========================================
 # Tests : ActionRegistry
 # Projet : PimsOS Builder
@@ -9,7 +8,6 @@ BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
 
     . "$ProjectRoot\Modules\Core\ActionRegistry.ps1"
-
 }
 
 Describe "ActionRegistry" {
@@ -17,7 +15,6 @@ Describe "ActionRegistry" {
     BeforeEach {
 
         Reset-ActionRegistry
-
     }
 
     Context "Get-ActionHandler" {
@@ -27,7 +24,6 @@ Describe "ActionRegistry" {
             $Handler = Get-ActionHandler -Type "Registry"
 
             $Handler | Should -Be "Invoke-RegistryAction"
-
         }
 
         It "Retourne le handler Service" {
@@ -35,7 +31,6 @@ Describe "ActionRegistry" {
             $Handler = Get-ActionHandler -Type "Service"
 
             $Handler | Should -Be "Invoke-ServiceAction"
-
         }
 
         It "Retourne `$null pour un type inconnu" {
@@ -43,17 +38,15 @@ Describe "ActionRegistry" {
             $Handler = Get-ActionHandler -Type "Unknown"
 
             $Handler | Should -BeNullOrEmpty
-
         }
-
     }
 
     Context "Register-ActionHandler" {
 
         BeforeEach {
 
-            function Invoke-TestAction { }
-
+            function Invoke-TestAction {
+            }
         }
 
         It "Ajoute un nouveau handler" {
@@ -65,7 +58,6 @@ Describe "ActionRegistry" {
             $Handler = Get-ActionHandler -Type "Test"
 
             $Handler | Should -Be "Invoke-TestAction"
-
         }
 
         It "Refuse un type déjà enregistré" {
@@ -74,8 +66,8 @@ Describe "ActionRegistry" {
                 Register-ActionHandler `
                     -Type "Registry" `
                     -Handler "Invoke-TestAction"
-            } | Should -Throw
 
+            } | Should -Throw
         }
 
         It "Refuse un handler inexistant" {
@@ -84,10 +76,9 @@ Describe "ActionRegistry" {
                 Register-ActionHandler `
                     -Type "Test" `
                     -Handler "Invoke-Inconnu"
+
             } | Should -Throw
-
         }
-
     }
 
     Context "Get-RegisteredActionHandlers" {
@@ -97,26 +88,22 @@ Describe "ActionRegistry" {
             $Registry = Get-RegisteredActionHandlers
 
             $Registry | Should -BeOfType Hashtable
-
         }
 
         It "Contient Registry" {
 
             $Registry = Get-RegisteredActionHandlers
 
-            $Registry.ContainsKey("Registry") | Should -BeTrue
-
+            $Registry.ContainsKey("Registry") |
+                Should -BeTrue
         }
 
         It "Contient Service" {
 
             $Registry = Get-RegisteredActionHandlers
 
-            $Registry.ContainsKey("Service") | Should -BeTrue
-
+            $Registry.ContainsKey("Service") |
+                Should -BeTrue
         }
-
     }
-
 }
-

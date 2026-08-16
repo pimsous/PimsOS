@@ -1,8 +1,10 @@
-# Guide du développeur
+# PimsOS Builder - Guide du développeur
 
-> Version : 0.4.0
+> Version technique : 3.0.0
 >
-> Architecture : 2.x
+> Statut : Référence
+>
+> Dernière mise à jour : 2026-08-16
 
 ---
 
@@ -24,12 +26,13 @@ Il s'adresse à toute personne souhaitant :
 
 Avant toute modification, lire les documents suivants :
 
-- Architecture.md
-- ArchitectureRules.md
-- BuildContext.md
-- CodingStandards.md
-- ModuleGuide.md
-- ProjectStructure.md
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `CodingStandards.md`
+- `ModuleGuide.md`
+- `ProjectStructure.md`
+- `Testing.md`
 
 Ces documents constituent les références officielles du projet.
 
@@ -37,36 +40,41 @@ Ces documents constituent les références officielles du projet.
 
 # Comprendre l'architecture
 
-Le framework repose sur une architecture modulaire.
+PimsOS repose sur un module PowerShell unique et une architecture en couches.
 
-Chaque composant possède une responsabilité unique.
+Chaque composant possède une responsabilité clairement définie.
+
+Le flux logique principal est :
 
 ```text
-Infrastructure
-        │
-        ▼
-Core
-        │
-        ▼
-Configuration
-        │
-        ▼
-ActionEngine
-        │
-        ▼
-ActionRegistry
-        │
-        ▼
-Engine spécialisé
-        │
-        ▼
-Manager
-        │
-        ▼
-Module Windows
+Infrastructure / Core / Configuration
+                │
+                ▼
+            Workflow
+                │
+                ▼
+            Pipeline
+                │
+                ▼
+          ActionEngine
+                │
+                ▼
+          ActionRegistry
+                │
+                ▼
+        Engine spécialisé
+                │
+                ▼
+             Manager
+                │
+                ▼
+        Module technique
+                │
+                ▼
+             Windows
 ```
 
-Avant d'ajouter du code, toujours identifier le composant concerné.
+Avant d'ajouter du code, toujours identifier la couche et le composant responsables du besoin.
 
 ---
 
@@ -76,34 +84,39 @@ Toute nouvelle fonctionnalité suit le cycle suivant :
 
 1. Identifier le besoin.
 2. Vérifier qu'un composant similaire n'existe pas déjà.
-3. Déterminer le module concerné.
+3. Déterminer la couche et le composant concernés.
 4. Concevoir la solution.
 5. Développer.
-6. Écrire les tests.
+6. Écrire ou adapter les tests.
 7. Mettre à jour la documentation.
 8. Valider le fonctionnement.
 9. Mettre à jour les ADR si nécessaire.
+10. Effectuer le commit.
 
 ---
 
-# Organisation des modules
+# Organisation des composants
 
-Les composants sont répartis dans :
+Les composants internes sont répartis dans :
 
 ```text
 Modules/
 │
-├── Infrastructure
-├── Core
-├── Configuration
-├── Image
-├── Windows
 ├── Actions
+├── Configuration
+├── Core
+├── Image
+├── Infrastructure
 ├── Managers
-└── Package
+├── Package
+├── Windows
+├── PimsOS.psd1
+└── PimsOS.psm1
 ```
 
 Chaque dossier possède une responsabilité clairement définie.
+
+Les composants internes ne sont pas des modules PowerShell indépendants.
 
 ---
 
@@ -112,23 +125,28 @@ Chaque dossier possède une responsabilité clairement définie.
 Les Engines sont placés dans :
 
 ```text
-Modules/Actions
+Modules\Actions
 ```
 
 Chaque Engine :
 
-- traite un seul type d'Action ;
-- ne contient que la logique métier ;
-- ne réalise jamais directement les appels Windows ;
-- met à jour le BuildContext ;
-- journalise toutes les opérations.
+- traite un domaine d'Action défini ;
+- contient la logique métier de ce domaine ;
+- ne réalise pas directement les appels aux API Windows ;
+- reçoit le BuildContext et l'Action ;
+- met à jour l'état relevant de sa responsabilité ;
+- utilise le Logger officiel ;
+- propage correctement les erreurs.
 
-Exemple :
+Le traitement technique est délégué au Manager approprié.
 
-```
+Exemples :
+
+```text
 RegistryEngine
 FeatureEngine
 PackageEngine
+DriverEngine
 ```
 
 ---
@@ -138,93 +156,135 @@ PackageEngine
 Les Managers sont placés dans :
 
 ```text
-Modules/Managers
+Modules\Managers
 ```
 
-Ils encapsulent les opérations techniques.
+Ils encapsulent les opérations techniques de leur domaine.
 
-Ils peuvent appeler :
+Ils peuvent notamment interagir avec :
 
 - DISM ;
-- Winget ;
-- Chocolatey ;
 - le registre Windows ;
-- le système de fichiers.
+- le système de fichiers ;
+- les fournisseurs de packages ;
+- les fonctionnalités Windows ;
+- les autres composants techniques nécessaires à leur domaine.
 
-Ils ne prennent aucune décision métier.
+Les Managers ne prennent pas les décisions métier relatives aux profils ou aux Tweaks.
 
 ---
 
 # Ajouter un nouveau type d'Action
 
-Pour ajouter une nouvelle Action :
+Pour ajouter un nouveau type d'Action :
 
-1. créer le nouvel Engine ;
-2. créer le Manager correspondant si nécessaire ;
-3. enregistrer l'Action dans **ActionRegistry.ps1** ;
-4. ajouter les compteurs dans **BuildContext** si besoin ;
-5. ajouter les validations ;
-6. créer les tests Pester ;
-7. documenter l'API.
+1. identifier son domaine fonctionnel ;
+2. créer l'Engine spécialisé ;
+3. créer ou adapter le Manager correspondant si nécessaire ;
+4. enregistrer le type dans `ActionRegistry.ps1` ;
+5. ajouter les validations nécessaires ;
+6. ajouter les tests Pester ;
+7. mettre à jour le BuildContext ou les statistiques si nécessaire ;
+8. mettre à jour la documentation.
 
-Aucun composant ne doit appeler directement un Engine spécialisé.
+Le traitement doit suivre :
 
-Toutes les Actions transitent par l'ActionEngine.
+```text
+Action
+    │
+    ▼
+ActionEngine
+    │
+    ▼
+ActionRegistry
+    │
+    ▼
+Engine spécialisé
+    │
+    ▼
+Manager
+    │
+    ▼
+Module technique
+```
+
+Aucun composant ne doit appeler directement un Engine spécialisé en contournant le routage normal.
 
 ---
 
 # Ajouter un Tweak
 
-Les Tweaks sont définis dans les fichiers JSON du dossier :
+Les Tweaks sont des définitions de configuration.
 
-```text
-Tweaks/
-```
+Ils doivent rester séparés de la logique PowerShell.
 
-Un Tweak contient notamment :
+Un Tweak peut notamment contenir :
 
-- son identifiant ;
-- sa catégorie ;
-- sa description ;
-- ses Actions ;
-- ses contraintes de compatibilité ;
-- ses métadonnées.
+- un identifiant ;
+- une catégorie ;
+- une description ;
+- des Actions ;
+- des métadonnées ;
+- des contraintes de compatibilité.
 
-Les Tweaks ne contiennent jamais de logique PowerShell.
+Les Tweaks ne doivent pas contenir de logique PowerShell exécutable.
+
+---
+
+# Profils
+
+Les profils déterminent les personnalisations sélectionnées pour un Build.
+
+Ils peuvent activer ou désactiver des Tweaks selon le scénario choisi.
+
+Le profil ne doit pas contenir de logique d'exécution.
+
+Le moteur de configuration construit une configuration finale avant l'exécution des Actions.
 
 ---
 
 # BuildContext
 
-Le BuildContext est le contrat officiel entre tous les composants.
+Le BuildContext est le contrat central entre les composants.
 
-Il ne doit jamais être remplacé.
+Il ne doit jamais être remplacé par un nouvel objet au cours du Build.
 
-Chaque composant enrichit uniquement les propriétés dont il est responsable.
+Chaque composant enrichit ou met à jour uniquement les informations relevant de sa responsabilité.
 
-Toute nouvelle information partagée doit être ajoutée au BuildContext.
+Toute nouvelle donnée doit être ajoutée au BuildContext uniquement lorsqu'elle représente un état ou une information réellement partagée entre plusieurs composants.
+
+Les composants ne doivent pas utiliser un état global pour transporter les données du Build.
+
+---
+
+# BuildState
+
+Le BuildState représente l'état courant de l'exécution.
+
+Il doit être utilisé pour les informations de progression et d'état du Build.
+
+Les nouveaux composants doivent mettre à jour le BuildState lorsque leur contrat l'exige.
 
 ---
 
 # Compatibilité Windows
 
-Le Builder ne cible pas une version unique de Windows.
+Le Builder n'est pas conçu pour une seule version de Windows.
 
-Il doit pouvoir personnaliser différentes versions de Windows selon :
+Les informations relatives à la cible doivent provenir :
 
-- l'image WIM sélectionnée ;
-- le profil ;
-- les contraintes déclarées dans les Tweaks.
+- de l'image Windows ;
+- du BuildContext ;
+- de la configuration ;
+- des contraintes déclarées par les Tweaks.
 
-Toute nouvelle fonctionnalité doit respecter ce principe.
+Les composants ne doivent pas coder en dur une version telle que `24H2` ou `25H2` lorsqu'il s'agit d'une information de configuration ou de compatibilité.
 
 ---
 
 # Journalisation
 
-Toute opération importante doit être journalisée.
-
-Utiliser :
+Toute opération importante doit être journalisée via :
 
 ```powershell
 Write-Log
@@ -238,58 +298,85 @@ Write-Host
 
 sont interdits dans la logique métier.
 
+`Write-Verbose` et `Write-Debug` peuvent être utilisés pour les informations de diagnostic appropriées.
+
 ---
 
 # Gestion des erreurs
 
 Les erreurs doivent :
 
-- être interceptées ;
-- être journalisées ;
-- être propagées.
+- être détectées ;
+- être traitées au niveau approprié ;
+- être journalisées lorsque nécessaire ;
+- être propagées lorsqu'elles ne peuvent pas être traitées localement.
 
-Ne jamais masquer une exception.
+Ne jamais masquer une exception sans justification.
+
+Dans un module, ne pas utiliser :
+
+```powershell
+exit
+```
+
+pour interrompre arbitrairement le processus appelant.
 
 ---
 
 # Tests
 
-Toute nouvelle fonctionnalité doit être accompagnée de tests Pester.
+Toute nouvelle fonctionnalité importante doit être accompagnée de tests Pester adaptés.
 
-Les tests doivent couvrir :
+Les tests doivent couvrir, lorsque cela est pertinent :
 
 - le fonctionnement nominal ;
-- les cas d'erreur ;
 - les paramètres invalides ;
-- les cas limites.
+- les cas d'erreur ;
+- les cas limites ;
+- les changements d'état ;
+- les statistiques ;
+- les régressions.
+
+Pour une correction de bug, ajouter ou adapter un test de régression lorsque cela est pertinent.
 
 ---
 
 # Documentation
 
-Toute évolution importante doit mettre à jour :
+Toute évolution importante doit mettre à jour les documents concernés.
 
-- API.md
-- Architecture.md
-- ArchitectureRules.md
-- BuildContext.md
-- ModuleGuide.md
-- Roadmap.md (si nécessaire)
+Selon le changement, cela peut inclure :
 
-Si l'architecture évolue, une nouvelle ADR doit être créée.
+- `API.md`
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `ModuleGuide.md`
+- `ProjectStatus.md`
+- `ProjectStructure.md`
+- `Roadmap.md`
+- `Milestones.md`
+- `ReleaseNotes.md`
+- `Testing.md`
+
+Si l'architecture évolue, une nouvelle ADR doit être créée lorsque la décision le justifie.
 
 ---
 
 # Revue de code
 
-Avant chaque commit Git, vérifier :
+Avant un commit important, vérifier :
 
-- le projet compile ;
-- les tests passent ;
-- le Build fonctionne ;
+- le code est syntaxiquement valide ;
+- le module se charge correctement ;
+- les tests concernés passent ;
+- aucune erreur critique n'est introduite ;
+- le BuildContext respecte son contrat ;
 - les nouveaux composants respectent les Architecture Rules ;
 - la documentation est à jour ;
 - les ADR sont mises à jour si nécessaire.
+
+PowerShell n'étant pas compilé comme un langage classique, la validation doit notamment porter sur le parsing, le chargement du module et l'exécution des tests.
 
 ---
 
@@ -301,17 +388,33 @@ Chaque évolution importante suit le processus suivant :
 2. Validation locale.
 3. Exécution des tests.
 4. Mise à jour de la documentation.
-5. Vérification des ADR.
-6. Commit Git.
-7. Push vers le dépôt distant.
+5. Vérification des ADR si nécessaire.
+6. Vérification de `git status`.
+7. Commit Git.
+8. Push vers le dépôt distant lorsque l'évolution est prête.
 
-La documentation fait partie intégrante du développement.
+Un commit doit représenter une évolution cohérente.
+
+---
+
+# Ajout d'un composant
+
+Avant de créer un nouveau composant :
+
+- vérifier qu'un composant existant ne répond pas déjà au besoin ;
+- définir clairement sa responsabilité ;
+- choisir la couche appropriée ;
+- identifier ses dépendances ;
+- prévoir ses tests ;
+- documenter l'évolution lorsque nécessaire.
+
+Un composant ne doit pas cumuler plusieurs responsabilités indépendantes.
 
 ---
 
 # Philosophie
 
-Le développement de PimsOS Builder repose sur quelques principes simples :
+Le développement de PimsOS Builder repose sur les principes suivants :
 
 - simplicité ;
 - lisibilité ;
@@ -321,14 +424,22 @@ Le développement de PimsOS Builder repose sur quelques principes simples :
 - maintenabilité ;
 - extensibilité.
 
-Une nouvelle fonctionnalité doit pouvoir être ajoutée avec un impact minimal sur les composants existants.
-
 Le respect de l'architecture est prioritaire sur la rapidité de développement.
 
-# Philosophie du projet
+Une nouvelle fonctionnalité doit, lorsque l'architecture le permet, avoir un impact limité sur les composants existants.
 
-PimsOS Builder est conçu pour être indépendant des versions de Windows.
+Les duplications doivent être évitées lorsqu'une solution réutilisable existe.
 
-Les composants ne doivent jamais contenir de logique spécifique à une version (24H2, 25H2, etc.).
+---
 
-Les informations sur la version cible doivent provenir du BuildContext ou de la configuration.
+# Références
+
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `CodingStandards.md`
+- `ModuleGuide.md`
+- `ProjectStructure.md`
+- `Testing.md`
+- `TechnicalDecisions.md`
+- `Documentation\ADR\`
