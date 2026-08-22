@@ -124,33 +124,36 @@ function Get-TweakDefinitions {
         # --------------------------------------------------
 
         foreach ($Property in @(
-            "Id",
-            "Name",
-            "Description",
-            "CategoryId",
-            "Actions"
-        )) {
+			"Id",
+			"Name",
+			"Description",
+			"CategoryId",
+			"Actions"
+		)) {
 
-            if (-not $Json.PSObject.Properties.Match($Property)) {
+			if ($null -eq $Json -or $null -eq $Json.PSObject.Properties[$Property]) {
 
-                throw (
-                    "{0} : propriété '{1}' absente." -f
-                    $RelativePath,
-                    $Property
-                )
+				throw (
+					"{0} : propriété '{1}' absente." -f
+					$RelativePath,
+					$Property
+				)
 
-            }
+			}
 
-        }
+		}
 
-        if ($Json.Actions.Count -eq 0) {
+        if (
+			$null -eq $Json.Actions -or
+			@($Json.Actions).Count -eq 0
+		) {
 
-            throw (
-                "{0} : aucune action définie." -f
-                $RelativePath
-            )
+			throw (
+				"{0} : aucune action définie." -f
+				$RelativePath
+			)
 
-        }
+		}
 
         # --------------------------------------------------
         # Construction

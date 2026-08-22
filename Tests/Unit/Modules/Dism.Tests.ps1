@@ -11,7 +11,7 @@ BeforeAll {
     # Logger minimal pour les tests
     # --------------------------------------------------
 
-    function global:Write-Log {
+    function Write-Log {
 
         param(
             [Parameter(Mandatory)]
@@ -39,20 +39,14 @@ Describe "Dism" {
 
         It "Retourne les images Windows" {
 
-            function global:Get-WindowsImage {
-
-                param(
-                    [string]$ImagePath,
-                    [switch]$Mounted
-                )
-
-                return @(
-                    [pscustomobject]@{
-                        ImageIndex = 1
-                        ImageName  = "Windows 11 Pro"
-                    }
-                )
-            }
+            Mock Get-WindowsImage {
+				@(
+					[pscustomobject]@{
+						ImageIndex = 1
+						ImageName  = "Windows 11 Pro"
+					}
+				)
+			}
 
             $Result = Get-DismImages `
                 -ImagePath "C:\Test\install.wim"
@@ -67,11 +61,9 @@ Describe "Dism" {
 
         It "Lève une exception si Get-WindowsImage échoue" {
 
-            function global:Get-WindowsImage {
-
-                throw "Erreur DISM"
-
-            }
+            Mock Get-WindowsImage {
+				throw "Erreur DISM"
+			}
 
             {
 
@@ -92,20 +84,14 @@ Describe "Dism" {
 
         It "Retourne les images montées" {
 
-            function global:Get-WindowsImage {
-
-                param(
-                    [string]$ImagePath,
-                    [switch]$Mounted
-                )
-
-                return @(
-                    [pscustomobject]@{
-                        ImageIndex = 1
-                        MountPath  = "C:\Mount"
-                    }
-                )
-            }
+            Mock Get-WindowsImage {
+				@(
+					[pscustomobject]@{
+						ImageIndex = 1
+						MountPath  = "C:\Mount"
+					}
+				)
+			}
 
             $Result = Get-DismMountedImages
 
@@ -119,11 +105,9 @@ Describe "Dism" {
 
         It "Lève une exception si la récupération échoue" {
 
-            function global:Get-WindowsImage {
-
-                throw "Erreur DISM"
-
-            }
+            Mock Get-WindowsImage {
+				throw "Erreur DISM"
+			}
 
             {
 
@@ -143,30 +127,21 @@ Describe "Dism" {
 
         BeforeEach {
 
-            $script:MountCalled = $false
-            $script:MountParameters = $null
+			$script:MountCalled = $false
+			$script:MountParameters = $null
 
-            function global:Mount-WindowsImage {
+			Mock Mount-WindowsImage {
+				$script:MountCalled = $true
 
-                param(
-                    [string]$ImagePath,
-                    [int]$Index,
-                    [string]$Path,
-                    [switch]$ReadOnly
-                )
+				$script:MountParameters = [pscustomobject]@{
+					ImagePath = $ImagePath
+					Index     = $Index
+					Path      = $Path
+					ReadOnly  = $ReadOnly.IsPresent
+				}
+			}
 
-                $script:MountCalled = $true
-
-                $script:MountParameters = [pscustomobject]@{
-                    ImagePath = $ImagePath
-                    Index     = $Index
-                    Path      = $Path
-                    ReadOnly  = $ReadOnly.IsPresent
-                }
-
-            }
-
-        }
+		}
 
         It "Monte une image Windows" {
 
@@ -294,11 +269,9 @@ Describe "Dism" {
                 -Force |
                 Out-Null
 
-            function global:Mount-WindowsImage {
-
-                throw "Erreur montage"
-
-            }
+            Mock Mount-WindowsImage {
+				throw "Erreur montage"
+			}
 
             {
 
@@ -331,15 +304,9 @@ Describe "Dism" {
 
             $script:SaveCalled = $false
 
-            function global:Save-WindowsImage {
-
-                param(
-                    [string]$Path
-                )
-
-                $script:SaveCalled = $true
-
-            }
+			Mock Save-WindowsImage {
+				$script:SaveCalled = $true
+			}
 
             Save-DismImage `
                 -MountPath $MountPath
@@ -370,11 +337,9 @@ Describe "Dism" {
                 -Force |
                 Out-Null
 
-            function global:Save-WindowsImage {
-
-                throw "Erreur sauvegarde"
-
-            }
+            Mock Save-WindowsImage {
+				throw "Erreur sauvegarde"
+			}
 
             {
 
@@ -395,25 +360,17 @@ Describe "Dism" {
 
         BeforeEach {
 
-            $script:DismountParameters = $null
+			$script:DismountParameters = $null
 
-            function global:Dismount-WindowsImage {
+			Mock Dismount-WindowsImage {
+				$script:DismountParameters = [pscustomobject]@{
+					Path    = $Path
+					Save    = $Save.IsPresent
+					Discard = $Discard.IsPresent
+				}
+			}
 
-                param(
-                    [string]$Path,
-                    [switch]$Save,
-                    [switch]$Discard
-                )
-
-                $script:DismountParameters = [pscustomobject]@{
-                    Path    = $Path
-                    Save    = $Save.IsPresent
-                    Discard = $Discard.IsPresent
-                }
-
-            }
-
-        }
+		}
 
         It "Démonte une image en sauvegardant les modifications" {
 
@@ -485,11 +442,9 @@ Describe "Dism" {
                 -Force |
                 Out-Null
 
-            function global:Dismount-WindowsImage {
-
-                throw "Erreur démontage"
-
-            }
+            Mock Dismount-WindowsImage {
+				throw "Erreur démontage"
+			}
 
             {
 
