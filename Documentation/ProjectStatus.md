@@ -82,3 +82,26 @@ PimsOS repose sur un module PowerShell unique :
 
 ```text
 Modules\PimsOS.psm1
+## PostInstall / FirstBoot — 2026-08-27
+
+### État : 🟡 En cours
+
+Le moteur PostInstall et sa préparation FirstBoot sont implémentés
+et testés.
+
+Les composants suivants sont validés :
+
+- State
+- Network
+- PostInstall
+- Bootstrap
+- FirstBoot
+- Unattend
+- Installer
+- intégration Pipeline
+- injection réelle dans un WIM
+
+Le lancement réel lors de la première connexion Windows reste à
+valider.
+
+Chocolatey, Winget et Microsoft Store restent non finalisés.

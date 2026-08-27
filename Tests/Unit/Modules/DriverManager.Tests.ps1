@@ -8,21 +8,12 @@ BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
 
     . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
+    . "$ProjectRoot\Modules\Image\Dism.ps1"
+    . "$ProjectRoot\Modules\Managers\DriverManager.ps1"
 
     # --------------------------------------------------
-    # Providers par défaut
+    # Provider PNP de test
     # --------------------------------------------------
-
-    function global:Invoke-DismDriver {
-
-        param(
-            [psobject]$Context,
-            [psobject]$Action
-        )
-
-        return $Context
-
-    }
 
     function global:Invoke-PnpDriver {
 
@@ -50,8 +41,6 @@ BeforeAll {
 
     }
 
-    . "$ProjectRoot\Modules\Managers\DriverManager.ps1"
-
 }
 
 Describe "DriverManager" {
@@ -65,6 +54,25 @@ Describe "DriverManager" {
         Reset-DriverProviders
 
         # ==========================================
+        # Environnement WIM
+        # ==========================================
+
+        $script:MountPath = Join-Path $TestDrive "Mount"
+        $script:DriverPath = Join-Path $TestDrive "Drivers"
+
+        New-Item `
+            -ItemType Directory `
+            -Path $script:MountPath `
+            -Force |
+            Out-Null
+
+        New-Item `
+            -ItemType Directory `
+            -Path $script:DriverPath `
+            -Force |
+            Out-Null
+
+        # ==========================================
         # Contexte
         # ==========================================
 
@@ -76,6 +84,16 @@ Describe "DriverManager" {
 
             }
 
+            WIM = [pscustomobject]@{
+
+                Mount = [pscustomobject]@{
+
+                    Path = $script:MountPath
+
+                }
+
+            }
+
         }
 
         # ==========================================
@@ -84,14 +102,21 @@ Describe "DriverManager" {
 
         $script:Action = [pscustomobject]@{
 
-            Provider = "DISM"
-
-            Source = "C:\Drivers\Test"
+            Provider       = "DISM"
+            Source         = $script:DriverPath
+            Name           = "TestDriver"
+            Recurse        = $false
+            ForceUnsigned  = $false
 
         }
 
-    }
+        # ==========================================
+        # Dépendance technique DISM
+        # ==========================================
 
+        Mock Add-DismDriver {}
+
+    }
 
     # ==================================================
     # Get-DriverProviders
@@ -110,7 +135,6 @@ Describe "DriverManager" {
 
         }
 
-
         It "Retourne PNP par défaut" {
 
             $Providers = @(
@@ -121,7 +145,6 @@ Describe "DriverManager" {
                 Should -Contain "PNP"
 
         }
-
 
         It "Retourne les fournisseurs triés" {
 
@@ -144,7 +167,6 @@ Describe "DriverManager" {
 
     }
 
-
     # ==================================================
     # Invoke-Driver
     # ==================================================
@@ -160,8 +182,9 @@ Describe "DriverManager" {
             $Result |
                 Should -Be $script:Context
 
-        }
+            Should -Invoke Add-DismDriver -Times 1 -Exactly
 
+        }
 
         It "Applique un pilote avec PNP" {
 
@@ -175,7 +198,6 @@ Describe "DriverManager" {
                 Should -Be $script:Context
 
         }
-
 
         It "Refuse un provider absent" {
 
@@ -192,7 +214,6 @@ Describe "DriverManager" {
 
         }
 
-
         It "Refuse une source absente" {
 
             $script:Action.Source = $null
@@ -208,7 +229,6 @@ Describe "DriverManager" {
 
         }
 
-
         It "Refuse un provider inconnu" {
 
             $script:Action.Provider = "Unknown"
@@ -223,7 +243,6 @@ Describe "DriverManager" {
                 Should -Throw
 
         }
-
 
         It "Transmet l'action au handler" {
 
@@ -253,12 +272,216 @@ Describe "DriverManager" {
                 -Action $script:Action
 
             $script:ReceivedAction.Source |
-                Should -Be "C:\Drivers\Test"
+                Should -Be $script:DriverPath
 
         }
 
     }
 
+    # ==================================================
+    # Invoke-DismDriver
+    # ==================================================
+
+    Context "Invoke-DismDriver" {
+
+        It "Utilise le chemin de montage WIM" {
+
+            $null = Invoke-DismDriver `
+                -Context $script:Context `
+                -Action $script:Action
+
+            Should -Invoke Add-DismDriver -Times 1 -Exactly `
+                -ParameterFilter {
+
+                    $MountPath -eq $script:MountPath
+
+                }
+
+        }
+
+        It "Utilise la source des pilotes de l'action" {
+
+            $null = Invoke-DismDriver `
+                -Context $script:Context `
+                -Action $script:Action
+
+            Should -Invoke Add-DismDriver -Times 1 -Exactly `
+                -ParameterFilter {
+
+                    $DriverPath -eq $script:DriverPath
+
+                }
+
+        }
+
+        It "Transmet Recurse" {
+
+            $script:Action.Recurse = $true
+
+            $null = Invoke-DismDriver `
+                -Context $script:Context `
+                -Action $script:Action
+
+            Should -Invoke Add-DismDriver -Times 1 -Exactly `
+                -ParameterFilter {
+
+                    $Recurse -eq $true
+
+                }
+
+        }
+
+        It "Transmet ForceUnsigned" {
+
+            $script:Action.ForceUnsigned = $true
+
+            $null = Invoke-DismDriver `
+                -Context $script:Context `
+                -Action $script:Action
+
+            Should -Invoke Add-DismDriver -Times 1 -Exactly `
+                -ParameterFilter {
+
+                    $ForceUnsigned -eq $true
+
+                }
+
+        }
+
+        It "Retourne le contexte de build" {
+
+            $Result = Invoke-DismDriver `
+                -Context $script:Context `
+                -Action $script:Action
+
+            $Result |
+                Should -Be $script:Context
+
+        }
+
+        It "Refuse un contexte sans WIM" {
+
+            $Context = [pscustomobject]@{}
+
+            {
+
+                Invoke-DismDriver `
+                    -Context $Context `
+                    -Action $script:Action
+
+            } |
+                Should -Throw "*section WIM*"
+
+        }
+
+        It "Refuse un contexte sans WIM" {
+
+            $Context = [pscustomobject]@{}
+
+            {
+
+                Invoke-DismDriver `
+                    -Context $Context `
+                    -Action $script:Action
+
+            } |
+                Should -Throw "*section WIM*"
+
+        }
+
+        It "Refuse un contexte sans chemin de montage" {
+
+            $Context = [pscustomobject]@{
+
+                WIM = [pscustomobject]@{
+
+                    Mount = [pscustomobject]@{
+
+                        Path = $null
+
+                    }
+
+                }
+
+            }
+
+            {
+
+                Invoke-DismDriver `
+                    -Context $Context `
+                    -Action $script:Action
+
+            } |
+                Should -Throw "*chemin de montage WIM*"
+
+        }
+
+        It "Refuse un nom de pilote absent" {
+
+            $script:Action.Name = $null
+
+            {
+
+                Invoke-DismDriver `
+                    -Context $script:Context `
+                    -Action $script:Action
+
+            } |
+                Should -Throw "*nom du pilote est obligatoire*"
+
+        }
+
+        It "Refuse une source absente" {
+
+            $script:Action.Source = $null
+
+            {
+
+                Invoke-DismDriver `
+                    -Context $script:Context `
+                    -Action $script:Action
+
+            } |
+                Should -Throw "*source du pilote est obligatoire*"
+
+        }
+
+        It "Refuse un montage WIM inexistant" {
+
+            $script:Context.WIM.Mount.Path =
+                Join-Path $TestDrive "MissingMount"
+
+            {
+
+                Invoke-DismDriver `
+                    -Context $script:Context `
+                    -Action $script:Action
+
+            } |
+                Should -Throw "*dossier de montage WIM est introuvable*"
+
+        }
+
+        It "Enrichit les erreurs DISM avec le nom du pilote" {
+
+            Mock Add-DismDriver {
+
+                throw "Erreur DISM de test"
+
+            }
+
+            {
+
+                Invoke-DismDriver `
+                    -Context $script:Context `
+                    -Action $script:Action
+
+            } |
+                Should -Throw "*TestDriver*"
+
+        }
+
+    }
 
     # ==================================================
     # Register-DriverProvider
@@ -279,7 +502,6 @@ Describe "DriverManager" {
 
         }
 
-
         It "Refuse un handler inexistant" {
 
             {
@@ -294,7 +516,6 @@ Describe "DriverManager" {
         }
 
     }
-
 
     # ==================================================
     # Reset-DriverProviders

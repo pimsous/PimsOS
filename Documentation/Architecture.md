@@ -1078,3 +1078,29 @@ Cette architecture permet :
 - une gestion cohérente des responsabilités.
 
 Les décisions structurantes sont documentées dans les ADR afin de préserver la cohérence de l'architecture au fil des évolutions.
+
+## PostInstall
+
+Le Build prépare le système, tandis que PostInstall exécute les
+opérations après installation de Windows.
+
+La séparation est :
+
+Build
+    ↓
+WIM préparé
+    ↓
+FirstBoot
+    ↓
+PostInstall
+    ↓
+PackageManager
+    ↓
+Applications
+
+Le runtime PostInstall est embarqué dans le WIM et ne dépend pas
+du chemin du dépôt PimsOS sur la machine de build.
+
+Le chemin d'exécution Windows est :
+
+`C:\ProgramData\PimsOS\PostInstall\`

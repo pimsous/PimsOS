@@ -275,3 +275,28 @@ Publication
 ```
 
 Aucune fonctionnalité ne doit être intégrée sans avoir suivi ce cycle.
+## PostInstall
+
+Après préparation du WIM :
+
+MountWim
+    ↓
+ApplyDrivers
+    ↓
+PreparePostInstall
+    ↓
+MountSoftwareHive
+
+`PreparePostInstall` installe le runtime dans :
+
+C:\ProgramData\PimsOS\PostInstall
+
+et génère :
+
+C:\Windows\Panther\unattend.xml
+
+Le premier démarrage Windows doit ensuite lancer le Bootstrap
+via `FirstLogonCommands`.
+
+Cette dernière étape reste à valider dans un environnement Windows
+réel.

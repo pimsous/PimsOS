@@ -199,3 +199,23 @@ Le Backlog permet de conserver une vision à moyen et long terme du projet sans 
 Les éléments les plus importants doivent être déplacés vers la Roadmap ou un jalon avant leur réalisation.
 
 Toute tâche terminée doit être retirée du Backlog actif et reflétée dans la documentation de statut du projet.
+## PostInstall
+
+### Terminé
+
+- State
+- Network
+- PostInstall
+- Bootstrap
+- FirstBoot
+- Unattend
+- Installer
+- intégration pipeline
+- validation WIM réelle
+
+### Restant
+
+- validation FirstBoot réelle
+- reprise réseau
+- providers de paquets
+- Microsoft Store

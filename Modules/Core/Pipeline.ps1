@@ -300,9 +300,9 @@ function Invoke-PipelineCleanup {
         if (
             $Context.BuildState.Image.RegistryLoaded -eq $true
         ) {
-
-            Write-Log "Démontage de la ruche SOFTWARE..." INFO
-
+        # ------------------------------------------
+        # Montage de la ruche SOFTWARE
+        # ------------------------------------------
             $Context = Dismount-RegistryHive `
                 -Context $Context `
                 -Hive SOFTWARE
@@ -441,7 +441,230 @@ function Invoke-PipelineCleanup {
     return $Context
 }
 
+# ==========================================
+# Applique la configuration des drivers
+# ==========================================
 
+function Apply-Drivers {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    Write-Log "Application de la configuration des drivers..." INFO
+
+    # --------------------------------------------------
+    # Lecture de la configuration
+    # --------------------------------------------------
+
+    $DriverConfig = Get-DriverConfiguration `
+        -Context $Context
+
+    # --------------------------------------------------
+    # Source None
+    # --------------------------------------------------
+
+    if ($DriverConfig.Source -eq "None") {
+
+        Write-Log `
+            "Aucun driver à intégrer." `
+            INFO
+
+        return $Context
+
+    }
+
+    # --------------------------------------------------
+    # Source Folder
+    # --------------------------------------------------
+
+    if ($DriverConfig.Source -eq "Folder") {
+
+        $Action = [PSCustomObject]@{
+
+            Id             = "Drivers.Folder"
+            Type           = "Driver"
+            Name           = "Drivers"
+            Provider       = "DISM"
+            Source         = $DriverConfig.Path
+            Recurse        = $DriverConfig.Recurse
+            ForceUnsigned  = $DriverConfig.ForceUnsigned
+            Enabled        = $true
+            ContinueOnError = $false
+
+        }
+
+        Write-Log (
+            "Source drivers : {0}" -f
+            $DriverConfig.Path
+        ) INFO
+
+        $Context = Invoke-DriverAction `
+            -Context $Context `
+            -Action $Action
+
+        # --------------------------------------------------
+        # Historique runtime
+        # --------------------------------------------------
+
+        $Context.Drivers.Add($Action)
+
+        return $Context
+
+    }
+
+    # --------------------------------------------------
+    # Source CurrentSystem
+    # --------------------------------------------------
+
+    if ($DriverConfig.Source -eq "CurrentSystem") {
+
+        $Config = Get-Config
+
+        if (
+            $null -eq $Config.Workspace -or
+            $null -eq $Config.Workspace.Drivers
+        ) {
+
+            throw (
+                "Le chemin Workspace.Drivers est absent de Config.json."
+            )
+
+        }
+
+        $DriversWorkspace = Join-Path `
+            -Path (Get-ProjectRoot) `
+            -ChildPath $Config.Workspace.Drivers
+
+        $CurrentSystemPath = Join-Path `
+            -Path $DriversWorkspace `
+            -ChildPath "CurrentSystem"
+
+        Write-Log (
+            "Destination des drivers système : {0}" -f
+            $CurrentSystemPath
+        ) INFO
+
+        # --------------------------------------------------
+        # Export du système actuel
+        # --------------------------------------------------
+
+        $null = Export-DismCurrentSystemDrivers `
+            -DestinationPath $CurrentSystemPath `
+            -ErrorAction Stop
+
+        # --------------------------------------------------
+        # Création de l'action
+        # --------------------------------------------------
+
+        $Action = [PSCustomObject]@{
+
+            Id              = "Drivers.CurrentSystem"
+            Type            = "Driver"
+            Name            = "CurrentSystemDrivers"
+            Provider        = "DISM"
+            Source          = $CurrentSystemPath
+            Recurse         = $DriverConfig.Recurse
+            ForceUnsigned   = $DriverConfig.ForceUnsigned
+            Enabled         = $true
+            ContinueOnError = $false
+
+        }
+
+        Write-Log (
+            "Drivers système exportés : {0}" -f
+            $CurrentSystemPath
+        ) SUCCESS
+
+        # --------------------------------------------------
+        # Injection dans le WIM
+        # --------------------------------------------------
+
+        $Context = Invoke-DriverAction `
+            -Context $Context `
+            -Action $Action
+
+        # --------------------------------------------------
+        # Historique runtime
+        # --------------------------------------------------
+
+        $Context.Drivers.Add($Action)
+
+        return $Context
+
+    }
+
+    throw (
+        "La source de drivers '{0}' n'est pas prise en charge." -f
+        $DriverConfig.Source
+    )
+
+}
+
+# ==========================================
+# Prépare le PostInstall dans l'image montée
+# ==========================================
+
+function Prepare-PostInstall {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    Write-Log `
+        "Préparation du PostInstall..." `
+        INFO
+
+    if (
+        $null -eq $Context.BuildState.Image.MountPath -or
+        [string]::IsNullOrWhiteSpace(
+            [string]$Context.BuildState.Image.MountPath
+        )
+    ) {
+
+        throw "Le chemin de montage WIM est absent du contexte."
+
+    }
+
+    $MountPath =
+        [string]$Context.BuildState.Image.MountPath
+
+    $RuntimeSource =
+        Get-PostInstallRuntimePath
+
+    $RuntimeResult =
+        Install-PimsOSPostInstallRuntime `
+            -MountPath $MountPath `
+            -SourcePath $RuntimeSource
+
+    $BootstrapPath =
+		"C:\ProgramData\PimsOS\PostInstall\Bootstrap.ps1"
+
+    $FirstBootResult =
+        Install-PimsOSFirstBoot `
+            -MountPath $MountPath `
+            -BootstrapPath $BootstrapPath
+
+    Write-Log `
+        "Runtime PostInstall installé dans l'image." `
+        SUCCESS
+
+    Write-Log (
+        "FirstBoot configuré : {0}" -f
+        $FirstBootResult.UnattendPath
+    ) SUCCESS
+
+    return $Context
+
+}
 # ==========================================
 # Retourne le pipeline du Build
 # ==========================================
@@ -598,10 +821,49 @@ function Get-BuildPipeline {
 
         },
 
+        # ------------------------------------------
+        # Application des drivers
+        # ------------------------------------------
+
+        @{
+
+            Id   = "ApplyDrivers"
+            Name = "Application des drivers"
+
+            Action = {
+
+                param($Context)
+
+                Apply-Drivers `
+                    -Context $Context
+
+            }
+
+        },
 
         # ------------------------------------------
-        # Montage de la ruche SOFTWARE
+        # Préparation du PostInstall
         # ------------------------------------------
+
+        @{
+
+            Id   = "PreparePostInstall"
+            Name = "Préparation du PostInstall"
+
+            Action = {
+
+                param($Context)
+
+                Prepare-PostInstall `
+                    -Context $Context
+
+            }
+
+        },
+
+        # ------------------------------------------
+		# Montage de la ruche SOFTWARE
+		# ------------------------------------------
 
         @{
 

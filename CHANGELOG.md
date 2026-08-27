@@ -394,3 +394,28 @@ Les versions de développement peuvent également utiliser un suffixe explicite 
 - `Milestones.md`
 - `TechnicalDecisions.md`
 - `Documentation\ADR\`
+
+## [Unreleased]
+
+### Added
+
+- Ajout du sous-système PostInstall.
+- Ajout de la gestion d'état PostInstall.
+- Ajout de la gestion réseau et de l'attente réseau.
+- Ajout du Bootstrap FirstBoot.
+- Ajout de la génération `unattend.xml`.
+- Ajout de l'installation du runtime PostInstall dans le WIM.
+- Ajout de l'étape `PreparePostInstall` au pipeline.
+- Ajout des tests unitaires et d'intégration correspondants.
+
+### Validation
+
+- 80 tests PostInstall/FirstBoot/Installer verts.
+- 17 tests BuildPipeline verts.
+- validation réelle de l'injection dans un WIM Windows 11 Professionnel.
+
+### Not yet validated
+
+- exécution réelle de FirstLogonCommands lors de la première connexion ;
+- reprise réseau complète ;
+- finalisation Chocolatey, Winget et Microsoft Store.

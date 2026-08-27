@@ -61,3 +61,17 @@ Tests
 │
 ├── Unit
 └── Integration
+## PostInstall
+
+Le sous-système PostInstall possède actuellement des tests dédiés
+pour State, Network, PostInstall, Bootstrap, FirstBoot, Unattend
+et Installer.
+
+Le pipeline possède également des tests d'intégration pour
+`PreparePostInstall`.
+
+Une validation réelle dans un WIM temporaire est utilisée pour
+compléter les tests unitaires.
+
+Les tests destructive sur WIM doivent utiliser un montage temporaire
+et `-Discard`.

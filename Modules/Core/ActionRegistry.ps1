@@ -14,6 +14,7 @@ Set-StrictMode -Version Latest
 $script:ActionRegistry = @{
     Registry = "Invoke-RegistryAction"
     Service  = "Invoke-ServiceAction"
+    Driver   = "Invoke-DriverAction"
 }
 
 # --------------------------------------------------
@@ -59,9 +60,10 @@ function Reset-ActionRegistry {
     param()
 
     $script:ActionRegistry = @{
-        Registry = "Invoke-RegistryAction"
-        Service  = "Invoke-ServiceAction"
-    }
+		Registry = "Invoke-RegistryAction"
+		Service  = "Invoke-ServiceAction"
+		Driver   = "Invoke-DriverAction"
+	}
 
     Write-ActionRegistryLog `
         -Message "Registre des moteurs réinitialisé." `

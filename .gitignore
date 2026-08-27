@@ -64,6 +64,12 @@ Desktop.ini
 # macOS
 # ------------------------------------------
 
+# --------------------------------------------------
+# Rainmeter / PimsOS-Network
+# Projet développé séparément
+# --------------------------------------------------
+Assets/Rainmeter/
+
 .DS_Store
 # Notes de reprise locales
 PimsOS_Reprise_*.txt

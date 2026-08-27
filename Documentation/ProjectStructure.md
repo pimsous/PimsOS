@@ -16,3 +16,12 @@ Le projet est structuré autour d'un module PowerShell unique :
 
 ```text
 Modules\PimsOS.psm1
+## PostInstall
+
+Le projet contient désormais :
+
+Modules\PostInstall\
+Tests\Unit\Modules\PostInstall\
+
+Le dossier `Modules\PostInstall` contient le runtime,
+et `Tests\Unit\Modules\PostInstall` contient ses tests dédiés.

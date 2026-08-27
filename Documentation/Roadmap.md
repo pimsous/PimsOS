@@ -379,3 +379,19 @@ Les évolutions architecturales importantes sont documentées dans les ADR.
 - `ReleaseNotes.md`
 - `Testing.md`
 - `Documentation\ADR\`
+## PostInstall / FirstBoot
+
+- [x] State
+- [x] Network
+- [x] moteur PostInstall
+- [x] Bootstrap
+- [x] FirstBoot
+- [x] Unattend
+- [x] Installer
+- [x] intégration Pipeline
+- [x] validation réelle dans un WIM
+- [ ] validation du premier démarrage réel
+- [ ] reprise réseau réelle
+- [ ] Chocolatey
+- [ ] Winget
+- [ ] Microsoft Store

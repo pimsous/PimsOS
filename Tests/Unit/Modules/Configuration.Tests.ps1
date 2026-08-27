@@ -35,6 +35,19 @@ Describe "Configuration" {
 
                 Root = $ProjectRoot
 
+                Config = [pscustomobject]@{
+
+                    Drivers = [pscustomobject]@{
+
+                        Source        = "None"
+                        Path          = $null
+                        Recurse       = $true
+                        ForceUnsigned = $false
+
+                    }
+
+                }
+
             }
 
             Configuration = $null
@@ -123,7 +136,6 @@ Describe "Configuration" {
 
     }
 
-
     # ==================================================
     # Get-Configuration
     # ==================================================
@@ -145,7 +157,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Retourne le contexte fourni" {
 
             $Result = Get-Configuration `
@@ -159,7 +170,6 @@ Describe "Configuration" {
                 Should -Be $ProjectRoot
 
         }
-
 
         It "Charge les définitions de tweaks" {
 
@@ -175,7 +185,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Valide les définitions de tweaks" {
 
             Get-Configuration `
@@ -189,7 +198,6 @@ Describe "Configuration" {
                 -Exactly
 
         }
-
 
         It "Charge le profil demandé" {
 
@@ -210,7 +218,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Fusionne les tweaks avec le profil" {
 
             Get-Configuration `
@@ -225,7 +232,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Marque les tweaks comme chargés" {
 
             Get-Configuration `
@@ -237,7 +243,6 @@ Describe "Configuration" {
                 Should -BeTrue
 
         }
-
 
         It "Marque le profil comme chargé" {
 
@@ -251,7 +256,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Marque le profil comme fusionné" {
 
             Get-Configuration `
@@ -264,7 +268,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Marque la configuration comme chargée" {
 
             Get-Configuration `
@@ -276,11 +279,6 @@ Describe "Configuration" {
                 Should -BeTrue
 
         }
-
-
-        # ==================================================
-        # Gestion des erreurs
-        # ==================================================
 
         It "Lève une exception si aucun tweak n'est chargé" {
 
@@ -301,7 +299,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Lève une exception si le profil est null" {
 
             Mock Load-Profile {
@@ -321,7 +318,6 @@ Describe "Configuration" {
 
         }
 
-
         It "Lève une exception si la fusion retourne null" {
 
             Mock Merge-Profile {
@@ -338,6 +334,208 @@ Describe "Configuration" {
 
             } |
                 Should -Throw
+
+        }
+
+    }
+
+    # ==================================================
+    # Get-DriverConfiguration
+    # ==================================================
+
+    Context "Get-DriverConfiguration" {
+
+        It "Retourne les valeurs par défaut configurées" {
+
+            $Result = Get-DriverConfiguration `
+                -Context $script:Context
+
+            $Result.Source |
+                Should -Be "None"
+
+            $Result.Path |
+                Should -BeNullOrEmpty
+
+            $Result.Recurse |
+                Should -BeTrue
+
+            $Result.ForceUnsigned |
+                Should -BeFalse
+
+        }
+
+        It "Retourne la configuration Folder" {
+
+            $DriversPath = Join-Path `
+                $TestDrive `
+                "Drivers"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $DriversPath `
+                -Force |
+                Out-Null
+
+            $script:Context.Project.Config.Drivers = [pscustomobject]@{
+
+                Source        = "Folder"
+                Path          = $DriversPath
+                Recurse       = $true
+                ForceUnsigned = $false
+
+            }
+
+            $Result = Get-DriverConfiguration `
+                -Context $script:Context
+
+            $Result.Source |
+                Should -Be "Folder"
+
+            $Result.Path |
+                Should -Be (
+                    Resolve-Path `
+                        -LiteralPath $DriversPath
+                ).Path
+
+            $Result.Recurse |
+                Should -BeTrue
+
+            $Result.ForceUnsigned |
+                Should -BeFalse
+
+        }
+
+        It "Accepte CurrentSystem sans chemin" {
+
+            $script:Context.Project.Config.Drivers = [pscustomobject]@{
+
+                Source        = "CurrentSystem"
+                Path          = $null
+                Recurse       = $true
+                ForceUnsigned = $false
+
+            }
+
+            $Result = Get-DriverConfiguration `
+                -Context $script:Context
+
+            $Result.Source |
+                Should -Be "CurrentSystem"
+
+            $Result.Path |
+                Should -BeNullOrEmpty
+
+        }
+
+        It "Accepte Source None sans chemin" {
+
+            $script:Context.Project.Config.Drivers = [pscustomobject]@{
+
+                Source        = "None"
+                Path          = $null
+                Recurse       = $true
+                ForceUnsigned = $false
+
+            }
+
+            $Result = Get-DriverConfiguration `
+                -Context $script:Context
+
+            $Result.Source |
+                Should -Be "None"
+
+            $Result.Path |
+                Should -BeNullOrEmpty
+
+        }
+
+        It "Refuse une source inconnue" {
+
+            $script:Context.Project.Config.Drivers = [pscustomobject]@{
+
+                Source        = "Unknown"
+                Path          = $null
+                Recurse       = $true
+                ForceUnsigned = $false
+
+            }
+
+            {
+
+                Get-DriverConfiguration `
+                    -Context $script:Context
+
+            } |
+                Should -Throw "*n'est pas prise en charge*"
+
+        }
+
+        It "Refuse Folder sans chemin" {
+
+            $script:Context.Project.Config.Drivers = [pscustomobject]@{
+
+                Source        = "Folder"
+                Path          = $null
+                Recurse       = $true
+                ForceUnsigned = $false
+
+            }
+
+            {
+
+                Get-DriverConfiguration `
+                    -Context $script:Context
+
+            } |
+                Should -Throw "*chemin des drivers est obligatoire*"
+
+        }
+
+        It "Refuse Folder avec un dossier inexistant" {
+
+            $script:Context.Project.Config.Drivers = [pscustomobject]@{
+
+                Source        = "Folder"
+                Path          = "Drivers\Missing"
+                Recurse       = $true
+                ForceUnsigned = $false
+
+            }
+
+            {
+
+                Get-DriverConfiguration `
+                    -Context $script:Context
+
+            } |
+                Should -Throw "*dossier de drivers est introuvable*"
+
+        }
+
+        It "Utilise les valeurs par défaut si Drivers est absent" {
+
+            $script:Context.Project.Config |
+                Add-Member `
+                    -MemberType NoteProperty `
+                    -Name Temporary `
+                    -Value $true
+
+            $script:Context.Project.Config.PSObject.Properties.Remove("Drivers")
+
+            $Result = Get-DriverConfiguration `
+                -Context $script:Context
+
+            $Result.Source |
+                Should -Be "None"
+
+            $Result.Path |
+                Should -BeNullOrEmpty
+
+            $Result.Recurse |
+                Should -BeTrue
+
+            $Result.ForceUnsigned |
+                Should -BeFalse
 
         }
 

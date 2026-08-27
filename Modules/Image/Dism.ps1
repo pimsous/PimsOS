@@ -261,3 +261,193 @@ function Dismount-DismImage {
     }
 
 }
+# --------------------------------------------------
+# Ajoute des pilotes à une image Windows montée
+# --------------------------------------------------
+
+function Add-DismDriver {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [string]$MountPath,
+
+        [Parameter(Mandatory)]
+        [string]$DriverPath,
+
+        [switch]$Recurse,
+
+        [switch]$ForceUnsigned
+
+    )
+
+    Write-Log "Ajout des pilotes à l'image Windows..." INFO
+
+    # --------------------------------------------------
+    # Vérifications
+    # --------------------------------------------------
+
+    if (-not (Test-Path -LiteralPath $MountPath -PathType Container)) {
+
+        throw (
+            "Le dossier de montage est introuvable : {0}" -f
+            $MountPath
+        )
+
+    }
+
+    if (-not (Test-Path -LiteralPath $DriverPath)) {
+
+        throw (
+            "La source des pilotes est introuvable : {0}" -f
+            $DriverPath
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Préparation des paramètres DISM
+    # --------------------------------------------------
+
+    $Parameters = @{
+
+        Path        = $MountPath
+        Driver      = $DriverPath
+        ErrorAction = "Stop"
+
+    }
+
+    if ($Recurse) {
+
+        $Parameters.Recurse = $true
+
+    }
+
+    if ($ForceUnsigned) {
+
+        $Parameters.ForceUnsigned = $true
+
+    }
+
+    # --------------------------------------------------
+    # Injection
+    # --------------------------------------------------
+
+    try {
+
+        $Result = Add-WindowsDriver @Parameters
+
+        Write-Log (
+            "Pilotes ajoutés depuis : {0}" -f
+            $DriverPath
+        ) SUCCESS
+
+        return $Result
+
+    }
+    catch {
+
+        throw (
+            "Impossible d'ajouter les pilotes depuis '{0}'.`r`n{1}" -f
+            $DriverPath,
+            $_.Exception.Message
+        )
+
+    }
+
+}
+# --------------------------------------------------
+# Exporte les pilotes du système actuellement en ligne
+# --------------------------------------------------
+
+function Export-DismCurrentSystemDrivers {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [string]$DestinationPath
+
+    )
+
+    Write-Log (
+        "Export des pilotes du système vers : {0}" -f
+        $DestinationPath
+    ) INFO
+
+    # --------------------------------------------------
+    # Préparation du dossier
+    # --------------------------------------------------
+
+    if (Test-Path -LiteralPath $DestinationPath) {
+
+        if (
+            -not (
+                Test-Path `
+                    -LiteralPath $DestinationPath `
+                    -PathType Container
+            )
+        ) {
+
+            throw (
+                "La destination des pilotes existe mais n'est pas un dossier : {0}" -f
+                $DestinationPath
+            )
+
+        }
+
+        Write-Log `
+            "Nettoyage de l'ancien export de drivers..." `
+            INFO
+
+        Get-ChildItem `
+            -LiteralPath $DestinationPath `
+            -Force `
+            -ErrorAction Stop |
+            Remove-Item `
+                -Recurse `
+                -Force `
+                -ErrorAction Stop
+
+    }
+    else {
+
+        New-Item `
+            -ItemType Directory `
+            -Path $DestinationPath `
+            -Force `
+            -ErrorAction Stop |
+            Out-Null
+
+    }
+
+    # --------------------------------------------------
+    # Export
+    # --------------------------------------------------
+
+    try {
+
+        $Result = Export-WindowsDriver `
+            -Online `
+            -Destination $DestinationPath `
+            -ErrorAction Stop
+
+        Write-Log (
+            "Export des pilotes terminé : {0}" -f
+            $DestinationPath
+        ) SUCCESS
+
+        return $Result
+
+    }
+    catch {
+
+        throw (
+            "Impossible d'exporter les pilotes du système.`r`n{0}" -f
+            $_.Exception.Message
+        )
+
+    }
+
+}

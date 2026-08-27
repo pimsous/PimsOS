@@ -8,38 +8,74 @@ BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
 
     . "$ProjectRoot\Modules\Core\ActionRegistry.ps1"
+
 }
 
 Describe "ActionRegistry" {
 
     BeforeEach {
 
+        # --------------------------------------------------
+        # Isolation du logger
+        # --------------------------------------------------
+
+        Mock Write-Log {}
+
         Reset-ActionRegistry
+
     }
+
+    # ==================================================
+    # Get-ActionHandler
+    # ==================================================
 
     Context "Get-ActionHandler" {
 
         It "Retourne le handler Registry" {
 
-            $Handler = Get-ActionHandler -Type "Registry"
+            $Handler = Get-ActionHandler `
+                -Type "Registry"
 
-            $Handler | Should -Be "Invoke-RegistryAction"
+            $Handler |
+                Should -Be "Invoke-RegistryAction"
+
         }
 
         It "Retourne le handler Service" {
 
-            $Handler = Get-ActionHandler -Type "Service"
+            $Handler = Get-ActionHandler `
+                -Type "Service"
 
-            $Handler | Should -Be "Invoke-ServiceAction"
+            $Handler |
+                Should -Be "Invoke-ServiceAction"
+
+        }
+
+        It "Retourne le handler Driver" {
+
+            $Handler = Get-ActionHandler `
+                -Type "Driver"
+
+            $Handler |
+                Should -Be "Invoke-DriverAction"
+
         }
 
         It "Retourne `$null pour un type inconnu" {
 
-            $Handler = Get-ActionHandler -Type "Unknown"
+            $Handler = Get-ActionHandler `
+                -Type "Unknown"
 
-            $Handler | Should -BeNullOrEmpty
+            $Handler |
+                Should -BeNullOrEmpty
+
         }
+
     }
+
+    # ==================================================
+    # Register-ActionHandler
+    # ==================================================
 
     Context "Register-ActionHandler" {
 
@@ -47,6 +83,7 @@ Describe "ActionRegistry" {
 
             function Invoke-TestAction {
             }
+
         }
 
         It "Ajoute un nouveau handler" {
@@ -55,31 +92,45 @@ Describe "ActionRegistry" {
                 -Type "Test" `
                 -Handler "Invoke-TestAction"
 
-            $Handler = Get-ActionHandler -Type "Test"
+            $Handler = Get-ActionHandler `
+                -Type "Test"
 
-            $Handler | Should -Be "Invoke-TestAction"
+            $Handler |
+                Should -Be "Invoke-TestAction"
+
         }
 
         It "Refuse un type déjà enregistré" {
 
             {
+
                 Register-ActionHandler `
                     -Type "Registry" `
                     -Handler "Invoke-TestAction"
 
-            } | Should -Throw
+            } |
+                Should -Throw
+
         }
 
         It "Refuse un handler inexistant" {
 
             {
+
                 Register-ActionHandler `
                     -Type "Test" `
                     -Handler "Invoke-Inconnu"
 
-            } | Should -Throw
+            } |
+                Should -Throw
+
         }
+
     }
+
+    # ==================================================
+    # Get-RegisteredActionHandlers
+    # ==================================================
 
     Context "Get-RegisteredActionHandlers" {
 
@@ -87,7 +138,9 @@ Describe "ActionRegistry" {
 
             $Registry = Get-RegisteredActionHandlers
 
-            $Registry | Should -BeOfType Hashtable
+            $Registry |
+                Should -BeOfType Hashtable
+
         }
 
         It "Contient Registry" {
@@ -96,6 +149,7 @@ Describe "ActionRegistry" {
 
             $Registry.ContainsKey("Registry") |
                 Should -BeTrue
+
         }
 
         It "Contient Service" {
@@ -104,6 +158,18 @@ Describe "ActionRegistry" {
 
             $Registry.ContainsKey("Service") |
                 Should -BeTrue
+
         }
+
+        It "Contient Driver" {
+
+            $Registry = Get-RegisteredActionHandlers
+
+            $Registry.ContainsKey("Driver") |
+                Should -BeTrue
+
+        }
+
     }
+
 }

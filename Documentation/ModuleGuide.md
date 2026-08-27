@@ -569,3 +569,21 @@ Toute évolution architecturale importante doit être documentée dans `Architec
 - `Testing.md`
 - `TechnicalDecisions.md`
 - `Documentation\ADR\`
+
+## PostInstall
+
+Le dossier `Modules/PostInstall/` contient :
+
+| Fichier | Rôle |
+|---|---|
+| `State.ps1` | état persistant du PostInstall |
+| `Network.ps1` | détection et attente réseau |
+| `PostInstall.ps1` | moteur d'exécution |
+| `Bootstrap.ps1` | point d'entrée FirstBoot |
+| `FirstBoot.ps1` | construction des commandes FirstLogon |
+| `Unattend.ps1` | génération de `unattend.xml` |
+| `Installer.ps1` | installation du runtime dans le WIM |
+
+Les tests sont regroupés dans :
+
+`Tests/Unit/Modules/PostInstall/`

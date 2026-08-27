@@ -456,5 +456,341 @@ Describe "Dism" {
         }
 
     }
+	# ==================================================
+    # Add-DismDriver
+    # ==================================================
 
+    Context "Add-DismDriver" {
+
+        It "Ajoute les pilotes à une image montée" {
+
+            $MountPath = Join-Path $TestDrive "Mount"
+            $DriverPath = Join-Path $TestDrive "Drivers"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $MountPath `
+                -Force |
+                Out-Null
+
+            New-Item `
+                -ItemType Directory `
+                -Path $DriverPath `
+                -Force |
+                Out-Null
+
+            Mock Add-WindowsDriver {
+
+                [PSCustomObject]@{
+                    Driver = "TestDriver"
+                }
+
+            }
+
+            $Result = Add-DismDriver `
+                -MountPath $MountPath `
+                -DriverPath $DriverPath
+
+            $Result |
+                Should -Not -BeNullOrEmpty
+
+            Should -Invoke Add-WindowsDriver -Times 1 -Exactly `
+                -ParameterFilter {
+
+                    $Path -eq $MountPath -and
+                    $Driver -eq $DriverPath
+
+                }
+
+        }
+
+        It "Transmet Recurse à DISM" {
+
+            $MountPath = Join-Path $TestDrive "Mount"
+            $DriverPath = Join-Path $TestDrive "Drivers"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $MountPath `
+                -Force |
+                Out-Null
+
+            New-Item `
+                -ItemType Directory `
+                -Path $DriverPath `
+                -Force |
+                Out-Null
+
+            Mock Add-WindowsDriver {}
+
+            $null = Add-DismDriver `
+                -MountPath $MountPath `
+                -DriverPath $DriverPath `
+                -Recurse
+
+            Should -Invoke Add-WindowsDriver -Times 1 -Exactly `
+                -ParameterFilter {
+
+                    $Recurse -eq $true
+
+                }
+
+        }
+
+        It "Transmet ForceUnsigned lorsqu'il est demandé" {
+
+            $MountPath = Join-Path $TestDrive "Mount"
+            $DriverPath = Join-Path $TestDrive "Drivers"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $MountPath `
+                -Force |
+                Out-Null
+
+            New-Item `
+                -ItemType Directory `
+                -Path $DriverPath `
+                -Force |
+                Out-Null
+
+            Mock Add-WindowsDriver {}
+
+            $null = Add-DismDriver `
+                -MountPath $MountPath `
+                -DriverPath $DriverPath `
+                -ForceUnsigned
+
+            Should -Invoke Add-WindowsDriver -Times 1 -Exactly `
+                -ParameterFilter {
+
+                    $ForceUnsigned -eq $true
+
+                }
+
+        }
+
+        It "Refuse un dossier de montage inexistant" {
+
+            $DriverPath = Join-Path $TestDrive "Drivers"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $DriverPath `
+                -Force |
+                Out-Null
+
+            {
+
+                Add-DismDriver `
+                    -MountPath (Join-Path $TestDrive "MissingMount") `
+                    -DriverPath $DriverPath
+
+            } |
+                Should -Throw "*dossier de montage est introuvable*"
+
+        }
+
+        It "Refuse une source de pilotes inexistante" {
+
+            $MountPath = Join-Path $TestDrive "Mount"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $MountPath `
+                -Force |
+                Out-Null
+
+            {
+
+                Add-DismDriver `
+                    -MountPath $MountPath `
+                    -DriverPath (Join-Path $TestDrive "MissingDrivers")
+
+            } |
+                Should -Throw "*source des pilotes est introuvable*"
+
+        }
+
+        It "Transforme une erreur DISM en exception PimsOS" {
+
+            $MountPath = Join-Path $TestDrive "Mount"
+            $DriverPath = Join-Path $TestDrive "Drivers"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $MountPath `
+                -Force |
+                Out-Null
+
+            New-Item `
+                -ItemType Directory `
+                -Path $DriverPath `
+                -Force |
+                Out-Null
+
+            Mock Add-WindowsDriver {
+
+                throw "Erreur DISM de test"
+
+            }
+
+            {
+
+                Add-DismDriver `
+                    -MountPath $MountPath `
+                    -DriverPath $DriverPath
+
+            } |
+                Should -Throw "*Erreur DISM de test*"
+
+        }
+
+    }
+    # ==================================================
+    # Export-DismCurrentSystemDrivers
+    # ==================================================
+
+    Context "Export-DismCurrentSystemDrivers" {
+
+        It "Exporte les drivers du système actuel" {
+
+            $DestinationPath = Join-Path `
+                $TestDrive `
+                "Drivers"
+
+            Mock Export-WindowsDriver {
+
+                [PSCustomObject]@{
+
+                    Driver = "oem-test.inf"
+
+                }
+
+            }
+
+            $Result = Export-DismCurrentSystemDrivers `
+                -DestinationPath $DestinationPath
+
+            $Result |
+                Should -Not -BeNullOrEmpty
+
+            Test-Path `
+                -LiteralPath $DestinationPath `
+                -PathType Container |
+                Should -BeTrue
+
+            Should -Invoke `
+                -CommandName Export-WindowsDriver `
+                -Times 1 `
+                -Exactly `
+                -ParameterFilter {
+
+                    $Online -eq $true -and
+                    $Destination -eq $DestinationPath
+
+                }
+
+        }
+
+        It "Crée le dossier de destination s'il n'existe pas" {
+
+            $DestinationPath = Join-Path `
+                $TestDrive `
+                "NewDrivers"
+
+            Mock Export-WindowsDriver {}
+
+            $null = Export-DismCurrentSystemDrivers `
+                -DestinationPath $DestinationPath
+
+            Test-Path `
+                -LiteralPath $DestinationPath `
+                -PathType Container |
+                Should -BeTrue
+
+        }
+
+        It "Refuse une destination qui est un fichier" {
+
+            $DestinationPath = Join-Path `
+                $TestDrive `
+                "Drivers.txt"
+
+            New-Item `
+                -ItemType File `
+                -Path $DestinationPath `
+                -Force |
+                Out-Null
+
+            {
+
+                Export-DismCurrentSystemDrivers `
+                    -DestinationPath $DestinationPath
+
+            } |
+                Should -Throw "*n'est pas un dossier*"
+
+        }
+
+        It "Nettoie un ancien export avant l'export" {
+
+            $DestinationPath = Join-Path `
+                $TestDrive `
+                "Drivers"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $DestinationPath `
+                -Force |
+                Out-Null
+
+            $OldFile = Join-Path `
+                $DestinationPath `
+                "old-driver.txt"
+
+            Set-Content `
+                -Path $OldFile `
+                -Value "old" `
+                -Encoding UTF8
+
+            Mock Export-WindowsDriver {}
+
+            $null = Export-DismCurrentSystemDrivers `
+                -DestinationPath $DestinationPath
+
+            Test-Path `
+                -LiteralPath $OldFile |
+                Should -BeFalse
+
+            Should -Invoke `
+                -CommandName Export-WindowsDriver `
+                -Times 1 `
+                -Exactly
+
+        }
+
+        It "Transforme une erreur Export-WindowsDriver" {
+
+            $DestinationPath = Join-Path `
+                $TestDrive `
+                "Drivers"
+
+            Mock Export-WindowsDriver {
+
+                throw "Erreur export de test"
+
+            }
+
+            {
+
+                Export-DismCurrentSystemDrivers `
+                    -DestinationPath $DestinationPath
+
+            } |
+                Should -Throw "*Erreur export de test*"
+
+        }
+
+    }
 }

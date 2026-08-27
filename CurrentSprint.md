@@ -410,3 +410,28 @@ Les principaux composants du moteur sont désormais présents :
 - Infrastructure.
 
 La prochaine étape n'est plus la construction de l'architecture fondamentale, mais sa **validation complète, son enrichissement et sa finalisation opérationnelle**.
+
+## PostInstall / FirstBoot — état au 2026-08-27
+
+### Validé
+
+- [x] State.ps1
+- [x] Network.ps1
+- [x] PostInstall.ps1
+- [x] Bootstrap.ps1
+- [x] FirstBoot.ps1
+- [x] Unattend.ps1
+- [x] Installer.ps1
+- [x] tests unitaires et d'intégration
+- [x] intégration de `PreparePostInstall` dans le pipeline
+- [x] injection réelle du runtime dans un WIM
+- [x] génération réelle de `unattend.xml`
+
+### À faire
+
+- [ ] tester l'exécution réelle de FirstLogonCommands
+- [ ] valider le premier démarrage dans une VM
+- [ ] valider la reprise après disponibilité réseau
+- [ ] intégrer Chocolatey
+- [ ] intégrer Winget
+- [ ] intégrer Microsoft Store

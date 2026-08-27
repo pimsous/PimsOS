@@ -1,5 +1,4 @@
 {
-  
   "Logging": {
     "KeepLogs": 20,
     "Level": "INFO",
@@ -7,25 +6,26 @@
   },
 
   "Paths": {
-	  "ISO": "ISO",
-	  "Logs": "Logs",
-	  "Output": "Output",
-	  "Mount": "Mount",
-	  "Temp": "Temp",
-	  "Resources": "Resources",
-	  "Packages": "Packages",
-	  "Registry": "Registry",
-	  "Documentation": "Documentation"
-	},
+    "ISO": "ISO",
+    "Logs": "Logs",
+    "Output": "Output",
+    "Mount": "Mount",
+    "Temp": "Temp",
+    "Resources": "Resources",
+    "Packages": "Packages",
+    "Registry": "Registry",
+    "Documentation": "Documentation"
+  },
 
-  "Workspace": {
+   "Workspace": {
     "Root": "Workspace",
     "ISO": "Workspace\\ISO",
     "Sources": "Workspace\\Sources",
     "MountISO": "Workspace\\Mount\\ISO",
     "MountWIM": "Workspace\\Mount\\WIM",
     "Temp": "Workspace\\Temp",
-    "Extract": "Workspace\\Extract"
+    "Extract": "Workspace\\Extract",
+    "Drivers": "Workspace\\Drivers"
   },
 
   "Requirements": {
@@ -36,6 +36,13 @@
   "Image": {
     "Edition": null,
     "Language": "fr-FR"
+  },
+
+  "Drivers": {
+    "Source": "None",
+    "Path": null,
+    "Recurse": true,
+    "ForceUnsigned": false
   },
 
   "Build": {
