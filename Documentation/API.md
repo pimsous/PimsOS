@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 

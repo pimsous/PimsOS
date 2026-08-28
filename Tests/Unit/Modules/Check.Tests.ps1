@@ -8,6 +8,7 @@ BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
 
     . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
+    . "$ProjectRoot\Modules\Infrastructure\Prerequisites.ps1"
     . "$ProjectRoot\Modules\Infrastructure\Check.ps1"
 }
 
@@ -123,22 +124,28 @@ Describe "Check" {
 
                 Project = [pscustomobject]@{
 
-                    Root = $ProjectRoot
+					Root = $ProjectRoot
 
-                    Config = [pscustomobject]@{
+					Config = [pscustomobject]@{
 
-                        Requirements = [pscustomobject]@{
+						Requirements = [pscustomobject]@{
 
-                            PowerShellMajor =
-                                $PSVersionTable.PSVersion.Major
+							PowerShellMajor =
+								$PSVersionTable.PSVersion.Major
 
-                            MinimumFreeSpaceGB = 0
+							MinimumFreeSpaceGB = 0
 
-                        }
+							WindowsADK = [pscustomobject]@{
 
-                    }
+								Required = $false
 
-                }
+							}
+
+						}
+
+					}
+
+				}
 
                 # --------------------------------------------------
                 # Rapport d'environnement
@@ -162,6 +169,7 @@ Describe "Check" {
                         Git           = $false
                         Dism          = $false
                         Iso           = $false
+						WindowsADK    = $false
                         DiskSpace     = $false
 
                     }
@@ -173,6 +181,29 @@ Describe "Check" {
             # ==================================================
             # Mocks des dépendances
             # ==================================================
+
+
+			Mock Test-PimsOSWindowsADK {
+
+				return [pscustomobject]@{
+
+					Installed   = $true
+					OsCdImgPath = "C:\ADK\oscdimg.exe"
+
+				}
+
+			}
+
+
+			function global:Start-BuildPhase {
+
+				param(
+					[psobject]$Context,
+					[string]$Name
+				)
+
+				...
+			}
 
             function global:Start-BuildPhase {
 
@@ -303,6 +334,36 @@ Describe "Check" {
                 Should -BeTrue
         }
 
+		        It "Détecte Windows ADK lorsqu'il est disponible" {
+
+            $Context = Invoke-EnvironmentChecks `
+                -Context $script:Context
+
+            $Context.BuildState.Environment.WindowsADK |
+                Should -BeTrue
+
+        }
+
+
+        It "Ajoute Windows ADK au rapport d'environnement" {
+
+            $Context = Invoke-EnvironmentChecks `
+                -Context $script:Context
+
+            $AdkCheck =
+                $Context.EnvironmentChecks |
+                Where-Object {
+                    $_.Name -eq "WindowsADK"
+                }
+
+            $AdkCheck |
+                Should -Not -BeNullOrEmpty
+
+            $AdkCheck.Success |
+                Should -BeTrue
+
+        }
+
         It "Crée un rapport contenant les vérifications" {
 
             $Context = Invoke-EnvironmentChecks `
@@ -312,7 +373,7 @@ Describe "Check" {
                 Should -Not -BeNullOrEmpty
 
             $Context.EnvironmentChecks.Count |
-                Should -Be 6
+                Should -Be 7
         }
     }
 }

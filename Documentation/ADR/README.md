@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -295,3 +295,4 @@ Pour comprendre les décisions décrites dans ce dossier, consulter également :
 - `Documentation\ModuleGuide.md`
 - `Documentation\TechnicalDecisions.md`
 - `Documentation\Testing.md`
+

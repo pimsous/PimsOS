@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -300,3 +300,4 @@ via `FirstLogonCommands`.
 
 Cette dernière étape reste à valider dans un environnement Windows
 réel.
+

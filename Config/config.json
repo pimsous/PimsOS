@@ -19,19 +19,37 @@
 
    "Workspace": {
     "Root": "Workspace",
+    "Cache": "Workspace\\Cache",
     "ISO": "Workspace\\ISO",
+    "ISOSource": "Workspace\\ISO\\Source",
     "Sources": "Workspace\\Sources",
     "MountISO": "Workspace\\Mount\\ISO",
+    "MountTest": "Workspace\\Mount\\TestMontage",
     "MountWIM": "Workspace\\Mount\\WIM",
     "Temp": "Workspace\\Temp",
     "Extract": "Workspace\\Extract",
-    "Drivers": "Workspace\\Drivers"
-  },
+    "Drivers": "Workspace\\Drivers",
+    "Packages": "Workspace\\Packages",
+    "PackagesChocolatey": "Workspace\\Packages\\Chocolatey",
+    "PackagesWinget": "Workspace\\Packages\\Winget",
+    "PackagesMicrosoftStore": "Workspace\\Packages\\MicrosoftStore",
+    "Registry": "Workspace\\Registry"
+},
 
   "Requirements": {
     "MinimumFreeSpaceGB": 20,
-    "PowerShellMajor": 7
-  },
+    "PowerShellMajor": 7,
+
+    "WindowsADK": {
+        "Required": true,
+        "Version": "10.1.26100.2454",
+        "DownloadUrl": "https://go.microsoft.com/fwlink/?linkid=2289980",
+        "InstallPath": "C:\\Program Files (x86)\\Windows Kits\\10",
+        "Feature": "OptionId.DeploymentTools",
+        "DownloadFileName": "adksetup.exe",
+        "Sha256": null
+    }
+},
 
   "Image": {
     "Edition": null,

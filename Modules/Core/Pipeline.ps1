@@ -624,7 +624,8 @@ function Prepare-PostInstall {
         INFO
 
     if (
-        $null -eq $Context.BuildState.Image.MountPath -or
+        $null -eq $Context.BuildState -or
+        $null -eq $Context.BuildState.Image -or
         [string]::IsNullOrWhiteSpace(
             [string]$Context.BuildState.Image.MountPath
         )
@@ -637,8 +638,9 @@ function Prepare-PostInstall {
     $MountPath =
         [string]$Context.BuildState.Image.MountPath
 
-    $RuntimeSource =
-        Get-PostInstallRuntimePath
+        $RuntimeSource =
+			Get-PostInstallRuntimePath
+
 
     $RuntimeResult =
         Install-PimsOSPostInstallRuntime `
@@ -696,6 +698,25 @@ function Get-BuildPipeline {
 
         },
 
+		# ------------------------------------------
+        # Copie du contenu ISO dans Workspace
+        # ------------------------------------------
+
+        @{
+
+            Id   = "CopyIsoContent"
+            Name = "Préparation de la source ISO"
+
+            Action = {
+
+                param($Context)
+
+                Copy-IsoContentToWorkspace `
+                    -Context $Context
+
+            }
+
+        },
 
         # ------------------------------------------
         # Détection du WIM
@@ -919,8 +940,8 @@ function Get-BuildPipeline {
                 param($Context)
 
                 Invoke-Configuration `
-                    -Context $Context `
-                    -Configuration $Context.Configuration
+					-Context $Context `
+					-Configuration $Context.Configuration
 
             }
 

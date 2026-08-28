@@ -181,6 +181,31 @@ function Invoke-EnvironmentChecks {
 
     }
 
+	# --------------------------------------------------
+	# Windows ADK
+	# --------------------------------------------------
+
+	$WindowsADK = Test-PimsOSWindowsADK
+
+	$Checks += [PSCustomObject]@{
+
+		Name = "WindowsADK"
+
+		Success = $WindowsADK.Installed
+
+		Value = if ($WindowsADK.Installed) {
+
+			"oscdimg : $($WindowsADK.OsCdImgPath)"
+
+		}
+		else {
+
+			"Windows ADK ou oscdimg.exe introuvable"
+
+		}
+
+	}
+
     # --------------------------------------------------
     # ISO
     # --------------------------------------------------
@@ -227,30 +252,51 @@ function Invoke-EnvironmentChecks {
     }
 
     # --------------------------------------------------
-    # Rapport
-    # --------------------------------------------------
+	# Rapport
+	# --------------------------------------------------
 
-    $Context = Set-EnvironmentReport `
-        -Context $Context `
-        -Checks $Checks
+	$Context = Set-EnvironmentReport `
+		-Context $Context `
+		-Checks $Checks
 
-    foreach ($Check in $Checks) {
+	foreach ($Check in $Checks) {
 
-        if ($Check.Success) {
+		if ($Check.Success) {
 
-            Write-Log "$($Check.Name) : $($Check.Value)" SUCCESS
+			Write-Log `
+				"$($Check.Name) : $($Check.Value)" `
+				SUCCESS
 
-        }
-        else {
+			continue
 
-            Write-Log "$($Check.Name) : $($Check.Value)" ERROR
+		}
 
-        }
+		# --------------------------------------------------
+		# Git est optionnel pour le build
+		# --------------------------------------------------
 
-    }
+		if ($Check.Name -eq "Git") {
 
-    $Context = Complete-BuildPhase `
-        -Context $Context
+			Write-Log `
+				"Git : Non installé (optionnel)" `
+				INFO
+
+			continue
+
+		}
+
+		# --------------------------------------------------
+		# Prérequis obligatoire manquant
+		# --------------------------------------------------
+
+		Write-Log `
+			"$($Check.Name) : $($Check.Value)" `
+			ERROR
+
+	}
+
+	$Context = Complete-BuildPhase `
+		-Context $Context
 
     # --------------------------------------------------
     # Etat du Build
@@ -269,6 +315,9 @@ function Invoke-EnvironmentChecks {
 
     $Context.BuildState.Environment.Dism =
         ($Checks | Where-Object Name -eq "DISM").Success
+
+	$Context.BuildState.Environment.WindowsADK =
+		($Checks | Where-Object Name -eq "WindowsADK").Success
 
     $Context.BuildState.Environment.Iso =
         ($Checks | Where-Object Name -eq "ISO").Success

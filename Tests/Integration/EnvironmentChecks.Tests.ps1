@@ -11,6 +11,7 @@ BeforeAll {
     . "$ProjectRoot\Modules\Core\Report.ps1"
     . "$ProjectRoot\Modules\Core\Workflow.ps1"
     . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
+    . "$ProjectRoot\Modules\Infrastructure\Prerequisites.ps1"
     . "$ProjectRoot\Modules\Infrastructure\Check.ps1"
     . "$ProjectRoot\Modules\Image\Iso.ps1"
 
@@ -49,13 +50,14 @@ Describe "EnvironmentChecks" {
 
                 Environment = [pscustomobject]@{
 
-                    Checked = $false
-                    PowerShell = $false
-                    Administrator = $false
-                    Git = $false
-                    Dism = $false
-                    Iso = $false
-                    DiskSpace = $false
+                    Checked       = $false
+					PowerShell    = $false
+					Administrator = $false
+					Git           = $false
+					Dism          = $false
+					Iso           = $false
+					WindowsADK    = $false
+					DiskSpace     = $false
 
                 }
 

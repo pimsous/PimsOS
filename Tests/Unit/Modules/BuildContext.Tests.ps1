@@ -379,19 +379,53 @@ Describe "BuildContext" {
 
             function global:Get-Config {
 
-                return [pscustomobject]@{
+				return [pscustomobject]@{
 
-                    Requirements = [pscustomobject]@{
+					Requirements = [pscustomobject]@{
 
-                        PowerShellMajor = 5
+						PowerShellMajor = 5
 
-                        MinimumFreeSpaceGB = 0
+						MinimumFreeSpaceGB = 0
+					}
 
-                    }
+					DefaultProfile = "Tests\Registry"
 
-                    DefaultProfile = "Tests\Registry"
-                }
-            }
+					Workspace = [pscustomobject]@{
+
+						Root = "Workspace"
+
+						Cache = "Workspace\Cache"
+
+						ISO = "Workspace\ISO"
+
+						ISOSource = "Workspace\ISO\Source"
+
+						Sources = "Workspace\Sources"
+
+						MountISO = "Workspace\Mount\ISO"
+
+						MountTest = "Workspace\Mount\TestMontage"
+
+						MountWIM = "Workspace\Mount\WIM"
+
+						Temp = "Workspace\Temp"
+
+						Extract = "Workspace\Extract"
+
+						Drivers = "Workspace\Drivers"
+
+						Packages = "Workspace\Packages"
+
+						PackagesChocolatey = "Workspace\Packages\Chocolatey"
+
+						PackagesWinget = "Workspace\Packages\Winget"
+
+						PackagesMicrosoftStore = "Workspace\Packages\MicrosoftStore"
+
+						Registry = "Workspace\Registry"
+					}
+				}
+			}
 
             function global:Get-ProjectVersion {
 
@@ -570,33 +604,33 @@ Describe "BuildContext" {
 
         It "Configure le Workspace" {
 
-            $Context = Initialize-BuildContext `
-                -Context $script:Context
+			$Context = Initialize-BuildContext `
+				-Context $script:Context
 
-            $Context.Workspace.Root |
-                Should -Be "C:\Projets\PimsOS"
+			$Context.Workspace.Root |
+				Should -Be "C:\Projets\PimsOS\Workspace"
 
-            $Context.Workspace.ISO |
-                Should -Be "C:\Projets\PimsOS\ISO"
+			$Context.Workspace.ISO |
+				Should -Be "C:\Projets\PimsOS\Workspace\ISO"
 
-            $Context.Workspace.Output |
-                Should -Be "C:\Projets\PimsOS\Output"
+			$Context.Project.Paths.Output |
+				Should -Be "C:\Projets\PimsOS\Output"
 
-            $Context.Workspace.Sources |
-                Should -Be "C:\Projets\PimsOS\Workspace\Sources"
+			$Context.Workspace.Sources |
+				Should -Be "C:\Projets\PimsOS\Workspace\Sources"
 
-            $Context.Workspace.Temp |
-                Should -Be "C:\Projets\PimsOS\Temp"
+			$Context.Workspace.Temp |
+				Should -Be "C:\Projets\PimsOS\Workspace\Temp"
 
-            $Context.Workspace.MountWIM |
-                Should -Be "C:\Projets\PimsOS\Mount\WIM"
+			$Context.Workspace.MountWIM |
+				Should -Be "C:\Projets\PimsOS\Workspace\Mount\WIM"
 
-            $Context.Workspace.MountISO |
-                Should -Be "C:\Projets\PimsOS\Mount\ISO"
+			$Context.Workspace.MountISO |
+				Should -Be "C:\Projets\PimsOS\Workspace\Mount\ISO"
 
-            $Context.Workspace.Extract |
-                Should -Be "C:\Projets\PimsOS\Temp\Extract"
-        }
+			$Context.Workspace.Extract |
+				Should -Be "C:\Projets\PimsOS\Workspace\Extract"
+		}
 
         It "Configure le chemin du log" {
 

@@ -87,93 +87,181 @@ function Repair-Workspace {
 
     }
 
-    # --------------------------------------------------
-    # Chemins du Workspace
-    # --------------------------------------------------
+    # ==================================================
+    # Création de l'arborescence Workspace
+    # ==================================================
 
-    $Paths = @(
-        $Context.Workspace.Sources,
+    $WorkspacePaths = @(
+        $Context.Workspace.Root
+        $Context.Workspace.Cache
+        $Context.Workspace.ISO
+        $Context.Workspace.ISOSource
+        $Context.Workspace.Sources
+        $Context.Workspace.MountISO
+        $Context.Workspace.MountTest
         $Context.Workspace.MountWIM
+        $Context.Workspace.Temp
+        $Context.Workspace.Extract
+        $Context.Workspace.Drivers
+        $Context.Workspace.Packages
+        $Context.Workspace.PackagesChocolatey
+        $Context.Workspace.PackagesWinget
+        $Context.Workspace.PackagesMicrosoftStore
+        $Context.Workspace.Registry
     )
 
-    foreach ($Path in $Paths) {
-
-        if (-not (Test-Path $Path)) {
-            continue
-        }
-
-        # --------------------------------------------------
-        # Montage WIM réutilisable
-        # --------------------------------------------------
+    foreach ($Path in $WorkspacePaths) {
 
         if (
-            $CanReuseWim -and
-            $Path -eq $Context.Workspace.MountWIM
+            [string]::IsNullOrWhiteSpace(
+                [string]$Path
+            )
+        ) {
+
+            throw "Un chemin Workspace est vide."
+
+        }
+
+        if (
+            -not (
+                Test-Path `
+                    -LiteralPath $Path `
+                    -PathType Container
+            )
         ) {
 
             Write-Log (
-                "Montage WIM conservé : {0}" -f $Path
+                "Création du dossier Workspace : {0}" -f $Path
             ) INFO
 
-            continue
+            New-Item `
+                -ItemType Directory `
+                -Path $Path `
+                -Force `
+                -ErrorAction Stop |
+                Out-Null
+
         }
 
-        # --------------------------------------------------
-        # Sources contenant le WIM monté
-        # --------------------------------------------------
+    }
+
+    # ==================================================
+    # Nettoyage des zones temporaires
+    # ==================================================
+
+    # --------------------------------------------------
+    # Montage WIM réutilisable
+    # --------------------------------------------------
+
+    if (
+        $CanReuseWim
+    ) {
+
+        Write-Log (
+            "Montage WIM conservé : {0}" -
+            $Context.Workspace.MountWIM
+        ) INFO
+
+    }
+    else {
+
+        $MountWimItems = @(
+            Get-ChildItem `
+                -LiteralPath $Context.Workspace.MountWIM `
+                -Force `
+                -ErrorAction SilentlyContinue
+        )
+
+        if ($MountWimItems.Count -gt 0) {
+
+            Write-Log (
+                "Nettoyage du montage WIM : {0}" -
+                $Context.Workspace.MountWIM
+            ) WARNING
+
+            Remove-Item `
+                -LiteralPath $MountWimItems.FullName `
+                -Recurse `
+                -Force `
+                -ErrorAction Stop
+
+            $Cleaned = $true
+
+        }
+
+    }
+
+    # --------------------------------------------------
+    # Sources
+    # --------------------------------------------------
+
+    if ($CanReuseWim) {
+
+        $WimPath =
+            $Context.BuildState.Recovery.Wim.ImagePath
 
         if (
-            $CanReuseWim -and
-            $Path -eq $Context.Workspace.Sources
+            -not [string]::IsNullOrWhiteSpace(
+                [string]$WimPath
+            ) -and
+            (Test-Path $WimPath)
         ) {
 
-            $WimPath = $Context.BuildState.Recovery.Wim.ImagePath
+            Write-Log (
+                "WIM réutilisable détecté : {0}" -f $WimPath
+            ) INFO
 
-            if (
-                -not [string]::IsNullOrWhiteSpace(
-                    [string]$WimPath
-                ) -and
-                (Test-Path $WimPath)
-            ) {
-
-                Write-Log (
-                    "WIM réutilisable détecté : {0}" -f $WimPath
-                ) INFO
-
-                Write-Log (
-                    "Sources conservées car le WIM est utilisé par DISM."
-                ) INFO
-
-                continue
-            }
+            Write-Log (
+                "Sources conservées car le WIM est utilisé par DISM."
+            ) INFO
 
         }
 
-        # --------------------------------------------------
-        # Vérification du contenu
-        # --------------------------------------------------
+    }
+
+    # --------------------------------------------------
+    # Zones toujours nettoyables
+    # --------------------------------------------------
+
+    $CleanablePaths = @(
+        $Context.Workspace.MountTest
+        $Context.Workspace.Extract
+        $Context.Workspace.Temp
+    )
+
+    foreach ($Path in $CleanablePaths) {
+
+        if (
+            -not (
+                Test-Path `
+                    -LiteralPath $Path `
+                    -PathType Container
+            )
+        ) {
+
+            continue
+
+        }
 
         $Items = @(
             Get-ChildItem `
-                -Path $Path `
+                -LiteralPath $Path `
                 -Force `
                 -ErrorAction SilentlyContinue
         )
 
         if ($Items.Count -eq 0) {
+
             continue
+
         }
 
-        # --------------------------------------------------
-        # Nettoyage
-        # --------------------------------------------------
-
         Write-Log (
-            "Nettoyage du Workspace : {0}" -f $Path
+            "Nettoyage du Workspace temporaire : {0}" -f $Path
         ) WARNING
 
         Remove-Item `
-            -Path (Join-Path $Path "*") `
+            -LiteralPath $Items.FullName `
             -Recurse `
             -Force `
             -ErrorAction Stop
@@ -184,18 +272,18 @@ function Repair-Workspace {
             -Path $Path
 
         Write-Log (
-            "Workspace nettoyé : {0}" -f $Path
+            "Workspace temporaire nettoyé : {0}" -f $Path
         ) SUCCESS
 
     }
 
-    # --------------------------------------------------
+    # ==================================================
     # Résultat
-    # --------------------------------------------------
+    # ==================================================
 
     if ($Cleaned) {
 
-        Write-Log "Workspace nettoyé." SUCCESS
+        Write-Log "Workspace préparé et nettoyé." SUCCESS
 
     }
     else {

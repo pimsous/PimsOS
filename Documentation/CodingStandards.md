@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -536,3 +536,4 @@ Toute duplication introduite doit avoir une justification claire.
 - `Testing.md`
 - `TechnicalDecisions.md`
 - `Documentation\ADR\`
+

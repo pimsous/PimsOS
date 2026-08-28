@@ -246,12 +246,14 @@ Describe "CommandManager" {
 
         It "Refuse un handler inexistant" {
 
-            Register-CommandProvider `
-                -Name "Broken" `
-                -Handler "Invoke-UnknownCommandHandler" |
-                Out-Null
+            {
+                Register-CommandProvider `
+                    -Name "Broken" `
+                    -Handler "Invoke-UnknownCommandHandler"
+            } |
+                Should -Throw
 
-        } -Skip:$true
+        }
 
 
         It "Transmet les arguments au handler" {

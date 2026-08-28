@@ -510,7 +510,7 @@ function Merge-Profile {
     ) SUCCESS
 
     $Context.BuildState.Image.ProfileMerged = $true
-
+	
 	$Context.Configuration = $Configuration
 
 	return $Configuration

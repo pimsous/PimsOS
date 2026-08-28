@@ -3,9 +3,13 @@
 # Projet : PimsOS Builder
 # ==========================================
 
-$ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
+BeforeAll {
 
-. "$ProjectRoot\Modules\PostInstall\Network.ps1"
+    $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
+
+    . "$ProjectRoot\Modules\PostInstall\Network.ps1"
+
+}
 Describe "PostInstall Network" {
 
     # ==================================================
@@ -282,10 +286,25 @@ Describe "PostInstall Network" {
             Mock Test-PostInstallNetwork {
 
                 return $false
-
             }
 
             Mock Start-Sleep {}
+
+            $script:NetworkTestDateCall = 0
+
+            Mock Get-Date {
+
+                $script:NetworkTestDateCall++
+
+                if ($script:NetworkTestDateCall -eq 1) {
+
+                    return [datetime]::Now
+
+                }
+
+                return [datetime]::Now.AddMinutes(1)
+
+            }
 
             $Result = Wait-PostInstallNetwork `
                 -IntervalSeconds 1 `
@@ -293,6 +312,8 @@ Describe "PostInstall Network" {
 
             $Result |
                 Should -BeFalse
+
+            $script:NetworkTestDateCall = $null
 
         }
 

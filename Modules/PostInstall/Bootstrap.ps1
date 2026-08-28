@@ -92,3 +92,9 @@ function Start-PimsOSPostInstall {
     }
 
 }
+
+# --------------------------------------------------
+# Point d'entrée
+# --------------------------------------------------
+
+Start-PimsOSPostInstall

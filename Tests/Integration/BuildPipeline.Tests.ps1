@@ -65,6 +65,8 @@ Describe "BuildPipeline" {
 
             Project = [pscustomobject]@{
 
+				Root = "C:\Projets\PimsOS"
+
                 Config = [pscustomobject]@{
 
                     Drivers = [pscustomobject]@{
@@ -771,7 +773,22 @@ Describe "BuildPipeline" {
 
             $script:ReceivedDriverAction.ForceUnsigned |
                 Should -BeTrue
+			
+			$script:Context.Drivers.Count |
+                Should -Be 1
 
+            $script:Context.Drivers[0].Id |
+                Should -Be "Drivers.CurrentSystem"
+
+            Should -Invoke `
+                -CommandName Invoke-DriverAction `
+                -Times 1 `
+                -Exactly `
+                -ParameterFilter {
+                    $Action.Id -eq "Drivers.CurrentSystem" -and
+                    $Action.Provider -eq "DISM" -and
+                    $Action.Source -eq $ExpectedSource
+                }
         }
 
     }

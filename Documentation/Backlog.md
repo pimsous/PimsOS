@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -219,3 +219,4 @@ Toute tâche terminée doit être retirée du Backlog actif et reflétée dans l
 - reprise réseau
 - providers de paquets
 - Microsoft Store
+

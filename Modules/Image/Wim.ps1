@@ -763,7 +763,28 @@ function Get-WimFile {
 
     Write-Log "Recherche du fichier image Windows..."
 
-    $Sources = $Context.ISO.SourcesPath
+    $Config = Get-Config
+
+	if (
+		$null -eq $Config.Workspace -or
+		[string]::IsNullOrWhiteSpace(
+			[string]$Config.Workspace.ISOSource
+		)
+	) {
+
+		throw "Le chemin Workspace.ISOSource est absent de Config.json."
+
+	}
+
+	$IsoSourceRoot =
+		Join-Path `
+			-Path (Get-ProjectRoot) `
+			-ChildPath $Config.Workspace.ISOSource
+
+	$Sources =
+		Join-Path `
+			-Path $IsoSourceRoot `
+			-ChildPath "sources"
 
     if (-not (Test-Path $Sources)) {
 
@@ -1131,7 +1152,7 @@ function Get-WimImages {
 # --------------------------------------------------
 
 function Select-WimImageInteractive {
-	
+
 	[CmdletBinding()]
     param(
 
@@ -1185,7 +1206,7 @@ function Select-WimImageInteractive {
 
 	}
 	until ($Selected)
-	
+
 	$Context.Image.Index = $Selected.Index
 
 	$Context.Image.Name = $Selected.Name
@@ -1246,7 +1267,7 @@ function Select-WimImage {
 		)
 
 	}
-    
+
 	$Selected = $null
 
 
@@ -1296,7 +1317,7 @@ function Select-WimImage {
     $Context.Image.Description = $Selected.Description
 
     $Context.Image.Size = $Selected.Size
-	
+
 	$Context.Image.SelectedBy =
 		if ([string]::IsNullOrWhiteSpace($EditionName)) {
 			"Utilisateur"

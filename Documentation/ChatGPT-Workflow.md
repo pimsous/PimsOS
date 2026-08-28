@@ -4,7 +4,7 @@
 >
 > Statut : Référence de travail
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -768,3 +768,4 @@ Le projet doit également permettre de :
 - améliorer progressivement les compétences de développement.
 
 Le développement de PimsOS doit rester méthodique, reproductible, durable et agréable à maintenir.
+

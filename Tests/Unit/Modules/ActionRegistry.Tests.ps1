@@ -18,8 +18,25 @@ Describe "ActionRegistry" {
         # --------------------------------------------------
         # Isolation du logger
         # --------------------------------------------------
+        # ActionRegistry peut être testé indépendamment de PimsOS.
+        # Le stub est global afin d'être visible depuis la fonction
+        # Write-ActionRegistryLog, dont la résolution de commandes se
+        # fait dans son propre scope.
 
-        Mock Write-Log {}
+        if (Get-Command Write-Log -CommandType Function -ErrorAction SilentlyContinue) {
+
+            Remove-Item Function:\Write-Log -Force -ErrorAction SilentlyContinue
+
+        }
+
+        function global:Write-Log {
+
+            param(
+                [object]$Message,
+                [object]$Level
+            )
+
+        }
 
         Reset-ActionRegistry
 

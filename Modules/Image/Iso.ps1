@@ -133,7 +133,7 @@ function Test-IsoFile {
 
     $iso = Get-IsoFile `
     -Context $Context
-	
+
 
     if ($iso.SizeGB -lt 3) {
 
@@ -204,6 +204,193 @@ function Copy-IsoToWorkspace {
 
 }
 
+# ==========================================
+# Copie le contenu de l'ISO montée dans
+# Workspace\ISO\Source
+# ==========================================
+
+function Copy-IsoContentToWorkspace {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    if ($null -eq $Context.ISO) {
+
+        throw "Les informations de l'ISO sont absentes du contexte."
+
+    }
+
+    if (
+        $Context.ISO.PSObject.Properties.Name -notcontains "Root"
+    ) {
+
+        throw "Le chemin racine de l'ISO montée est absent du contexte."
+
+    }
+
+    $SourcePath =
+        [string]$Context.ISO.Root
+
+    if ([string]::IsNullOrWhiteSpace($SourcePath)) {
+
+        throw "Le chemin racine de l'ISO montée est vide."
+
+    }
+
+    if (-not (Test-Path -LiteralPath $SourcePath -PathType Container)) {
+
+        throw (
+            "Le contenu de l'ISO montée est introuvable : {0}" -f
+            $SourcePath
+        )
+
+    }
+
+    $Config = Get-Config
+
+    if (
+        $null -eq $Config.Workspace -or
+        [string]::IsNullOrWhiteSpace(
+            [string]$Config.Workspace.ISOSource
+        )
+    ) {
+
+        throw "Le chemin Workspace.ISOSource est absent de Config.json."
+
+    }
+
+    $DestinationPath =
+        Join-Path `
+            -Path (Get-ProjectRoot) `
+            -ChildPath $Config.Workspace.ISOSource
+
+    Write-Log (
+        "Préparation de la source ISO : {0}" -f
+        $DestinationPath
+    ) INFO
+
+    # --------------------------------------------------
+    # Nettoyage de l'ancienne source
+    # --------------------------------------------------
+
+    if (Test-Path -LiteralPath $DestinationPath) {
+
+        Write-Log `
+            "Nettoyage de l'ancienne source ISO..." `
+            INFO
+
+        Remove-Item `
+            -LiteralPath $DestinationPath `
+            -Recurse `
+            -Force `
+            -ErrorAction Stop
+
+    }
+
+    # --------------------------------------------------
+    # Création du dossier source
+    # --------------------------------------------------
+
+    New-Item `
+        -ItemType Directory `
+        -Path $DestinationPath `
+        -Force `
+        -ErrorAction Stop |
+        Out-Null
+
+    # --------------------------------------------------
+    # Copie du contenu ISO
+    # --------------------------------------------------
+
+    Write-Log (
+        "Copie du contenu ISO depuis {0}..." -f
+        $SourcePath
+    ) INFO
+
+    Copy-Item `
+        -Path (Join-Path $SourcePath "*") `
+        -Destination $DestinationPath `
+        -Recurse `
+        -Force `
+        -ErrorAction Stop
+
+	# --------------------------------------------------
+    # Préparation du install.wim pour modification
+    # --------------------------------------------------
+
+    $InstallWim =
+        Join-Path `
+            -Path $DestinationPath `
+            -ChildPath "sources\install.wim"
+
+    if (Test-Path -LiteralPath $InstallWim -PathType Leaf) {
+
+        Write-Log `
+            "Suppression de l'attribut ReadOnly du install.wim..." `
+            INFO
+
+        Set-ItemProperty `
+            -LiteralPath $InstallWim `
+            -Name Attributes `
+            -Value ([System.IO.FileAttributes]::Archive) `
+            -ErrorAction Stop
+
+    }
+
+    # --------------------------------------------------
+    # Validation
+    # --------------------------------------------------
+
+    $BootFile =
+        Join-Path `
+            -Path $DestinationPath `
+            -ChildPath "boot\etfsboot.com"
+
+    $EfiBootFile =
+        Join-Path `
+            -Path $DestinationPath `
+            -ChildPath "efi\microsoft\boot\efisys.bin"
+
+
+    if (-not (Test-Path -LiteralPath $BootFile -PathType Leaf)) {
+
+        throw (
+            "Le fichier de démarrage BIOS n'a pas été copié : {0}" -f
+            $BootFile
+        )
+
+    }
+
+    if (-not (Test-Path -LiteralPath $EfiBootFile -PathType Leaf)) {
+
+        throw (
+            "Le fichier de démarrage UEFI n'a pas été copié : {0}" -f
+            $EfiBootFile
+        )
+
+    }
+
+    if (-not (Test-Path -LiteralPath $InstallWim -PathType Leaf)) {
+
+        throw (
+            "Le fichier install.wim n'a pas été copié : {0}" -f
+            $InstallWim
+        )
+
+    }
+
+    Write-Log `
+        "Source ISO préparée avec succès." `
+        SUCCESS
+
+    return $Context
+}
+
 function Get-IsoInformation {
 
     [CmdletBinding()]
@@ -224,7 +411,7 @@ function Get-IsoInformation {
 
     }
 }
-	
+
 function Mount-Iso {
 
     [CmdletBinding()]
@@ -261,10 +448,14 @@ function Mount-Iso {
 
 			Mounted     = $true
 
+			OutputPath   = $null
+			OutputName   = $null
+			OutputSizeGB = 0
+
 		}
-		
+
 		$Context.BuildState.Image.IsoMounted = $true
-		
+
 		return $Context
 
 	}
@@ -315,10 +506,14 @@ if (-not $volume.DriveLetter) {
 
         Mounted = $true
 
+		OutputPath   = $null
+		OutputName   = $null
+		OutputSizeGB = 0
+
     }
-	
+
 	$Context.BuildState.Image.IsoMounted = $true
-	
+
     Write-Log "ISO montée sur $drive" SUCCESS
 
     return $Context
@@ -532,4 +727,236 @@ function Dismount-Iso {
 
     return $Context
 
+}
+# ==========================================
+# Création de l'ISO PimsOS
+# ==========================================
+
+function New-PimsOSIso {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    Write-Log `
+        "Création de l'ISO PimsOS..." `
+        INFO
+
+    # --------------------------------------------------
+    # Vérification de Windows ADK / oscdimg
+    # --------------------------------------------------
+
+    $OsCdImgPath = Get-PimsOSOsCdImgPath
+
+    if (
+        [string]::IsNullOrWhiteSpace($OsCdImgPath) -or
+        -not (Test-Path -LiteralPath $OsCdImgPath -PathType Leaf)
+    ) {
+
+        throw `
+            "oscdimg.exe est introuvable. Windows ADK est requis pour créer l'ISO."
+
+    }
+
+	# --------------------------------------------------
+    # Détermination de la source ISO
+    # --------------------------------------------------
+
+    $Config = Get-Config
+
+    if (
+        $null -eq $Config.Workspace -or
+        [string]::IsNullOrWhiteSpace(
+            [string]$Config.Workspace.ISOSource
+        )
+    ) {
+
+        throw "Le chemin Workspace.ISOSource est absent de Config.json."
+
+    }
+
+    $SourcePath =
+        Join-Path `
+            -Path (Get-ProjectRoot) `
+            -ChildPath $Config.Workspace.ISOSource
+
+    if (-not (Test-Path -LiteralPath $SourcePath -PathType Container)) {
+
+        throw (
+            "Le contenu source de l'ISO est introuvable : {0}" -f
+            $SourcePath
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Chemin de sortie
+    # --------------------------------------------------
+
+    $OutputPath = [string]$Context.Project.Paths.Output
+
+    if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+
+        throw `
+            "Le chemin Output est absent du contexte."
+
+    }
+
+    if (-not (Test-Path -LiteralPath $OutputPath -PathType Container)) {
+
+        New-Item `
+            -ItemType Directory `
+            -Path $OutputPath `
+            -Force `
+            -ErrorAction Stop |
+            Out-Null
+
+    }
+
+    # --------------------------------------------------
+    # Nom de l'ISO
+    # --------------------------------------------------
+
+    $Version = [string]$Context.Project.Version
+
+    if ([string]::IsNullOrWhiteSpace($Version)) {
+
+        $Version = "dev"
+
+    }
+
+    $IsoName =
+        "PimsOS_{0}_{1}.iso" -f
+        $Version,
+        (Get-Date -Format "yyyyMMdd_HHmmss")
+
+    $IsoPath =
+        Join-Path `
+            -Path $OutputPath `
+            -ChildPath $IsoName
+
+    # --------------------------------------------------
+    # Vérification des fichiers de démarrage
+    # --------------------------------------------------
+
+    $BootFile = Join-Path `
+        -Path $SourcePath `
+        -ChildPath "boot\etfsboot.com"
+
+    $EfiBootFile = Join-Path `
+        -Path $SourcePath `
+        -ChildPath "efi\microsoft\boot\efisys.bin"
+
+    if (-not (Test-Path -LiteralPath $BootFile -PathType Leaf)) {
+
+        throw (
+            "Fichier de démarrage BIOS introuvable : {0}" -f
+            $BootFile
+        )
+
+    }
+
+    if (-not (Test-Path -LiteralPath $EfiBootFile -PathType Leaf)) {
+
+        throw (
+            "Fichier de démarrage UEFI introuvable : {0}" -f
+            $EfiBootFile
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Création avec oscdimg
+    # --------------------------------------------------
+
+    Write-Log (
+        "Source ISO : {0}" -f
+        $SourcePath
+    ) INFO
+
+    Write-Log (
+        "ISO de sortie : {0}" -f
+        $IsoPath
+    ) INFO
+
+    Write-Log (
+        "oscdimg : {0}" -f
+        $OsCdImgPath
+    ) INFO
+
+    $Arguments = @(
+		"-m"
+		"-o"
+		"-u2"
+		"-udfver102"
+		"-bootdata:2#p0,b$BootFile#pEF,b$EfiBootFile"
+		$SourcePath
+		$IsoPath
+	)
+
+    & $OsCdImgPath @Arguments
+
+    $ExitCode = $LASTEXITCODE
+
+    if ($ExitCode -ne 0) {
+
+        throw (
+            "oscdimg a échoué avec le code retour {0}." -f
+            $ExitCode
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Vérification de l'ISO
+    # --------------------------------------------------
+
+    if (-not (Test-Path -LiteralPath $IsoPath -PathType Leaf)) {
+
+        throw (
+            "oscdimg indique une réussite mais l'ISO n'a pas été créée : {0}" -f
+            $IsoPath
+        )
+
+    }
+
+    $IsoFile = Get-Item `
+        -LiteralPath $IsoPath `
+        -ErrorAction Stop
+
+    if ($IsoFile.Length -le 0) {
+
+        throw "L'ISO générée est vide."
+
+    }
+
+    # --------------------------------------------------
+    # Mise à jour du contexte
+    # --------------------------------------------------
+
+    $Context.ISO.OutputPath = $IsoPath
+
+    $Context.ISO.OutputName = $IsoFile.Name
+
+    $Context.ISO.OutputSizeGB =
+        [Math]::Round(
+            $IsoFile.Length / 1GB,
+            2
+        )
+
+    Write-Log (
+        "ISO PimsOS créée : {0}" -f
+        $IsoPath
+    ) SUCCESS
+
+    Write-Log (
+        "Taille ISO : {0} Go" -f
+        $Context.ISO.OutputSizeGB
+    ) SUCCESS
+
+    return $Context
 }

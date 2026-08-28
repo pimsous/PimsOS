@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -322,3 +322,4 @@ Consulter également :
 Le respect des prérequis permet de disposer d'un environnement cohérent pour développer et exécuter **PimsOS Builder**.
 
 Le projet vérifie automatiquement une partie des prérequis avant les opérations de Build et peut interrompre l'exécution lorsqu'une condition obligatoire n'est pas satisfaite.
+

@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -443,3 +443,4 @@ Les duplications doivent être évitées lorsqu'une solution réutilisable exist
 - `Testing.md`
 - `TechnicalDecisions.md`
 - `Documentation\ADR\`
+

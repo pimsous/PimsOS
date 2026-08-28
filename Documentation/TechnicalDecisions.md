@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -628,3 +628,4 @@ Les dépendances techniques peuvent être simulées lorsque l'exécution réelle
 Ce document constitue la mémoire des principaux choix d'implémentation réalisés au cours du développement de **PimsOS Builder**.
 
 Il complète les ADR en documentant les décisions techniques qui influencent le développement quotidien du projet, sans modifier son architecture.
+

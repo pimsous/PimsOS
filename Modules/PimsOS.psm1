@@ -18,6 +18,7 @@ Set-StrictMode -Version Latest
 . "$PSScriptRoot\Infrastructure\Security.ps1"
 . "$PSScriptRoot\Infrastructure\Logger.ps1"
 . "$PSScriptRoot\Infrastructure\Recovery.ps1"
+. "$PSScriptRoot\Infrastructure\Prerequisites.ps1"
 . "$PSScriptRoot\Infrastructure\Check.ps1"
 . "$PSScriptRoot\Infrastructure\Validation.ps1"
 . "$PSScriptRoot\Infrastructure\Service.ps1"
@@ -80,6 +81,23 @@ Set-StrictMode -Version Latest
 . "$PSScriptRoot\Image\Dism.ps1"
 . "$PSScriptRoot\Image\Wim.ps1"
 
+# ==========================================
+# PostInstall
+# ==========================================
+
+. "$PSScriptRoot\PostInstall\State.ps1"
+. "$PSScriptRoot\PostInstall\Network.ps1"
+. "$PSScriptRoot\PostInstall\PostInstall.ps1"
+. "$PSScriptRoot\PostInstall\FirstBoot.ps1"
+. "$PSScriptRoot\PostInstall\Unattend.ps1"
+. "$PSScriptRoot\PostInstall\Installer.ps1"
+
+# ==========================================
+# UI
+# ==========================================
+
+. "$PSScriptRoot\UI\Wizard.ps1"
+
 # --------------------------------------------------
 # Actions
 # --------------------------------------------------
@@ -123,6 +141,7 @@ function Initialize-PimsOS {
 
         $Context = Initialize-BuildContext `
             -Context $Context
+			
 
         # ------------------------------------------
         # Logger
@@ -152,7 +171,21 @@ function Initialize-PimsOS {
             "Profil : {0}" -f
             $Context.ConfigurationProfile
         )
+		
+		# ------------------------------------------
+		# Assistant de configuration
+		# ------------------------------------------
 
+		if ($Context.Build.Interactive) {
+
+			Write-Verbose "Lancement de l'assistant de configuration..."
+			
+			Write-Log "Lancement de l'assistant de configuration..." INFO
+
+			$Context = Show-PimsOSBuildWizard `
+				-Context $Context
+		}
+		
         # ------------------------------------------
         # Recovery
         # ------------------------------------------
@@ -161,6 +194,75 @@ function Initialize-PimsOS {
 
         $Context = Repair-BuildEnvironment `
             -Context $Context
+
+        # ------------------------------------------
+        # Windows ADK
+        # ------------------------------------------
+
+        $AdkRequired = $false
+
+        if (
+            $null -ne $Context.Configuration -and
+            $null -ne $Context.Configuration.Requirements -and
+            $null -ne $Context.Configuration.Requirements.WindowsADK
+        ) {
+
+            $AdkConfiguration =
+                $Context.Configuration.Requirements.WindowsADK
+
+            if (
+                $AdkConfiguration.PSObject.Properties.Name `
+                    -contains "Required"
+            ) {
+
+                $AdkRequired =
+                    [bool]$AdkConfiguration.Required
+
+            }
+
+        }
+
+
+        if ($AdkRequired) {
+
+            Write-Verbose "Vérification de Windows ADK..."
+
+            $AdkStatus = Test-PimsOSWindowsADK
+
+            if (-not $AdkStatus.Installed) {
+
+                Write-Log (
+                    "Windows ADK requis mais absent. " +
+                    "Préparation de l'installation..."
+                )
+
+                $Context.BuildState.Environment.WindowsADK = $false
+
+                Install-PimsOSWindowsADK `
+					-Configuration $Context.Configuration `
+					-DestinationPath (
+						Join-Path `
+							$Context.Workspace.Temp `
+							"ADK"
+					)
+
+                Write-Log (
+                    "Windows ADK installé : {0}" -f
+                    (Get-PimsOSOsCdImgPath)
+                ) SUCCESS
+
+            }
+            else {
+
+                Write-Log (
+                    "Windows ADK déjà disponible : {0}" -f
+                    $AdkStatus.OsCdImgPath
+                ) SUCCESS
+
+            }
+
+        }
+
 
         # ------------------------------------------
         # Vérifications

@@ -86,7 +86,7 @@ function Get-Configuration {
 
     $Context.Configuration = $Configuration
 
-    $Context.BuildState.Image.TweaksLoaded = $true
+	$Context.BuildState.Image.TweaksLoaded = $true
     $Context.BuildState.Image.ProfileLoaded = $true
     $Context.BuildState.Image.ProfileMerged = $true
     $Context.BuildState.Image.ConfigLoaded = $true

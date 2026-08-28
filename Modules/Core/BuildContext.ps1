@@ -61,6 +61,8 @@ function New-BuildState {
 
             Iso = $false
 
+			WindowsADK = $false
+
             DiskSpace = $false
 
         }
@@ -269,19 +271,37 @@ function New-BuildContext {
 
         ISO = [PSCustomObject]@{
 
-            Path = $null
+		# ------------------------------------------
+		# ISO source
+		# ------------------------------------------
 
-            Name = $null
+		Path = $null
 
-            FullName = $null
+		Name = $null
 
-            SizeGB = 0
+		FullName = $null
 
-            Mounted = $false
+		SizeGB = 0
 
-            MountPath = $null
+		# ------------------------------------------
+		# Montage ISO source
+		# ------------------------------------------
 
-        }
+		Mounted = $false
+
+		MountPath = $null
+
+		# ------------------------------------------
+		# ISO PimsOS générée
+		# ------------------------------------------
+
+		OutputPath = $null
+
+		OutputName = $null
+
+		OutputSizeGB = 0
+
+		}
 
 
         # ==========================================
@@ -343,23 +363,39 @@ function New-BuildContext {
 
         Workspace = [PSCustomObject]@{
 
-            Root = $null
+			Root = $null
 
-            ISO = $null
+			Cache = $null
 
-            Sources = $null
+			ISO = $null
 
-            MountISO = $null
+			ISOSource = $null
 
-            MountWIM = $null
+			Sources = $null
 
-            Output = $null
+			MountISO = $null
 
-            Temp = $null
+			MountTest = $null
 
-            Extract = $null
+			MountWIM = $null
 
-        }
+			Temp = $null
+
+			Extract = $null
+
+			Drivers = $null
+
+			Packages = $null
+
+			PackagesChocolatey = $null
+
+			PackagesWinget = $null
+
+			PackagesMicrosoftStore = $null
+
+			Registry = $null
+
+		}
 
 
         # ==========================================
@@ -610,48 +646,74 @@ function Initialize-BuildContext {
 
 
     # ==================================================
-    # Workspace
-    # ==================================================
+	# Workspace
+	# ==================================================
 
-    $Context.Workspace.Root =
-        $Context.Project.Root
-
-
-    $Context.Workspace.ISO =
-        $Context.Project.Paths.ISO
+	$WorkspaceConfiguration =
+		Get-ObjectProperty `
+			-Object $Context.Configuration `
+			-Name "Workspace"
 
 
-    $Context.Workspace.Output =
-        $Context.Project.Paths.Output
+	if ($null -eq $WorkspaceConfiguration) {
+
+		throw (
+			"La configuration PimsOS ne contient pas " +
+			"la section 'Workspace'."
+		)
+
+	}
 
 
-    $Context.Workspace.Sources =
-        Join-Path `
-            $Context.Project.Root `
-            "Workspace\Sources"
+	# --------------------------------------------------
+	# Initialisation des chemins Workspace
+	# --------------------------------------------------
+
+	$WorkspaceProperties = @(
+		"Root",
+		"Cache",
+		"ISO",
+		"ISOSource",
+		"Sources",
+		"MountISO",
+		"MountTest",
+		"MountWIM",
+		"Temp",
+		"Extract",
+		"Drivers",
+		"Packages",
+		"PackagesChocolatey",
+		"PackagesWinget",
+		"PackagesMicrosoftStore",
+		"Registry"
+	)
 
 
-    $Context.Workspace.Temp =
-        $Context.Project.Paths.Temp
+	foreach ($WorkspaceProperty in $WorkspaceProperties) {
+
+		$RelativePath =
+			Get-ObjectProperty `
+				-Object $WorkspaceConfiguration `
+				-Name $WorkspaceProperty
 
 
-    $Context.Workspace.MountWIM =
-        Join-Path `
-            $Context.Project.Paths.Mount `
-            "WIM"
+		if ([string]::IsNullOrWhiteSpace($RelativePath)) {
+
+			throw (
+				"Le chemin Workspace '{0}' est absent " +
+				"du fichier Config.json." -f
+				$WorkspaceProperty
+			)
+
+		}
 
 
-    $Context.Workspace.MountISO =
-        Join-Path `
-            $Context.Project.Paths.Mount `
-            "ISO"
+		$Context.Workspace.$WorkspaceProperty =
+			Join-Path `
+				$Context.Project.Root `
+				$RelativePath
 
-
-    $Context.Workspace.Extract =
-        Join-Path `
-            $Context.Project.Paths.Temp `
-            "Extract"
-
+	}
 
     # ==================================================
     # Logger

@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 Bienvenue dans **PimsOS Builder**.
 
@@ -462,3 +462,4 @@ Les principales références du projet sont :
 - `ProjectStatus.md`
 
 Ces documents constituent la référence du fonctionnement et du développement de **PimsOS Builder**.
+

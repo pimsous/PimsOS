@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-16
+> Dernière mise à jour : 2026-08-28
 
 ---
 
@@ -25,3 +25,4 @@ Tests\Unit\Modules\PostInstall\
 
 Le dossier `Modules\PostInstall` contient le runtime,
 et `Tests\Unit\Modules\PostInstall` contient ses tests dédiés.
+
