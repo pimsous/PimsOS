@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -241,12 +241,15 @@ Le moteur d'orchestration est suffisamment structuré et testé pour poursuivre 
 * [x] Implémenter FirstBoot.
 * [x] Implémenter Unattend.
 * [x] Implémenter Installer.
+* [x] Implémenter UI PostInstall.
 * [x] Intégrer `PreparePostInstall` au BuildPipeline.
 * [x] Valider l'injection du runtime dans un WIM temporaire.
 * [x] Valider la génération de `unattend.xml`.
 * [x] Valider le namespace `urn:schemas-microsoft-com:unattend`.
 * [x] Valider `wcm:action="add"`.
 * [x] Valider la commande vers `Bootstrap.ps1`.
+* [x] Ajouter l'affichage réseau du premier démarrage.
+* [x] Ajouter l'attente réseau avec interface console.
 * [ ] Valider l'exécution réelle de `FirstLogonCommands`.
 * [ ] Valider le premier démarrage réel de Windows.
 * [ ] Valider la reprise réseau réelle.

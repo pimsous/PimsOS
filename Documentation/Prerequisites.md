@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -126,6 +126,29 @@ Les tests du framework doivent être exécutés avec Pester 5.x.
 
 ---
 
+# PSScriptAnalyzer
+
+PSScriptAnalyzer est utilisé pour contrôler la qualité statique du code PowerShell.
+
+Vérifier sa disponibilité :
+
+```powershell
+Get-Module PSScriptAnalyzer -ListAvailable
+```
+
+Une vérification peut être exécutée sur les modules :
+
+```powershell
+Invoke-ScriptAnalyzer `
+    -Path .\Modules `
+    -Recurse `
+    -Severity Error
+```
+
+Aucune erreur PSScriptAnalyzer ne doit être introduite par une évolution.
+
+---
+
 # DISM
 
 DISM doit être disponible dans l'environnement Windows.
@@ -204,6 +227,44 @@ La disponibilité de l'espace disque fait partie des vérifications d'environnem
 
 ---
 
+# Réseau et PostInstall
+
+Le Build lui-même réalise une partie importante des opérations hors ligne.
+
+Le runtime **PostInstall**, exécuté après l'installation de Windows, peut toutefois nécessiter une connexion réseau pour certaines opérations.
+
+Le runtime distingue :
+
+```text
+Adaptateur réseau
+        ↓
+Connexion réseau
+        ↓
+Accès Internet
+```
+
+Un adaptateur actif ne garantit donc pas l'accès à Internet.
+
+Lorsque le réseau ou Internet n'est pas disponible, PostInstall peut entrer dans l'état :
+
+```text
+WaitingForNetwork
+```
+
+et attendre que les conditions nécessaires soient réunies.
+
+L'interface console du premier démarrage fournit notamment :
+
+```text
+Show-PostInstallNetworkStatus
+Show-PostInstallNetworkHelp
+Wait-PostInstallNetworkUI
+```
+
+La validation réelle de la reprise après perte puis disponibilité du réseau reste à effectuer dans un environnement Windows réel.
+
+---
+
 # Version du projet
 
 Les informations générales du projet sont centralisées dans :
@@ -249,6 +310,43 @@ Un Build est interrompu lorsqu'un prérequis obligatoire n'est pas satisfait.
 
 ---
 
+# Tests et validation
+
+La campagne officielle utilise :
+
+```text
+Tests\Unit
+Tests\Integration
+```
+
+Les tests historiques sont conservés séparément dans :
+
+```text
+Tests\Legacy
+```
+
+Ils ne participent pas à la validation courante du framework.
+
+Avant une évolution importante, exécuter au minimum :
+
+```powershell
+Invoke-Pester -Path .\Tests\Unit
+Invoke-Pester -Path .\Tests\Integration
+```
+
+Pour contrôler les erreurs statiques :
+
+```powershell
+Invoke-ScriptAnalyzer `
+    -Path .\Modules `
+    -Recurse `
+    -Severity Error
+```
+
+Les validations doivent également inclure le chargement du module lorsque le changement le concerne.
+
+---
+
 # Encodage
 
 Les fichiers texte du projet utilisent :
@@ -268,6 +366,7 @@ Les conventions de fin de ligne doivent rester cohérentes avec les règles du d
 | Build Windows | 26100 |
 | PowerShell | 7.6.x |
 | Pester | 5.x |
+| PSScriptAnalyzer | Version compatible |
 | Git | Version compatible avec le dépôt |
 | Visual Studio Code | Version stable récente |
 
@@ -284,6 +383,7 @@ $PSVersionTable.PSVersion
 git --version
 dism /?
 Get-Module Pester -ListAvailable
+Get-Module PSScriptAnalyzer -ListAvailable
 ```
 
 Vérifier également que :
@@ -301,6 +401,15 @@ Invoke-Pester -Path .\Tests\Unit
 Invoke-Pester -Path .\Tests\Integration
 ```
 
+Exécuter également l'analyse statique :
+
+```powershell
+Invoke-ScriptAnalyzer `
+    -Path .\Modules `
+    -Recurse `
+    -Severity Error
+```
+
 ---
 
 # Références
@@ -314,6 +423,7 @@ Consulter également :
 - `ArchitectureRules.md`
 - `CodingStandards.md`
 - `Testing.md`
+- `PostInstall.md`
 
 ---
 
@@ -323,3 +433,4 @@ Le respect des prérequis permet de disposer d'un environnement cohérent pour d
 
 Le projet vérifie automatiquement une partie des prérequis avant les opérations de Build et peut interrompre l'exécution lorsqu'une condition obligatoire n'est pas satisfaite.
 
+Les validations automatisées du code et des tests constituent également une partie importante des contrôles avant intégration d'une évolution.

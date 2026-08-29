@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -583,6 +583,7 @@ Le dossier `Modules/PostInstall/` contient :
 | `FirstBoot.ps1` | construction des commandes FirstLogon |
 | `Unattend.ps1` | génération de `unattend.xml` |
 | `Installer.ps1` | installation du runtime dans le WIM |
+| `UI.ps1` | interface console du premier démarrage et attente réseau |
 
 Les tests sont regroupés dans :
 

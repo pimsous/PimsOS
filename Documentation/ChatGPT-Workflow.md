@@ -4,7 +4,7 @@
 >
 > Statut : Référence de travail
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -146,6 +146,94 @@ Toute modification architecturale importante doit :
 5. être implémentée après validation.
 
 ---
+
+# PostInstall
+
+Le PostInstall constitue désormais une partie intégrée du workflow de PimsOS Builder.
+
+Le développement du PostInstall doit respecter la même méthode que le reste du projet :
+
+```text
+Architecture
+    ↓
+Composants
+    ↓
+Tests unitaires
+    ↓
+Tests d'intégration
+    ↓
+Validation
+    ↓
+Documentation
+    ↓
+Git
+```
+
+## État actuel
+
+Les composants suivants sont implémentés :
+
+- `State.ps1`
+- `Network.ps1`
+- `UI.ps1`
+- `PostInstall.ps1`
+- `Bootstrap.ps1`
+- `FirstBoot.ps1`
+- `Unattend.ps1`
+- `Installer.ps1`
+
+Le runtime PostInstall est préparé dans le WIM par le Build et installé dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Le premier démarrage utilise `unattend.xml` pour lancer le Bootstrap.
+
+## Gestion réseau
+
+La vérification réseau distingue :
+
+- la présence d'un adaptateur réseau ;
+- la disponibilité du réseau local ;
+- l'accès réel à Internet.
+
+Lorsque le réseau ou Internet n'est pas disponible, le PostInstall peut entrer dans l'état `WaitingForNetwork` et attendre la disponibilité nécessaire avant de reprendre.
+
+La couche UI fournit notamment :
+
+```powershell
+Show-PostInstallNetworkStatus
+Show-PostInstallNetworkHelp
+Wait-PostInstallNetworkUI
+```
+
+La logique métier du PostInstall doit rester séparée de l'interface utilisateur.
+
+## Tests
+
+Toute évolution du PostInstall doit être accompagnée des tests nécessaires.
+
+Les validations actuellement utilisées comprennent :
+
+- tests unitaires des composants PostInstall ;
+- tests d'intégration du BuildPipeline ;
+- tests d'intégration de l'API publique PimsOS ;
+- analyse PSScriptAnalyzer.
+
+Une modification du PostInstall n'est considérée comme stable qu'après validation des tests concernés et, lorsque l'impact le justifie, de la suite d'intégration.
+
+## Documentation
+
+Toute évolution importante du PostInstall doit synchroniser les documents concernés, notamment :
+
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `Backlog.md`
+- `ProjectStatus.md`
+- `Testing.md`
+- `ReleaseNotes.md` lorsque nécessaire.
 
 # Documentation
 

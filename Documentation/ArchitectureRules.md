@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -213,6 +213,7 @@ Référence :
 - ADR-0010
 
 ---
+
 # Règle 9 — Décisions centralisées
 
 Toute décision importante du Builder doit être centralisée dans une fonction unique.
@@ -228,6 +229,8 @@ Exemples :
 
 Cette règle garantit qu'une décision métier ne possède qu'un seul point de maintenance.
 
+---
+
 # Règle 10 — Aucun état global
 
 Aucune logique métier ne doit dépendre :
@@ -239,10 +242,12 @@ Aucune logique métier ne doit dépendre :
 Toutes les données doivent être contenues dans le BuildContext.
 
 ---
+
 # Règle 10 bis — Routage des Actions
 
 Toute Action doit être exécutée via le mécanisme suivant :
 
+```text
 Action
     │
     ▼
@@ -259,10 +264,13 @@ Manager
     │
     ▼
 Module Windows
+```
 
 Aucun composant ne doit appeler directement un Engine spécialisé.
 
 Tout nouveau type d'Action doit être enregistré dans l'ActionRegistry.
+
+---
 
 # Règle 11 — Logger obligatoire
 
@@ -276,7 +284,13 @@ Write-Host
 
 est interdite dans la logique métier.
 
-Les messages doivent être journalisés via le Logger du projet.
+Les messages de la logique métier doivent être journalisés via le Logger du projet.
+
+Une exception est autorisée pour les composants exclusivement dédiés
+à la présentation utilisateur, notamment l'interface console du runtime
+PostInstall.
+
+Ces composants ne doivent cependant contenir aucune logique métier.
 
 Référence :
 
@@ -327,6 +341,7 @@ Ils ne doivent jamais contenir :
 - de décisions d'architecture.
 
 ---
+
 # Règle 14 bis — Séparation Engine / Manager
 
 Les Engines contiennent exclusivement la logique métier.
@@ -337,6 +352,8 @@ Un Engine ne doit jamais appeler directement une API Windows.
 
 Toute interaction avec Windows doit être réalisée par un Manager ou un module technique.
 
+---
+
 # Règle 14 bis A — Indépendance de la version de Windows
 
 Le moteur PimsOS Builder ne doit jamais dépendre d'une version spécifique de Windows.
@@ -344,6 +361,8 @@ Le moteur PimsOS Builder ne doit jamais dépendre d'une version spécifique de W
 Les informations relatives à la version ciblée (Release, Build, Édition) doivent être découvertes dynamiquement ou provenir de la configuration.
 
 Le moteur doit pouvoir personnaliser toute image Windows compatible sans modification de son architecture.
+
+---
 
 # Règle 15 — Documentation obligatoire
 
@@ -398,6 +417,8 @@ La version de Windows ciblée doit être déterminée dynamiquement à partir :
 
 Les Tweaks peuvent définir leurs propres contraintes de compatibilité via les propriétés Supported.
 
+---
+
 # Règle 18 — Évolutions
 
 Toute nouvelle fonctionnalité doit respecter l'architecture existante.
@@ -425,13 +446,16 @@ Avant toute fusion importante, vérifier :
 - les tests.
 
 ---
+
 # Règle 20 — Recovery
 
 Toute reprise de build doit être validée avant d'être utilisée.
 
 Le mécanisme de validation est centralisé dans :
 
+```text
 Test-WimMountState()
+```
 
 Aucun autre composant ne doit décider si un build est réutilisable.
 
@@ -442,6 +466,104 @@ En cas de montage invalide, le Recovery doit :
 - reconstruire le build.
 
 Cette logique ne doit jamais être dupliquée dans le Pipeline ou le Workflow.
+
+---
+
+# Règle 21 — Runtime PostInstall
+
+Le runtime PostInstall constitue une couche d'exécution distincte du Builder.
+
+Il est préparé par le Build mais s'exécute dans Windows installé.
+
+Le runtime doit être autonome et ne doit jamais dépendre du chemin du dépôt PimsOS utilisé lors du Build.
+
+Le runtime est installé dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Il comprend notamment :
+
+```text
+Bootstrap.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+State.ps1
+```
+
+Le flux d'exécution est :
+
+```text
+FirstBoot
+    |
+    v
+Bootstrap
+    |
+    v
+State
+    |
+    v
+Network / Internet
+    |
+    v
+PostInstall
+```
+
+Le Bootstrap constitue le point d'entrée du runtime.
+
+Il est responsable du chargement des composants nécessaires et du démarrage de PostInstall.
+
+---
+
+# Règle 21 bis — Séparation UI / logique métier
+
+L'interface utilisateur du runtime PostInstall doit rester séparée de la logique métier.
+
+Le composant UI :
+
+- affiche l'état du processus ;
+- affiche les informations réseau ;
+- affiche les instructions destinées à l'utilisateur ;
+- peut utiliser `Write-Host` pour l'affichage console.
+
+Le composant UI ne doit pas :
+
+- modifier directement l'état métier ;
+- exécuter les opérations d'installation ;
+- appeler directement les Managers Windows ;
+- contenir de logique de Build.
+
+Les décisions métier restent dans les composants PostInstall dédiés.
+
+---
+
+# Règle 21 ter — État du runtime PostInstall
+
+Le runtime PostInstall possède un état persistant indépendant du BuildContext du Builder.
+
+Cet état est stocké dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\state.json
+```
+
+Il permet notamment de conserver :
+
+- le statut du PostInstall ;
+- la phase courante ;
+- les tâches terminées ;
+- la disponibilité réseau ;
+- les erreurs rencontrées.
+
+Cet état ne doit pas être utilisé comme état global du Builder.
+
+Le BuildContext reste l'état de référence du processus de Build.
+
+Le `state.json` est exclusivement réservé à l'exécution du runtime PostInstall après installation de Windows.
+
+---
 
 # Checklist de validation
 
@@ -461,6 +583,10 @@ Avant de valider une évolution, vérifier les points suivants :
 | Utilise l'ActionRegistry | ☐ | ☐ |
 | Respecte la séparation Engine / Manager | ☐ | ☐ |
 | Compatible avec les versions Windows supportées | ☐ | ☐ |
+| Respecte la séparation Build / PostInstall | ☐ | ☐ |
+| Respecte l'isolation de l'état PostInstall | ☐ | ☐ |
+| Sépare l'UI de la logique métier | ☐ | ☐ |
+
 ---
 
 # Références
@@ -470,6 +596,7 @@ Avant de valider une évolution, vérifier les points suivants :
 - CodingStandards.md
 - ModuleGuide.md
 - Testing.md
+- PostInstall.md
 - Documentation/ADR/
 
 ---

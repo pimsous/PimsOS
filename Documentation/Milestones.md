@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -20,14 +20,14 @@ Un jalon est considéré comme atteint lorsque les objectifs définis pour celui
 
 # État actuel des jalons
 
-| Jalon       | Objet                      | Statut      |
-| ----------- | -------------------------- | ----------- |
-| Milestone 1 | Architecture du framework  | ✅ Terminé   |
-| Milestone 2 | Module PowerShell unique   | ✅ Terminé   |
-| Milestone 3 | Moteur de Build            | ✅ Terminé   |
+| Jalon | Objet | Statut |
+|---|---|---|
+| Milestone 1 | Architecture du framework | ✅ Terminé |
+| Milestone 2 | Module PowerShell unique | ✅ Terminé |
+| Milestone 3 | Moteur de Build | ✅ Terminé |
 | Milestone 4 | Framework de configuration | ✅ Stabilisé |
-| Milestone 5 | Génération d'image         | 🟡 En cours |
-| Milestone 6 | Première version stable    | ⏳ À venir   |
+| Milestone 5 | Génération d'image | 🟡 En cours |
+| Milestone 6 | Première version stable | ⏳ À venir |
 
 ---
 
@@ -77,8 +77,7 @@ Centraliser le chargement du framework dans un module PowerShell unique.
 
 Le module expose l'API publique nécessaire au fonctionnement du framework.
 
-Le principe actuellement validé est que les composants internes restent
-internes au module et ne constituent pas automatiquement une API publique.
+Le principe actuellement validé est que les composants internes restent internes au module et ne constituent pas automatiquement une API publique.
 
 ### Résultat
 
@@ -114,7 +113,7 @@ Mettre en place le moteur principal d'orchestration du Build.
 
 ### Wizard
 
-Le Wizard de configuration est désormais intégré au flux du Build.
+Le Wizard de configuration est intégré au flux du Build.
 
 Il permet de configurer :
 
@@ -124,8 +123,7 @@ Il permet de configurer :
 * le résumé ;
 * la validation ou l'annulation.
 
-La configuration sélectionnée est transmise au `BuildContext`, puis au
-pipeline.
+La configuration sélectionnée est transmise au `BuildContext`, puis au pipeline.
 
 ### Drivers
 
@@ -141,7 +139,7 @@ L'application des drivers intervient après le montage du WIM.
 
 ### PostInstall
 
-La préparation du runtime PostInstall est également intégrée au pipeline.
+La préparation du runtime PostInstall est intégrée au pipeline.
 
 L'ordre actuellement validé est :
 
@@ -155,14 +153,23 @@ PreparePostInstall
 MountSoftwareHive
 ```
 
+Le runtime installé dans l'image contient notamment :
+
+```text
+Bootstrap.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+State.ps1
+```
+
+Le Build prépare également `unattend.xml` afin de lancer le Bootstrap lors du premier démarrage.
+
 ### Résultat
 
-Le framework dispose d'un moteur de Build capable d'orchestrer les
-principales étapes de préparation et de personnalisation d'une image
-Windows.
+Le framework dispose d'un moteur de Build capable d'orchestrer les principales étapes de préparation et de personnalisation d'une image Windows.
 
-La chaîne d'orchestration et ses principaux contrats sont couverts par
-les tests unitaires et d'intégration.
+La chaîne d'orchestration et ses principaux contrats sont couverts par les tests unitaires et d'intégration.
 
 ---
 
@@ -227,8 +234,7 @@ Advanced
 Experimental
 ```
 
-Les catégories actuellement définies dans `Config\Categories.json`
-comprennent notamment :
+Les catégories actuellement définies dans `Config\Categories.json` comprennent notamment :
 
 ```text
 Privacy
@@ -249,17 +255,13 @@ Le profil sélectionné est conservé dans le `BuildContext`.
 
 ### État
 
-Le framework de configuration et la chaîne Engine / Manager sont
-considérés comme stabilisés pour la version technique 3.0.0.
+Le framework de configuration et la chaîne Engine / Manager sont considérés comme stabilisés pour la version technique 3.0.0.
 
-La couverture des tests est importante et continue d'être étendue sur
-les composants d'infrastructure.
+La couverture des tests est importante et continue d'être étendue sur les composants d'infrastructure.
 
 ### Résultat
 
-Le Builder peut construire une configuration à partir des données
-disponibles et acheminer les Actions vers les Engines spécialisés
-correspondants.
+Le Builder peut construire une configuration à partir des données disponibles et acheminer les Actions vers les Engines spécialisés correspondants.
 
 ---
 
@@ -294,27 +296,24 @@ Les composants suivants sont disponibles et testés :
 * Network ;
 * PostInstall ;
 * Bootstrap ;
+* UI ;
 * FirstBoot ;
 * Unattend ;
 * Installer.
 
-La génération de `unattend.xml` et la préparation de
-`FirstLogonCommands` sont également couvertes.
+La génération de `unattend.xml` et la préparation de `FirstLogonCommands` sont également couvertes.
 
-Une validation réelle de l'injection du runtime dans un WIM temporaire
-a été réalisée.
+Une validation réelle de l'injection du runtime dans un WIM temporaire a été réalisée.
 
 ### Travaux restants
 
-* validation réelle de l'exécution de `FirstLogonCommands` lors de la
-  première connexion ;
+* validation réelle de l'exécution de `FirstLogonCommands` lors de la première connexion ;
 * validation complète du Build de bout en bout ;
 * finalisation de la chaîne de production de l'ISO ;
 * validation de l'artefact ISO final ;
 * finalisation de certains traitements du WIM ;
 * validation complète de la reprise du Build ;
-* validation complète de la reprise après perte puis disponibilité du
-  réseau ;
+* validation complète de la reprise après perte puis disponibilité du réseau ;
 * implémentation du provider Chocolatey ;
 * implémentation du provider Winget ;
 * intégration Microsoft Store ;
@@ -322,8 +321,7 @@ a été réalisée.
 
 ### Résultat attendu
 
-Le Builder doit être capable de produire automatiquement une ISO PimsOS
-complète, validée, reproductible et exploitable.
+Le Builder doit être capable de produire automatiquement une ISO PimsOS complète, validée, reproductible et exploitable.
 
 ---
 
@@ -380,9 +378,7 @@ La dernière campagne de référence donne :
 0 NotRun
 ```
 
-Le seul test ignoré est conditionnel et concerne le cas d'une catégorie
-sans groupes alors que les catégories actuellement définies possèdent
-toutes des groupes.
+Le seul test ignoré est conditionnel et concerne le cas d'une catégorie sans groupes alors que les catégories actuellement définies possèdent toutes des groupes.
 
 La campagne complète s'exécute actuellement en environ :
 
@@ -402,9 +398,7 @@ La version technique actuelle du framework est :
 
 L'architecture est considérée comme stabilisée.
 
-Le développement fonctionnel se poursuit principalement autour de la
-finalisation de la chaîne de génération d'image, de la validation
-FirstBoot réelle et de l'intégration des providers de packages.
+Le développement fonctionnel se poursuit principalement autour de la finalisation de la chaîne de génération d'image, de la validation FirstBoot réelle et de l'intégration des providers de packages.
 
 ---
 

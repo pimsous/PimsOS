@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -628,4 +628,44 @@ Les dépendances techniques peuvent être simulées lorsque l'exécution réelle
 Ce document constitue la mémoire des principaux choix d'implémentation réalisés au cours du développement de **PimsOS Builder**.
 
 Il complète les ADR en documentant les décisions techniques qui influencent le développement quotidien du projet, sans modifier son architecture.
+
+---
+
+## PostInstall
+
+Le sous-système PostInstall constitue une phase d'exécution distincte du Build.
+
+Le Build prépare les composants nécessaires dans l'image Windows, tandis que le runtime PostInstall exécute les opérations après l'installation du système.
+
+Le runtime utilise notamment :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Les composants du runtime comprennent notamment :
+
+```text
+Bootstrap.ps1
+Network.ps1
+PostInstall.ps1
+State.ps1
+UI.ps1
+```
+
+`UI.ps1` fournit l'interface console du premier démarrage pour afficher l'état du réseau, fournir une aide à l'utilisateur et attendre la disponibilité réseau.
+
+Les états fonctionnels du runtime sont notamment :
+
+```text
+Pending
+Running
+WaitingForNetwork
+Completed
+Failed
+```
+
+La vérification réseau distingue l'état de l'adaptateur, la connexion réseau et l'accès Internet.
+
+La validation automatisée du sous-système PostInstall couvre également l'interface UI et l'attente réseau avec des tests Pester dédiés.
 

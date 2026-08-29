@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -143,7 +143,7 @@ avec les tests correspondant à l'architecture actuelle de PimsOS Builder.
 La dernière exécution complète de la campagne officielle a produit :
 
 ```text
-Tests Passed: 701
+Tests Passed: 708
 Tests Failed: 0
 Tests Skipped: 1
 Tests Inconclusive: 0
@@ -223,13 +223,18 @@ pour :
 * Bootstrap ;
 * FirstBoot ;
 * Unattend ;
-* Installer.
+* Installer ;
+* UI.
 
 Le pipeline possède également des tests d'intégration pour
 `PreparePostInstall`.
 
 Une validation réelle dans un WIM temporaire est utilisée pour
 compléter les tests unitaires.
+
+La suite PostInstall couvre également l'interface console `UI.ps1`,
+notamment l'affichage de l'état réseau, l'aide réseau et l'attente
+réseau avec reprise immédiate lorsque le réseau est disponible.
 
 Les tests destructifs sur WIM doivent utiliser un montage temporaire
 et `-Discard`.
@@ -422,7 +427,7 @@ automatisée lorsque :
 L'état de référence actuellement validé est :
 
 ```text
-701 Passed
+708 Passed
 0 Failed
 1 Skipped
 0 Inconclusive

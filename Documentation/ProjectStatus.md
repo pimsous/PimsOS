@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -74,8 +74,9 @@ L'objectif final est de produire automatiquement une image Windows personnalisé
 | Converters            | ⬜ Non implémenté                                                |
 | Chocolatey            | ⬜ Non implémenté                                                |
 | Winget                | ⬜ Non implémenté                                                |
+| Microsoft Store       | ⬜ Non intégré                                                   |
 | Génération ISO finale | 🟡 En cours de finalisation                                     |
-| Tests Pester          | ✅ 701 tests validés, 0 échec                                    |
+| Tests Pester          | ✅ 708 tests validés, 0 échec                                    |
 | Documentation         | 🟡 Synchronisation en cours                                     |
 
 ---
@@ -98,23 +99,26 @@ Tests\Legacy
 
 sont conservés séparément et ne font pas partie de la campagne officielle.
 
-La dernière campagne officielle a produit :
+La campagne de référence actuelle comprend :
+
+```text
+Tests\Unit          : 684 tests
+Tests\Integration   : 24 tests
+```
+
+Résultat global :
 
 | Résultat           | Valeur |
 | ------------------ | ------ |
-| Tests réussis      | 701    |
+| Tests réussis      | 708    |
 | Tests échoués      | 0      |
 | Tests ignorés      | 1      |
 | Tests inconclusifs | 0      |
 | Tests non exécutés | 0      |
-| Durée totale       | 5,69 s |
 
-Le seul test ignoré est conditionnel. Il concerne le comportement d'une
-catégorie sans groupes alors que les catégories actuellement définies dans
-`Config\Categories.json` possèdent toutes des groupes.
+Le test ignoré est conditionnel et concerne le comportement d'une catégorie sans groupes alors que les catégories actuellement définies dans `Config\Categories.json` possèdent toutes des groupes.
 
-Ce `Skipped` est donc intentionnel et ne correspond pas à un échec
-fonctionnel.
+Ce `Skipped` est intentionnel et ne correspond pas à un échec fonctionnel.
 
 ---
 
@@ -141,12 +145,10 @@ Modules
 ├── Managers
 ├── Package
 ├── PostInstall
-├── UI
 └── ...
 ```
 
-Le module public orchestre les différents composants sans exposer
-inutilement leurs fonctions internes.
+Le module public orchestre les différents composants sans exposer inutilement leurs fonctions internes.
 
 ---
 
@@ -181,8 +183,7 @@ Le contexte est initialisé avant le lancement du Wizard et du pipeline.
 
 # Wizard
 
-L'assistant de configuration est intégré au flux principal lorsque le
-contexte est interactif.
+L'assistant de configuration est intégré au flux principal lorsque le contexte est interactif.
 
 Le Wizard permet actuellement de configurer :
 
@@ -195,8 +196,7 @@ Le Wizard permet actuellement de configurer :
 [0] Annuler
 ```
 
-La configuration réalisée dans le Wizard est conservée dans le
-`BuildContext` et transmise au pipeline.
+La configuration réalisée dans le Wizard est conservée dans le `BuildContext` et transmise au pipeline.
 
 Les éléments suivants sont couverts par les tests :
 
@@ -297,15 +297,24 @@ Les composants suivants disposent de tests :
 * Bootstrap ;
 * FirstBoot ;
 * Unattend ;
-* Installer.
+* Installer ;
+* UI.
 
 L'intégration avec le BuildPipeline est également testée.
 
-Une validation réelle permet de vérifier l'injection du runtime dans un WIM
-temporaire ainsi que la présence de `unattend.xml`.
+Le runtime PostInstall installé dans le WIM comprend notamment :
 
-La validation du lancement réel du runtime lors de la première connexion
-Windows reste à compléter.
+```text
+Bootstrap.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+State.ps1
+```
+
+Une validation réelle permet de vérifier l'injection du runtime dans un WIM temporaire ainsi que la présence et la structure de `unattend.xml`.
+
+La validation du lancement réel du runtime lors de la première connexion Windows reste à compléter.
 
 ---
 
@@ -320,10 +329,21 @@ Le module réseau vérifie notamment :
 * l'attente de disponibilité du réseau ;
 * le délai d'expiration.
 
-Les attentes temporelles sont simulées dans les tests afin d'éviter les
-délais réels inutiles pendant la campagne automatisée.
+L'interface UI PostInstall distingue également :
 
-La suite dédiée Network est actuellement validée.
+```text
+Adaptateur réseau
+        ↓
+Connexion réseau
+        ↓
+Accès Internet
+```
+
+Lorsque le réseau local est disponible mais qu'Internet ne l'est pas, cette situation est signalée explicitement.
+
+Les attentes temporelles sont simulées dans les tests afin d'éviter les délais réels inutiles pendant la campagne automatisée.
+
+La suite dédiée Network ainsi que la suite UI sont actuellement validées.
 
 ---
 
@@ -360,8 +380,7 @@ Advanced
 Experimental
 ```
 
-Les catégories actuellement présentes dans `Config\Categories.json` sont
-notamment :
+Les catégories actuellement présentes dans `Config\Categories.json` sont notamment :
 
 ```text
 Privacy
@@ -370,16 +389,13 @@ Xbox
 
 Le système permet également de récupérer les groupes associés aux catégories.
 
-Le test concernant une catégorie sans groupes reste conditionnel afin de
-ne pas créer artificiellement une catégorie uniquement pour satisfaire
-la suite de tests.
+Le test concernant une catégorie sans groupes reste conditionnel afin de ne pas créer artificiellement une catégorie uniquement pour satisfaire la suite de tests.
 
 ---
 
 # ActionRegistry et Engines
 
-Les systèmes `ActionRegistry`, `ActionEngine` et les engines spécialisés
-sont implémentés et couverts par les tests.
+Les systèmes `ActionRegistry`, `ActionEngine` et les engines spécialisés sont implémentés et couverts par les tests.
 
 Ils permettent d'isoler :
 
@@ -394,8 +410,7 @@ Ils permettent d'isoler :
 
 # Managers
 
-Les différents Managers constituent les couches spécialisées de gestion
-des opérations du framework.
+Les différents Managers constituent les couches spécialisées de gestion des opérations du framework.
 
 Ils sont actuellement implémentés et couverts par les tests unitaires.
 
@@ -449,6 +464,14 @@ La couverture de tests et certains scénarios avancés restent à compléter.
 
 ---
 
+# Security
+
+Le domaine Security est implémenté.
+
+La couverture de tests reste à compléter avant de considérer ce domaine comme entièrement validé.
+
+---
+
 # Composants non finalisés
 
 Les domaines suivants ne sont pas encore implémentés ou finalisés :
@@ -471,23 +494,29 @@ La suite officielle Pester est exécutée avec Pester 5.8.0.
 Résultat de référence actuel :
 
 ```text
-701 Passed
+684 Unit Passed
+24 Integration Passed
+708 Passed
 0 Failed
 1 Skipped
 0 Inconclusive
 0 NotRun
 ```
 
-La campagne complète s'exécute actuellement en environ :
-
-```text
-5,69 secondes
-```
+La durée de la campagne peut varier selon l'environnement et les tests exécutés.
 
 Les tests `Legacy` sont volontairement exclus de cette campagne.
 
-Toute nouvelle fonctionnalité importante doit être accompagnée des tests
-correspondants.
+Toute nouvelle fonctionnalité importante doit être accompagnée des tests correspondants.
+
+Une analyse statique des modules peut également être exécutée avec PSScriptAnalyzer :
+
+```powershell
+Invoke-ScriptAnalyzer `
+    -Path .\Modules `
+    -Recurse `
+    -Severity Error
+```
 
 ---
 
@@ -506,8 +535,7 @@ La documentation couvre notamment :
 * le cycle de vie ;
 * les composants Legacy.
 
-La documentation est actuellement en cours de synchronisation avec
-l'implémentation.
+La documentation est actuellement en cours de synchronisation avec l'implémentation.
 
 ---
 
@@ -517,8 +545,9 @@ Les prochaines étapes prioritaires sont :
 
 1. finaliser la génération de l'ISO ;
 2. compléter la validation réelle du cycle FirstBoot ;
-3. compléter la couverture Recovery et Security ;
-4. poursuivre l'implémentation des fonctionnalités de gestion des packages ;
-5. enrichir le reporting ;
-6. maintenir la documentation synchronisée avec l'implémentation ;
-7. préparer une première release fonctionnelle du framework.
+3. valider la reprise réelle du PostInstall après perte puis disponibilité du réseau ;
+4. compléter la couverture Recovery et Security ;
+5. poursuivre l'implémentation des fonctionnalités de gestion des packages ;
+6. enrichir le reporting ;
+7. maintenir la documentation synchronisée avec l'implémentation ;
+8. préparer une première release fonctionnelle du framework.

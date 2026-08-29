@@ -1,6 +1,6 @@
 # PostInstall PimsOS
 
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ## Objectif
 
@@ -35,6 +35,7 @@ Il comprend notamment :
 ```text
 Bootstrap.ps1
 Network.ps1
+UI.ps1
 PostInstall.ps1
 State.ps1
 ```
@@ -185,6 +186,33 @@ réelles pendant la campagne Pester.
 
 ---
 
+## Interface réseau du premier démarrage
+
+Le fichier `UI.ps1` fournit l'interface console utilisée par le runtime
+PostInstall lors de la vérification et de l'attente réseau.
+
+Il expose notamment :
+
+```text
+Show-PostInstallNetworkStatus
+Show-PostInstallNetworkHelp
+Wait-PostInstallNetworkUI
+```
+
+`Show-PostInstallNetworkStatus` affiche l'état de l'adaptateur réseau,
+de la connexion réseau et de l'accès Internet.
+
+`Show-PostInstallNetworkHelp` affiche les indications nécessaires
+lorsqu'une connexion réseau est requise.
+
+`Wait-PostInstallNetworkUI` assure l'attente avec affichage de l'état
+et vérifie périodiquement la disponibilité du réseau.
+
+La couche UI reste séparée de la logique métier et peut utiliser les
+fonctions du module Network.
+
+---
+
 ## Fonctionnement sans réseau
 
 Le PostInstall doit pouvoir effectuer les tâches locales sans dépendre
@@ -195,6 +223,9 @@ Lorsque le réseau est indisponible, le moteur peut passer à :
 ```text
 WaitingForNetwork
 ```
+
+L'interface utilisateur indique alors la situation et fournit les
+informations nécessaires pour permettre la reconnexion.
 
 Les opérations nécessitant une connexion peuvent ainsi être exécutées
 ultérieurement lorsque les conditions nécessaires sont réunies.
@@ -241,6 +272,15 @@ Il est installé dans :
 C:\ProgramData\PimsOS\PostInstall\Bootstrap.ps1
 ```
 
+Le Bootstrap charge les composants nécessaires du runtime, notamment :
+
+```text
+State.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+```
+
 Le mécanisme FirstBoot s'appuie sur ce Bootstrap pour démarrer le
 runtime après l'installation de Windows.
 
@@ -263,6 +303,16 @@ et :
 C:\Windows\Panther\unattend.xml
 ```
 
+Les fichiers du runtime actuellement installés comprennent :
+
+```text
+Bootstrap.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+State.ps1
+```
+
 Les opérations d'injection sont couvertes par les tests du sous-système
 PostInstall et par les tests d'intégration du pipeline.
 
@@ -280,6 +330,7 @@ Bootstrap
 FirstBoot
 Unattend
 Installer
+UI
 ```
 
 Le BuildPipeline possède également des tests d'intégration couvrant :
@@ -288,27 +339,20 @@ Le BuildPipeline possède également des tests d'intégration couvrant :
 PreparePostInstall
 ```
 
-La dernière campagne officielle de tests Pester porte sur :
+La campagne officielle utilise :
 
 ```text
 Tests\Unit
 Tests\Integration
 ```
 
-Résultat global de référence :
+Les tests historiques sont conservés séparément dans :
 
-| Résultat           | Valeur |
-| ------------------ | ------ |
-| Tests réussis      | 701    |
-| Tests échoués      | 0      |
-| Tests ignorés      | 1      |
-| Tests inconclusifs | 0      |
-| Tests non exécutés | 0      |
-| Durée              | 5,69 s |
+```text
+Tests\Legacy
+```
 
-Le seul test ignoré est conditionnel et concerne une catégorie sans
-groupes qui n'existe pas dans les définitions actuelles de
-`Config\Categories.json`.
+Ils ne font pas partie de la campagne officielle.
 
 ---
 
@@ -323,7 +367,11 @@ Les sous-suites PostInstall actuellement validées comprennent :
 * FirstBoot : 14/14 ;
 * Unattend : 16/16 ;
 * Installer : 14/14 ;
+* UI : 5/5 ;
 * BuildPipeline : 17/17.
+
+La validation automatisée couvre également l'intégration du PostInstall
+dans le pipeline.
 
 Ces validations sont complétées par une validation réelle dans un WIM
 temporaire.
@@ -356,6 +404,18 @@ Elle couvre :
 * l'attente jusqu'à disponibilité ;
 * l'expiration du délai ;
 * la correction d'un intervalle inférieur à une seconde.
+
+La suite `UI.Tests.ps1` contient actuellement 5 tests.
+
+Elle couvre :
+
+* l'affichage et le retour positif lorsque le réseau et Internet sont
+  disponibles ;
+* le retour négatif lorsque le réseau est indisponible ;
+* le retour négatif lorsque le réseau local est disponible mais
+  qu'Internet est indisponible ;
+* l'exécution sans erreur de l'aide réseau ;
+* le retour immédiat de l'attente UI lorsque le réseau est disponible.
 
 Les attentes temporelles sont simulées pendant les tests.
 
@@ -446,8 +506,8 @@ Le sous-système PostInstall est **implémenté et fortement testé**.
 
 La préparation du runtime dans le WIM, la génération de
 `unattend.xml`, le Bootstrap, la gestion de l'état, la détection réseau,
-la préparation FirstBoot et l'intégration au BuildPipeline sont couverts
-par les tests actuels.
+l'interface réseau du premier démarrage, la préparation FirstBoot et
+l'intégration au BuildPipeline sont couvertes par les tests actuels.
 
 La prochaine validation fonctionnelle importante est l'exécution réelle
 de `FirstLogonCommands` lors de la première connexion Windows, ainsi que

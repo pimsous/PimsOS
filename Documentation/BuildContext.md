@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -79,8 +79,7 @@ Module technique
         │
         ▼
 Complete-Build
-```text
-
+```
 
 Le même BuildContext est utilisé pendant toute l'exécution.
 
@@ -142,11 +141,12 @@ Le BuildContext contient également les informations concernant la version de Wi
 
 Exemples :
 
-- Release
-- Build
-- Édition sélectionnée
+- Release ;
+- Build ;
+- Édition sélectionnée.
 
 Ces informations sont découvertes ou sélectionnées au moment du Build et ne sont pas figées dans le moteur.
+
 ---
 
 # Build
@@ -155,11 +155,11 @@ Informations relatives au build courant.
 
 Exemples :
 
-- Build ID
-- mode interactif
-- génération ISO
-- génération du rapport
-- mode DryRun
+- Build ID ;
+- mode interactif ;
+- génération ISO ;
+- génération du rapport ;
+- mode DryRun.
 
 ---
 
@@ -198,12 +198,12 @@ Nom du profil actuellement utilisé.
 
 Exemples :
 
-- Default
-- Gaming
-- Privacy
-- Minimal
-- Workstation
-- Tests\Registry
+- Default ;
+- Gaming ;
+- Privacy ;
+- Minimal ;
+- Workstation ;
+- Tests\Registry.
 
 ---
 
@@ -233,11 +233,11 @@ Informations sur l'édition Windows sélectionnée.
 
 Exemples :
 
-- Index
-- Nom
-- Description
-- Taille
-- État de modification
+- Index ;
+- Nom ;
+- Description ;
+- Taille ;
+- État de modification.
 
 Le Builder permet désormais de sélectionner dynamiquement l'édition Windows présente dans le WIM.
 
@@ -251,12 +251,12 @@ Répertoires temporaires utilisés pendant le Build.
 
 Exemples :
 
-- Sources
-- Mount
-- ISO
-- Output
-- Temp
-- Extract
+- Sources ;
+- Mount ;
+- ISO ;
+- Output ;
+- Temp ;
+- Extract.
 
 ---
 
@@ -308,6 +308,34 @@ Liste des fonctionnalités Windows à installer ou supprimer.
 
 ---
 
+# PostInstall
+
+Le BuildContext conserve les informations nécessaires à la préparation du runtime **PostInstall** lorsque celles-ci sont partagées avec les composants du Build.
+
+La préparation du PostInstall intervient dans le pipeline après l'application des drivers et avant les étapes suivantes de préparation de l'image.
+
+Le runtime PostInstall est installé dans l'image Windows sous :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Les composants préparés comprennent notamment :
+
+```text
+Bootstrap.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+State.ps1
+```
+
+La configuration FirstBoot et `unattend.xml` permettent ensuite de déclencher le Bootstrap lors du premier démarrage de Windows.
+
+Le BuildContext ne contient pas la logique d'exécution du PostInstall. Il transporte uniquement les informations nécessaires aux composants du Build.
+
+---
+
 # Report
 
 Contient le rapport d'exécution.
@@ -342,22 +370,22 @@ Le BuildContext centralise également toutes les statistiques du Build.
 
 Exemples :
 
-- ActionsProcessed
-- PackagesProcessed
-- DriversProcessed
-- FeaturesProcessed
-- CapabilitiesProcessed
-- CommandsProcessed
-- FilesProcessed
-- FoldersProcessed
-- EnvironmentVariablesProcessed
-- ScheduledTasksProcessed
-- ShortcutsProcessed
-- ServicesProcessed
-- RegistryActionsProcessed
-- TweaksApplied
-- Errors
-- Warnings
+- ActionsProcessed ;
+- PackagesProcessed ;
+- DriversProcessed ;
+- FeaturesProcessed ;
+- CapabilitiesProcessed ;
+- CommandsProcessed ;
+- FilesProcessed ;
+- FoldersProcessed ;
+- EnvironmentVariablesProcessed ;
+- ScheduledTasksProcessed ;
+- ShortcutsProcessed ;
+- ServicesProcessed ;
+- RegistryActionsProcessed ;
+- TweaksApplied ;
+- Errors ;
+- Warnings.
 
 Ces statistiques sont mises à jour automatiquement par les différents Engines.
 

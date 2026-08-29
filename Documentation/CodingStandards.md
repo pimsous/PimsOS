@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -527,6 +527,108 @@ Une nouvelle fonctionnalité doit, lorsque l'architecture le permet, être ajout
 Toute duplication introduite doit avoir une justification claire.
 
 ---
+
+# PostInstall
+
+Le développement du runtime **PostInstall** suit les mêmes standards
+que les autres composants du framework.
+
+## Composants
+
+Le runtime PostInstall comprend notamment :
+
+```text
+State.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+Bootstrap.ps1
+FirstBoot.ps1
+Unattend.ps1
+Installer.ps1
+```
+
+Chaque composant conserve une responsabilité distincte.
+
+## Interface utilisateur
+
+`UI.ps1` fournit l'interface console du premier démarrage pour les
+vérifications réseau.
+
+Les fonctions principales sont :
+
+```powershell
+Show-PostInstallNetworkStatus
+Show-PostInstallNetworkHelp
+Wait-PostInstallNetworkUI
+```
+
+La couche UI ne doit pas absorber la logique métier du PostInstall.
+
+## Réseau
+
+La vérification distingue :
+
+- la présence d'un adaptateur réseau ;
+- la disponibilité du réseau local ;
+- la disponibilité d'Internet.
+
+Un réseau local disponible sans accès Internet est donc traité comme
+une situation distincte.
+
+Lorsque cela est nécessaire, le runtime attend la disponibilité du
+réseau et reprend automatiquement son traitement.
+
+## Runtime installé
+
+Le runtime est préparé par le Build puis installé dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Le runtime installé ne doit pas dépendre du chemin du dépôt utilisé
+pour construire l'image.
+
+`Installer.ps1` vérifie la présence des fichiers nécessaires avant de
+les copier dans l'image Windows.
+
+## FirstBoot
+
+Le Build prépare également le démarrage automatique du PostInstall
+via `unattend.xml`.
+
+Le flux est :
+
+```text
+Build
+    ↓
+Runtime PostInstall
+    ↓
+unattend.xml
+    ↓
+FirstLogonCommands
+    ↓
+Bootstrap.ps1
+    ↓
+PostInstall
+```
+
+## Tests
+
+Les composants PostInstall doivent disposer de tests Pester couvrant
+notamment :
+
+- le comportement nominal ;
+- les erreurs ;
+- les cas réseau ;
+- l'attente et la reprise ;
+- l'intégration du Bootstrap ;
+- l'installation du runtime ;
+- la génération de `unattend.xml`.
+
+Toute modification importante doit être validée par les tests unitaires
+concernés et par les tests d'intégration lorsque l'impact le justifie.
 
 # Références
 

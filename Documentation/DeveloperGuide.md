@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -267,6 +267,129 @@ Les nouveaux composants doivent mettre à jour le BuildState lorsque leur contra
 
 ---
 
+# PostInstall
+
+Le PostInstall est le runtime exécuté après l'installation de Windows.
+
+Il est préparé pendant le Build puis embarqué dans l'image Windows. Le runtime installé doit être autonome et ne doit pas dépendre du chemin du dépôt PimsOS utilisé sur la machine de Build.
+
+Le runtime est installé dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Les composants principaux sont :
+
+```text
+State.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+Bootstrap.ps1
+FirstBoot.ps1
+Unattend.ps1
+Installer.ps1
+```
+
+Le flux d'exécution est :
+
+```text
+Build
+    │
+    ▼
+Runtime PostInstall
+    │
+    ▼
+unattend.xml
+    │
+    ▼
+FirstLogonCommands
+    │
+    ▼
+Bootstrap.ps1
+    │
+    ▼
+PostInstall
+```
+
+## Bootstrap
+
+`Bootstrap.ps1` constitue le point d'entrée du runtime.
+
+Il localise le runtime installé, vérifie les composants nécessaires, charge les scripts requis puis démarre le PostInstall.
+
+Le Bootstrap ne doit pas dépendre du chemin du dépôt utilisé pour construire l'image.
+
+## État
+
+`State.ps1` fournit la gestion de l'état persistant du PostInstall.
+
+L'état permet notamment de suivre :
+
+- l'état courant ;
+- la phase d'exécution ;
+- les tâches terminées ;
+- la disponibilité du réseau ;
+- les erreurs ;
+- le statut final.
+
+## Réseau
+
+`Network.ps1` fournit les vérifications réseau.
+
+Le runtime distingue :
+
+- la présence d'un adaptateur ;
+- la disponibilité du réseau local ;
+- l'accès à Internet.
+
+Un adaptateur actif ne signifie donc pas nécessairement qu'Internet est disponible.
+
+Lorsque l'accès réseau est requis et indisponible, le PostInstall peut passer par l'état `WaitingForNetwork` puis reprendre automatiquement lorsque les conditions sont réunies.
+
+## Interface utilisateur
+
+`UI.ps1` fournit l'affichage console du premier démarrage.
+
+Les fonctions principales sont :
+
+```powershell
+Show-PostInstallNetworkStatus
+Show-PostInstallNetworkHelp
+Wait-PostInstallNetworkUI
+```
+
+La couche UI présente l'état du réseau et les instructions nécessaires à l'utilisateur. Elle ne doit pas absorber la logique métier du PostInstall.
+
+## Installer
+
+`Installer.ps1` prépare le runtime dans l'image Windows et installe la configuration FirstBoot.
+
+Il vérifie la présence des fichiers requis avant leur copie et installe `unattend.xml` dans :
+
+```text
+C:\Windows\Panther\unattend.xml
+```
+
+## Tests PostInstall
+
+Les composants PostInstall doivent disposer de tests Pester adaptés.
+
+Les tests doivent couvrir, lorsque cela est pertinent :
+
+- l'initialisation de l'état ;
+- les vérifications réseau ;
+- la disponibilité d'Internet ;
+- l'attente et la reprise réseau ;
+- les erreurs ;
+- le Bootstrap ;
+- l'installation du runtime ;
+- la génération de `unattend.xml` ;
+- l'intégration au Pipeline.
+
+---
+
 # Compatibilité Windows
 
 Le Builder n'est pas conçu pour une seule version de Windows.
@@ -299,6 +422,8 @@ Write-Host
 sont interdits dans la logique métier.
 
 `Write-Verbose` et `Write-Debug` peuvent être utilisés pour les informations de diagnostic appropriées.
+
+L'interface console du runtime PostInstall constitue une exception fonctionnelle : `UI.ps1` utilise volontairement `Write-Host` pour afficher les informations destinées à l'utilisateur lors du premier démarrage. Cette utilisation doit rester limitée à la couche UI.
 
 ---
 
@@ -351,6 +476,7 @@ Selon le changement, cela peut inclure :
 - `Architecture.md`
 - `ArchitectureRules.md`
 - `BuildContext.md`
+- `CodingStandards.md`
 - `ModuleGuide.md`
 - `ProjectStatus.md`
 - `ProjectStructure.md`
@@ -443,4 +569,3 @@ Les duplications doivent être évitées lorsqu'une solution réutilisable exist
 - `Testing.md`
 - `TechnicalDecisions.md`
 - `Documentation\ADR\`
-

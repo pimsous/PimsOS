@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -174,6 +174,48 @@ Ces éléments sont désormais suivis dans :
 
 ---
 
+# PostInstall
+
+## Terminé
+
+Les composants suivants du PostInstall sont désormais implémentés et couverts par les tests :
+
+- State ;
+- Network ;
+- PostInstall ;
+- Bootstrap ;
+- FirstBoot ;
+- Unattend ;
+- Installer ;
+- UI ;
+- intégration dans le pipeline ;
+- validation du WIM réel.
+
+La gestion de l'attente réseau avec interface utilisateur est également implémentée.
+
+Le runtime PostInstall est préparé dans le WIM et installé dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Le premier démarrage utilise `unattend.xml` pour lancer le Bootstrap.
+
+---
+
+## Restant
+
+Les travaux PostInstall restant à réaliser sont :
+
+- [ ] validation FirstBoot réelle sur une installation Windows ;
+- [ ] implémentation des providers de paquets ;
+- [ ] intégration de Chocolatey ;
+- [ ] intégration de Winget ;
+- [ ] intégration de Microsoft Store ;
+- [ ] validation de bout en bout du processus PostInstall sur une image réellement installée.
+
+---
+
 # Gestion du Backlog
 
 Le Backlog est réévalué :
@@ -199,24 +241,3 @@ Le Backlog permet de conserver une vision à moyen et long terme du projet sans 
 Les éléments les plus importants doivent être déplacés vers la Roadmap ou un jalon avant leur réalisation.
 
 Toute tâche terminée doit être retirée du Backlog actif et reflétée dans la documentation de statut du projet.
-## PostInstall
-
-### Terminé
-
-- State
-- Network
-- PostInstall
-- Bootstrap
-- FirstBoot
-- Unattend
-- Installer
-- intégration pipeline
-- validation WIM réelle
-
-### Restant
-
-- validation FirstBoot réelle
-- reprise réseau
-- providers de paquets
-- Microsoft Store
-

@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 Bienvenue dans **PimsOS Builder**.
 
@@ -185,17 +185,18 @@ Avant toute modification importante, exécuter les tests :
 Invoke-Pester
 ```
 
-Pour exécuter explicitement les tests du projet :
-
-```powershell
 Pour exécuter explicitement les tests du Builder :
 
+```powershell
 Invoke-Pester -Path .\Tests\Unit
 Invoke-Pester -Path .\Tests\Integration
 ```
+
 Pour exécuter les tests d'acceptance :
 
+```powershell
 Invoke-Pester -Path .\Tests\Acceptance
+```
 
 Les tests obligatoires doivent être validés avant de considérer une évolution comme stable.
 
@@ -307,6 +308,107 @@ Pour lancer ensuite le processus de Build complet :
 `Initialize-PimsOS` et `Build-PimsOS.ps1` ne doivent pas être considérés comme deux étapes obligatoires à exécuter successivement dans le cadre d'un même Build.
 
 Le script `Build-PimsOS.ps1` constitue le lanceur du processus de Build, tandis que `Initialize-PimsOS` est l'entrée fonctionnelle publique du module.
+
+---
+
+# PostInstall
+
+Le PostInstall est exécuté après l'installation de Windows lors du premier démarrage.
+
+Le Build prépare et embarque le runtime dans l'image Windows. Le runtime installé est autonome et ne dépend pas du chemin du dépôt PimsOS utilisé pendant le Build.
+
+Le runtime est installé dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Les composants principaux sont :
+
+```text
+State.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+Bootstrap.ps1
+FirstBoot.ps1
+Unattend.ps1
+Installer.ps1
+```
+
+Le flux général est :
+
+```text
+Build
+    │
+    ▼
+Installation du runtime
+    │
+    ▼
+Génération unattend.xml
+    │
+    ▼
+Installation de Windows
+    │
+    ▼
+FirstLogonCommands
+    │
+    ▼
+Bootstrap.ps1
+    │
+    ▼
+PostInstall
+```
+
+## Vérification réseau
+
+Le PostInstall distingue :
+
+- la présence d'un adaptateur réseau ;
+- la disponibilité du réseau local ;
+- l'accès à Internet.
+
+Un adaptateur actif ne signifie donc pas nécessairement qu'Internet est disponible.
+
+Lorsque le réseau ou Internet est indisponible, le runtime peut entrer dans l'état `WaitingForNetwork`, afficher l'état courant à l'utilisateur et reprendre automatiquement lorsque les conditions sont réunies.
+
+## Interface utilisateur
+
+L'interface console du premier démarrage est fournie par `UI.ps1`.
+
+Les fonctions principales sont :
+
+```powershell
+Show-PostInstallNetworkStatus
+Show-PostInstallNetworkHelp
+Wait-PostInstallNetworkUI
+```
+
+La couche UI reste séparée de la logique métier du PostInstall.
+
+## État
+
+`State.ps1` permet de conserver l'état persistant du PostInstall, notamment :
+
+- le statut ;
+- la phase courante ;
+- les tâches terminées ;
+- la disponibilité réseau ;
+- les erreurs.
+
+## Tests
+
+Le PostInstall dispose de tests unitaires couvrant notamment :
+
+- l'état ;
+- la détection réseau ;
+- l'accès Internet ;
+- l'attente réseau ;
+- la reprise ;
+- l'interface utilisateur ;
+- le Bootstrap ;
+- l'installation du runtime ;
+- la génération de `unattend.xml`.
 
 ---
 
@@ -462,4 +564,3 @@ Les principales références du projet sont :
 - `ProjectStatus.md`
 
 Ces documents constituent la référence du fonctionnement et du développement de **PimsOS Builder**.
-

@@ -4,7 +4,7 @@
 >
 > Statut : Référence historique
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 

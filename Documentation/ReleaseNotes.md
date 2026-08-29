@@ -69,8 +69,7 @@ Il permet notamment :
 * d'afficher le résumé ;
 * de valider ou d'annuler la configuration.
 
-Les informations configurées dans le Wizard sont transmises au
-`BuildContext`, puis au pipeline.
+Les informations configurées dans le Wizard sont transmises au `BuildContext`, puis au pipeline.
 
 ### Drivers
 
@@ -84,13 +83,11 @@ Les sources actuellement supportées sont :
 
 Le Wizard permet de sélectionner la source des drivers.
 
-Les actions DISM correspondantes sont construites et enregistrées dans
-le contexte du Build.
+Les actions DISM correspondantes sont construites et enregistrées dans le contexte du Build.
 
 ### PostInstall / FirstBoot
 
-Le sous-système PostInstall et sa préparation FirstBoot sont désormais
-intégrés au BuildPipeline.
+Le sous-système PostInstall et sa préparation FirstBoot sont désormais intégrés au BuildPipeline.
 
 Les composants concernés comprennent :
 
@@ -100,10 +97,23 @@ Les composants concernés comprennent :
 * `Bootstrap.ps1` ;
 * `FirstBoot.ps1` ;
 * `Unattend.ps1` ;
-* `Installer.ps1`.
+* `Installer.ps1` ;
+* `UI.ps1`.
 
-La préparation du runtime PostInstall est exécutée après l'application
-des drivers et avant le montage de la ruche `SOFTWARE`.
+Le runtime PostInstall est installé dans :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+La préparation du runtime est exécutée après l'application des drivers et avant le montage de la ruche `SOFTWARE`.
+
+La couche UI fournit notamment :
+
+* l'affichage de l'état réseau ;
+* l'aide utilisateur lorsque le réseau est indisponible ;
+* l'attente avec affichage de l'état ;
+* la reprise automatique lorsque la connexion devient disponible.
 
 ### Tests
 
@@ -119,6 +129,7 @@ Extension importante de la couverture Pester avec :
 * tests PostInstall ;
 * tests FirstBoot ;
 * tests réseau ;
+* tests UI PostInstall ;
 * tests d'intégration de l'API publique ;
 * tests d'intégration du BuildPipeline.
 
@@ -147,8 +158,7 @@ Extension importante de la couverture Pester avec :
 * Normalisation des mécanismes de sélection des providers.
 * Validation systématique des paramètres.
 * Amélioration de la gestion des handlers.
-* Correction de plusieurs problèmes liés aux dictionnaires ordonnés
-  PowerShell.
+* Correction de plusieurs problèmes liés aux dictionnaires ordonnés PowerShell.
 * Validation du comportement lorsqu'un handler inexistant est demandé.
 
 ### Configuration
@@ -163,8 +173,12 @@ Extension importante de la couverture Pester avec :
 
 * Détection du réseau avec `Get-NetConnectionProfile`.
 * Repli vers `Get-NetAdapter` lorsque nécessaire.
-* Vérification de la connectivité Internet.
+* Vérification distincte de la connectivité Internet.
 * Attente configurable de la disponibilité réseau.
+* Interface console dédiée au premier démarrage.
+* Affichage de l'état du réseau et de l'accès Internet.
+* Aide utilisateur lorsque le réseau est indisponible.
+* Reprise automatique après disponibilité du réseau.
 * Préparation du runtime dans le WIM.
 * Génération de `unattend.xml`.
 * Préparation des commandes `FirstLogonCommands`.
@@ -190,22 +204,20 @@ et ne font pas partie de la campagne officielle.
 La campagne de référence actuelle donne :
 
 ```text
-701 Passed
+684 Passed
 0 Failed
 1 Skipped
 0 Inconclusive
 0 NotRun
 ```
 
-Le seul test ignoré est conditionnel et concerne une catégorie sans
-groupes qui n'existe pas dans les définitions actuelles.
+Les dernières campagnes ciblées PostInstall et intégration sont également validées sans échec.
 
 ---
 
 ## Corrections
 
-Les travaux de stabilisation de la version 3.0.0 ont notamment permis
-de corriger :
+Les travaux de stabilisation de la version 3.0.0 ont notamment permis de corriger :
 
 * la propagation incorrecte du `BuildContext` ;
 * la mise à jour de l'état de chargement de la configuration ;
@@ -217,35 +229,31 @@ de corriger :
 * la gestion des sources de drivers ;
 * la construction des actions DISM pour les drivers ;
 * plusieurs problèmes de détection des providers ;
-* l'utilisation incorrecte de `ContainsKey()` avec des dictionnaires
-  ordonnés ;
+* l'utilisation incorrecte de `ContainsKey()` avec des dictionnaires ordonnés ;
 * la propagation des erreurs dans les Engines ;
 * plusieurs incohérences de gestion des statistiques ;
 * des incohérences entre les contrats des Managers et leurs tests ;
-* le comportement du test réseau expirant qui attendait réellement une
-  minute avant de terminer ;
-* la gestion d'un handler inexistant dans `CommandManager`.
+* le comportement du test réseau expirant qui attendait réellement une minute avant de terminer ;
+* la gestion d'un handler inexistant dans `CommandManager` ;
+* l'intégration de la couche UI PostInstall avec la logique réseau existante.
 
 ---
 
 ## Breaking Changes
 
-La version 3.0.0 poursuit et stabilise les changements introduits par
-l'architecture du module unique.
+La version 3.0.0 poursuit et stabilise les changements introduits par l'architecture du module unique.
 
 Principes importants :
 
 * `PimsOS.psm1` constitue le module central ;
 * `Initialize-PimsOS` constitue le point d'entrée public fonctionnel ;
 * les composants internes ne sont pas des modules PowerShell indépendants ;
-* les fonctions internes ne constituent pas automatiquement une API
-  publique ;
+* les fonctions internes ne constituent pas automatiquement une API publique ;
 * le `BuildContext` constitue le contrat central entre les composants ;
 * le Wizard transmet sa configuration au contexte puis au pipeline ;
 * les tests `Legacy` sont séparés de la campagne officielle.
 
-Les anciennes architectures basées sur plusieurs modules indépendants
-ne constituent plus le modèle de référence.
+Les anciennes architectures basées sur plusieurs modules indépendants ne constituent plus le modèle de référence.
 
 ---
 
@@ -255,10 +263,8 @@ Les éléments suivants restent en développement :
 
 * finalisation complète de la génération de l'ISO ;
 * validation complète d'un Build de bout en bout ;
-* validation réelle de l'exécution de `FirstLogonCommands` lors de la
-  première connexion Windows ;
-* validation complète de la reprise après perte puis disponibilité du
-  réseau ;
+* validation réelle de l'exécution de `FirstLogonCommands` lors de la première connexion Windows ;
+* validation complète de la reprise après perte puis disponibilité du réseau ;
 * implémentation du provider Chocolatey ;
 * implémentation du provider Winget ;
 * intégration Microsoft Store ;
@@ -267,8 +273,7 @@ Les éléments suivants restent en développement :
 * couverture complémentaire de `Security.ps1` ;
 * enrichissement du Reporting.
 
-La version 3.0.0 ne doit donc pas encore être considérée comme une
-release stable finale.
+La version 3.0.0 ne doit donc pas encore être considérée comme une release stable finale.
 
 ---
 
@@ -280,8 +285,7 @@ release stable finale.
 
 🚧 Historique
 
-Cette version correspond à une étape précédente du développement du
-Builder.
+Cette version correspond à une étape précédente du développement du Builder.
 
 ### Principales évolutions
 
