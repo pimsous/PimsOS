@@ -6,7 +6,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-08-29
 
 ---
 
@@ -1081,27 +1081,247 @@ Les décisions structurantes sont documentées dans les ADR afin de préserver l
 
 ## PostInstall
 
-Le Build prépare le système, tandis que PostInstall exécute les
-opérations après installation de Windows.
+Le Build prépare le système, tandis que le runtime **PostInstall**
+exécute les opérations nécessaires après l'installation de Windows.
 
-La séparation est :
+La séparation des responsabilités est :
 
+```text
 Build
-    ↓
+    |
+    v
 WIM préparé
-    ↓
+    |
+    v
 FirstBoot
-    ↓
+    |
+    v
+PostInstall Bootstrap
+    |
+    v
+Initialisation de l'état
+    |
+    v
+Vérification réseau / Internet
+    |
+    +-- Réseau disponible
+    |       |
+    |       v
+    |   Installation locale
+    |       |
+    |       v
+    |   Opérations réseau
+    |
+    +-- Réseau indisponible
+            |
+            v
+       WaitingForNetwork
+            |
+            v
+       Reprise automatique
+            |
+            v
+       PostInstall
+            |
+            v
+       PackageManager
+            |
+            v
+       Applications
+```
+
+### Runtime autonome
+
+Le runtime PostInstall est embarqué dans le WIM lors du Build.
+
+Il est ensuite exécuté depuis :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Le runtime ne dépend pas du chemin du dépôt PimsOS présent sur la
+machine ayant construit l'image.
+
+Les fichiers nécessaires au runtime sont notamment :
+
+```text
+Bootstrap.ps1
+Network.ps1
+UI.ps1
+PostInstall.ps1
+State.ps1
+```
+
+L'installation du runtime est réalisée par :
+
+```powershell
+Install-PimsOSPostInstallRuntime
+```
+
+Cette fonction valide la présence du runtime source, crée le dossier
+de destination et copie les fichiers nécessaires dans l'image Windows.
+
+### Bootstrap
+
+`Bootstrap.ps1` constitue le point d'entrée du runtime PostInstall.
+
+Il :
+
+- localise le runtime installé ;
+- vérifie la présence des composants nécessaires ;
+- charge `State.ps1` ;
+- charge `Network.ps1` ;
+- charge `UI.ps1` ;
+- charge `PostInstall.ps1` ;
+- démarre l'exécution PostInstall.
+
+Le Bootstrap permet ainsi au runtime d'être initialisé indépendamment
+du dépôt de Build.
+
+### État PostInstall
+
+L'exécution PostInstall repose sur un état persistant permettant
+d'identifier la progression du processus.
+
+L'état permet notamment de gérer :
+
+- l'initialisation ;
+- l'exécution des phases locales ;
+- l'attente du réseau ;
+- la reprise après disponibilité du réseau ;
+- les erreurs d'exécution.
+
+### Gestion réseau
+
+La couche réseau distingue la disponibilité du réseau local de
+l'accès réel à Internet.
+
+La vérification suit le principe :
+
+```text
+Adaptateur réseau
+        |
+        v
+Connexion réseau
+        |
+        v
+Accès Internet
+```
+
+Un adaptateur actif ne signifie donc pas nécessairement qu'Internet
+est disponible.
+
+PostInstall distingue notamment les situations suivantes :
+
+```text
+Aucun adaptateur
+        |
+        v
+Réseau indisponible
+```
+
+et :
+
+```text
+Adaptateur actif
+        |
+        v
+Réseau local disponible
+        |
+        v
+Internet indisponible
+```
+
+Cette distinction est importante car certaines opérations PostInstall
+nécessitent un accès Internet.
+
+### Interface réseau du premier démarrage
+
+`UI.ps1` fournit l'interface console utilisée pendant le premier
+démarrage.
+
+Elle expose notamment :
+
+```powershell
+Show-PostInstallNetworkStatus
+Show-PostInstallNetworkHelp
+Wait-PostInstallNetworkUI
+```
+
+`Show-PostInstallNetworkStatus` présente l'état courant du réseau et
+de l'accès Internet.
+
+`Show-PostInstallNetworkHelp` fournit les indications nécessaires à
+l'utilisateur lorsqu'une connexion réseau est requise.
+
+`Wait-PostInstallNetworkUI` assure l'attente avec affichage de l'état
+et permet la reprise automatique lorsque la connexion devient
+disponible.
+
+La couche UI reste séparée de la logique métier de PostInstall.
+
+### Intégration FirstBoot
+
+Le Build génère également la configuration `unattend.xml` permettant
+de lancer le Bootstrap lors du premier démarrage de Windows.
+
+Le fichier est installé dans :
+
+```text
+C:\Windows\Panther\unattend.xml
+```
+
+Le flux est donc :
+
+```text
+Build
+    |
+    v
+Installation du runtime
+    |
+    v
+Génération unattend.xml
+    |
+    v
+Installation de Windows
+    |
+    v
+FirstLogonCommands
+    |
+    v
+Bootstrap.ps1
+    |
+    v
 PostInstall
-    ↓
-PackageManager
-    ↓
-Applications
+```
 
-Le runtime PostInstall est embarqué dans le WIM et ne dépend pas
-du chemin du dépôt PimsOS sur la machine de build.
+La génération du fichier `unattend.xml` est réalisée par les
+composants FirstBoot/Unattend du framework.
 
-Le chemin d'exécution Windows est :
+### Séparation Build / PostInstall
 
-`C:\ProgramData\PimsOS\PostInstall\`
+Le Build et PostInstall possèdent des responsabilités différentes.
 
+**Build :**
+
+- prépare l'image Windows ;
+- applique les personnalisations offline ;
+- installe le runtime PostInstall ;
+- prépare FirstBoot ;
+- génère `unattend.xml`.
+
+**PostInstall :**
+
+- s'exécute dans Windows installé ;
+- initialise son état ;
+- vérifie l'environnement réseau ;
+- vérifie l'accès Internet ;
+- attend si nécessaire la disponibilité du réseau ;
+- reprend automatiquement l'exécution lorsque les conditions sont
+  réunies ;
+- exécute les opérations prévues après installation.
+
+Cette séparation conserve une frontière claire entre les opérations
+offline du Build et les opérations runtime réalisées après
+l'installation de Windows.
