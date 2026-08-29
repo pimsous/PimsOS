@@ -1,7 +1,7 @@
 # ==========================================
 # Module : PostInstall UI
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.1.0
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -21,7 +21,17 @@ function Show-PostInstallNetworkStatus {
 
     )
 
-    Clear-Host
+    try {
+
+        Clear-Host
+
+    }
+    catch [System.IO.IOException] {
+
+        # Environnement non interactif (CI, redirection, etc.).
+        # L'affichage peut continuer sans effacer l'écran.
+
+    }
 
     Write-Host ""
     Write-Host "==================================================" -ForegroundColor Cyan
@@ -55,7 +65,6 @@ function Show-PostInstallNetworkStatus {
 
         }
 
-        
         Write-Host "[X] Accès Internet indisponible" -ForegroundColor Red
         Write-Host ""
         Write-Host "Le réseau local est disponible mais" -ForegroundColor Yellow
