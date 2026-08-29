@@ -8,10 +8,12 @@ $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
 Describe "PostInstall Bootstrap" {
 
     BeforeEach {
-		
-		$TestProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
 
-		. "$TestProjectRoot\Modules\PostInstall\Bootstrap.ps1"
+        $TestProjectRoot = (
+            Resolve-Path "$PSScriptRoot\..\..\..\.."
+        ).Path
+
+        . "$TestProjectRoot\Modules\PostInstall\Bootstrap.ps1"
 
         $script:RuntimePath = Join-Path `
             $TestDrive `
@@ -31,6 +33,10 @@ Describe "PostInstall Bootstrap" {
             $script:RuntimePath `
             "Network.ps1"
 
+        $script:UIPath = Join-Path `
+            $script:RuntimePath `
+            "UI.ps1"
+
         $script:PostInstallPath = Join-Path `
             $script:RuntimePath `
             "PostInstall.ps1"
@@ -43,6 +49,11 @@ Describe "PostInstall Bootstrap" {
         Set-Content `
             -Path $script:NetworkPath `
             -Value 'function Test-BootstrapNetwork { return $true }' `
+            -Encoding UTF8
+
+        Set-Content `
+            -Path $script:UIPath `
+            -Value 'function Show-BootstrapUI {}' `
             -Encoding UTF8
 
         Set-Content `
@@ -149,5 +160,4 @@ Describe "PostInstall Bootstrap" {
     }
 
 }
-
 

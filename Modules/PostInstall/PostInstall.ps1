@@ -96,7 +96,21 @@ function Invoke-PostInstall {
 
         if ($WaitForNetwork) {
 
-            if (-not (Test-PostInstallNetwork)) {
+            if (Get-Command Show-PostInstallNetworkStatus `
+                -ErrorAction SilentlyContinue) {
+
+                $NetworkAvailable =
+                    Show-PostInstallNetworkStatus
+
+            }
+            else {
+
+                $NetworkAvailable =
+                    Test-PostInstallNetwork
+
+            }
+
+            if (-not $NetworkAvailable) {
 
                 $State = Set-PostInstallStatus `
                     -State $State `
@@ -107,8 +121,21 @@ function Invoke-PostInstall {
                 $State = Save-PostInstallState `
                     -State $State
 
-                $NetworkAvailable = Wait-PostInstallNetwork `
-                    -TimeoutMinutes $NetworkTimeoutMinutes
+                if (Get-Command Wait-PostInstallNetworkUI `
+                    -ErrorAction SilentlyContinue) {
+
+                    $NetworkAvailable =
+                        Wait-PostInstallNetworkUI `
+                            -TimeoutMinutes $NetworkTimeoutMinutes
+
+                }
+                else {
+
+                    $NetworkAvailable =
+                        Wait-PostInstallNetwork `
+                            -TimeoutMinutes $NetworkTimeoutMinutes
+
+                }
 
                 if (-not $NetworkAvailable) {
 

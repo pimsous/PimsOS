@@ -53,11 +53,12 @@ function Install-PimsOSPostInstallRuntime {
     # --------------------------------------------------
 
     $RequiredFiles = @(
-        "Bootstrap.ps1"
-        "Network.ps1"
-        "PostInstall.ps1"
-        "State.ps1"
-    )
+		"Bootstrap.ps1"
+		"Network.ps1"
+		"UI.ps1"
+		"PostInstall.ps1"
+		"State.ps1"
+	)
 
     foreach ($FileName in $RequiredFiles) {
 

@@ -1,7 +1,7 @@
 # ==========================================
 # Module : PostInstall Bootstrap
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.1.0
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -50,6 +50,10 @@ function Start-PimsOSPostInstall {
         -Path $RuntimePath `
         -ChildPath "Network.ps1"
 
+    $UIPath = Join-Path `
+        -Path $RuntimePath `
+        -ChildPath "UI.ps1"
+
     $PostInstallPath = Join-Path `
         -Path $RuntimePath `
         -ChildPath "PostInstall.ps1"
@@ -57,6 +61,7 @@ function Start-PimsOSPostInstall {
     foreach ($Path in @(
         $StatePath,
         $NetworkPath,
+        $UIPath,
         $PostInstallPath
     )) {
 
@@ -73,6 +78,7 @@ function Start-PimsOSPostInstall {
 
     . $StatePath
     . $NetworkPath
+    . $UIPath
     . $PostInstallPath
 
     try {

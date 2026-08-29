@@ -32,6 +32,7 @@ Describe "PostInstall Installer" {
         foreach ($FileName in @(
             "Bootstrap.ps1"
             "Network.ps1"
+            "UI.ps1"
             "PostInstall.ps1"
             "State.ps1"
         )) {
@@ -90,36 +91,37 @@ Describe "PostInstall Installer" {
 
         }
 
-        It "Copie les quatre fichiers du runtime" {
+        It "Copie les cinq fichiers du runtime" {
 
-            $null =
-                Install-PimsOSPostInstallRuntime `
-                    -MountPath $script:MountPath `
-                    -SourcePath $script:SourcePath
+			$null =
+				Install-PimsOSPostInstallRuntime `
+					-MountPath $script:MountPath `
+					-SourcePath $script:SourcePath
 
-            $Destination = Join-Path `
-                $script:MountPath `
-                "ProgramData\PimsOS\PostInstall"
+			$Destination = Join-Path `
+				$script:MountPath `
+				"ProgramData\PimsOS\PostInstall"
 
-            foreach ($FileName in @(
-                "Bootstrap.ps1"
-                "Network.ps1"
-                "PostInstall.ps1"
-                "State.ps1"
-            )) {
+			foreach ($FileName in @(
+				"Bootstrap.ps1"
+				"Network.ps1"
+				"UI.ps1"
+				"PostInstall.ps1"
+				"State.ps1"
+			)) {
 
-                Test-Path `
-                    -LiteralPath (
-                        Join-Path `
-                            $Destination `
-                            $FileName
-                    ) `
-                    -PathType Leaf |
-                    Should -BeTrue
+				$FilePath = Join-Path `
+					$Destination `
+					$FileName
 
-            }
+				Test-Path `
+					-LiteralPath $FilePath `
+					-PathType Leaf |
+					Should -BeTrue
 
-        }
+			}
+
+		}
 
         It "Retourne le chemin de destination" {
 
@@ -321,36 +323,38 @@ Describe "PostInstall Installer" {
         }
 
     }
-	# ==================================================
-	# Get-PostInstallRuntimePath
-	# ==================================================
 
-	Context "Get-PostInstallRuntimePath" {
+    # ==================================================
+    # Get-PostInstallRuntimePath
+    # ==================================================
 
-		It "Retourne le dossier Modules\PostInstall du projet" {
+    Context "Get-PostInstallRuntimePath" {
 
-			$Result = Get-PostInstallRuntimePath
+        It "Retourne le dossier Modules\PostInstall du projet" {
 
-			$Expected = (
-				Resolve-Path `
-					"$PSScriptRoot\..\..\..\..\Modules\PostInstall"
-			).Path
+            $Result = Get-PostInstallRuntimePath
 
-			$Result |
-				Should -Be $Expected
+            $Expected = (
+                Resolve-Path `
+                    "$PSScriptRoot\..\..\..\..\Modules\PostInstall"
+            ).Path
 
-		}
+            $Result |
+                Should -Be $Expected
 
-		It "Retourne un dossier existant" {
+        }
 
-			$Result = Get-PostInstallRuntimePath
+        It "Retourne un dossier existant" {
 
-			Test-Path `
-				-LiteralPath $Result `
-				-PathType Container |
-				Should -BeTrue
+            $Result = Get-PostInstallRuntimePath
 
-		}
+            Test-Path `
+                -LiteralPath $Result `
+                -PathType Container |
+                Should -BeTrue
 
-	}
+        }
+
+    }
+
 }

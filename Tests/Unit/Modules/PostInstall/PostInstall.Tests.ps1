@@ -176,6 +176,90 @@ Describe "PostInstall" {
 
         }
 
+		It "Utilise l'interface UI pour détecter le réseau" {
+
+            Mock Save-PostInstallState {
+
+                param(
+                    [psobject]$State,
+                    [string]$StatePath
+                )
+
+                return $State
+
+            }
+
+            function Show-PostInstallNetworkStatus {
+                return $true
+            }
+
+            $Result = Invoke-PostInstall `
+                -State $script:State `
+                -WaitForNetwork
+
+            $Result.NetworkAvailable |
+                Should -BeTrue
+
+            $Result.Status |
+                Should -Be "Completed"
+
+            Remove-Item `
+                -Path Function:\Show-PostInstallNetworkStatus `
+                -Force `
+                -ErrorAction SilentlyContinue
+
+        }
+
+        It "Utilise l'attente UI lorsque le réseau est indisponible" {
+
+            Mock Save-PostInstallState {
+
+                param(
+                    [psobject]$State,
+                    [string]$StatePath
+                )
+
+                return $State
+
+            }
+
+            function Show-PostInstallNetworkStatus {
+                return $false
+            }
+
+            function Wait-PostInstallNetworkUI {
+
+                param(
+                    [int]$IntervalSeconds,
+                    [int]$TimeoutMinutes
+                )
+
+                return $true
+
+            }
+
+            $Result = Invoke-PostInstall `
+                -State $script:State `
+                -WaitForNetwork
+
+            $Result.NetworkAvailable |
+                Should -BeTrue
+
+            $Result.Status |
+                Should -Be "Completed"
+
+            Remove-Item `
+                -Path Function:\Show-PostInstallNetworkStatus `
+                -Force `
+                -ErrorAction SilentlyContinue
+
+            Remove-Item `
+                -Path Function:\Wait-PostInstallNetworkUI `
+                -Force `
+                -ErrorAction SilentlyContinue
+
+        }
+
         It "Passe en WaitingForNetwork lorsque le réseau est absent" {
 
             Mock Save-PostInstallState {
