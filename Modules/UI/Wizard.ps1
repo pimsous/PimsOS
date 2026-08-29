@@ -7,6 +7,16 @@
 
 Set-StrictMode -Version Latest
 
+function Clear-PimsOSScreen {
+
+    if ($env:GITHUB_ACTIONS -eq "true") {
+        return
+    }
+
+    Clear-Host
+}
+
+
 
 function Show-PimsOSBuildWizard {
 
@@ -18,8 +28,7 @@ function Show-PimsOSBuildWizard {
 
     while ($true) {
 
-        Clear-Host
-
+        Clear-PimsOSScreen
         Write-Host ""
         Write-Host "==================================================" -ForegroundColor Cyan
         Write-Host "                 PimsOS Builder" -ForegroundColor Cyan
@@ -94,8 +103,7 @@ function Show-PimsOSProfileMenu {
         [psobject]$Context
     )
 
-    Clear-Host
-
+    Clear-PimsOSScreen
     Write-Host ""
     Write-Host "==================================================" -ForegroundColor Cyan
     Write-Host "                 Profil PimsOS" -ForegroundColor Cyan
@@ -208,8 +216,7 @@ function Show-PimsOSBuildOptions {
 
     while ($true) {
 
-        Clear-Host
-
+        Clear-PimsOSScreen
         Write-Host ""
         Write-Host "==================================================" -ForegroundColor Cyan
         Write-Host "                 Options du Build" -ForegroundColor Cyan
@@ -262,8 +269,7 @@ function Show-PimsOSDriverMenu {
         [psobject]$Context
     )
 
-    Clear-Host
-
+    Clear-PimsOSScreen
     Write-Host ""
     Write-Host "==================================================" -ForegroundColor Cyan
     Write-Host "                 Drivers PimsOS" -ForegroundColor Cyan
@@ -407,8 +413,7 @@ function Show-PimsOSBuildSummary {
         [psobject]$Context
     )
 
-    Clear-Host
-
+    Clear-PimsOSScreen
     Write-Host ""
     Write-Host "==================================================" -ForegroundColor Cyan
     Write-Host "              Résumé du Build" -ForegroundColor Cyan
@@ -464,4 +469,6 @@ function Show-PimsOSBuildSummary {
 
     $null = Read-Host "Appuyez sur Entrée"
 }
+
+
 

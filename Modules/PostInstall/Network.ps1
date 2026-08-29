@@ -7,6 +7,8 @@
 
 Set-StrictMode -Version Latest
 
+
+
 # --------------------------------------------------
 # Vérifie la disponibilité du réseau
 # --------------------------------------------------
@@ -80,11 +82,13 @@ function Test-PostInstallInternet {
 
     }
 
+    $InternetTestHost = "www.microsoft.com"
+
     try {
 
         return (
             Test-Connection `
-                -ComputerName "www.microsoft.com" `
+                -ComputerName $InternetTestHost `
                 -Count 1 `
                 -Quiet `
                 -ErrorAction Stop
