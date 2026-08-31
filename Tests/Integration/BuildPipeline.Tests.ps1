@@ -33,6 +33,12 @@ BeforeAll {
     . "$ProjectRoot\Modules\Image\Dism.ps1"
 
     # --------------------------------------------------
+    # Registry
+    # --------------------------------------------------
+
+    . "$ProjectRoot\Modules\Windows\Registry.ps1"
+
+    # --------------------------------------------------
     # Actions
     # --------------------------------------------------
 
@@ -84,6 +90,14 @@ Describe "BuildPipeline" {
 
             Drivers = [System.Collections.Generic.List[object]]::new()
 
+            Configuration = @()
+
+            Registry = [pscustomobject]@{
+
+                Mounted = @()
+
+            }
+
             BuildState = [pscustomobject]@{
 
                 Status = "Idle"
@@ -94,6 +108,12 @@ Describe "BuildPipeline" {
                 Image = [pscustomobject]@{
 
                     MountPath = $null
+                    Mounted = $false
+                    WimMounted = $false
+                    IsoMounted = $false
+                    RegistryLoaded = $false
+                    CurrentRegistryHive = $null
+                    Index = $null
 
                 }
 
@@ -282,50 +302,69 @@ Describe "BuildPipeline" {
 
 	Context "Get-BuildPipeline" {
 
-		It "Contient l'étape Application des drivers après le montage du WIM" {
+        It "Contient les étapes principales du pipeline" {
 
-			$Pipeline = @(Get-BuildPipeline)
+            $Pipeline = @(Get-BuildPipeline)
+            $Ids = @($Pipeline | ForEach-Object { $_.Id })
 
-			$Names = @(
-				$Pipeline |
-					ForEach-Object {
-						$_.Name
-					}
-			)
+            foreach ($RequiredId in @(
+                "MountIso",
+                "CopyIsoContent",
+                "DetectWim",
+                "CopyWim",
+                "ReadWimImages",
+                "SelectImage",
+                "MountWim",
+                "ApplyDrivers",
+                "PreparePostInstall",
+                "LoadConfiguration",
+                "MountConfigurationRegistryHives",
+                "ApplyConfiguration",
+                "DismountConfigurationRegistryHives",
+                "ValidatePostInstallDeployment",
+                "DismountWim",
+                "SyncWimToIsoSource",
+                "DismountIso",
+                "NewPimsOSIso"
+            )) {
 
-			$MountIndex = [Array]::IndexOf(
-				$Names,
-				"Montage du WIM"
-			)
+                $Ids | Should -Contain $RequiredId
 
-			$DriverIndex = [Array]::IndexOf(
-				$Names,
-				"Application des drivers"
-			)
+            }
 
-			$HiveIndex = [Array]::IndexOf(
-				$Names,
-				"Montage de la ruche SOFTWARE"
-			)
+            $Ids | Should -Not -Contain "DismountSoftwareHive"
 
-			$MountIndex |
-				Should -BeGreaterOrEqual 0
+        }
 
-			$DriverIndex |
-				Should -BeGreaterOrEqual 0
+        It "Place l'application des drivers après le montage du WIM" {
 
-			$HiveIndex |
-				Should -BeGreaterOrEqual 0
+            $Pipeline = @(Get-BuildPipeline)
+            $Ids = @($Pipeline | ForEach-Object { $_.Id })
 
-			$DriverIndex |
-				Should -BeGreaterThan $MountIndex
+            $MountIndex = [Array]::IndexOf($Ids, "MountWim")
+            $DriverIndex = [Array]::IndexOf($Ids, "ApplyDrivers")
 
-			$DriverIndex |
-				Should -BeLessThan $HiveIndex
+            $MountIndex | Should -BeGreaterOrEqual 0
+            $DriverIndex | Should -BeGreaterOrEqual 0
+            $DriverIndex | Should -BeGreaterThan $MountIndex
 
-		}
+        }
 
-		It "Place la préparation du PostInstall après les drivers et avant SOFTWARE" {
+        It "Place la préparation du PostInstall après les drivers" {
+
+            $Pipeline = @(Get-BuildPipeline)
+            $Ids = @($Pipeline | ForEach-Object { $_.Id })
+
+            $DriverIndex = [Array]::IndexOf($Ids, "ApplyDrivers")
+            $PostInstallIndex = [Array]::IndexOf($Ids, "PreparePostInstall")
+
+            $DriverIndex | Should -BeGreaterOrEqual 0
+            $PostInstallIndex | Should -BeGreaterOrEqual 0
+            $PostInstallIndex | Should -BeGreaterThan $DriverIndex
+
+        }
+
+		It "Place la préparation du PostInstall après les drivers et avant le montage des ruches de configuration" {
 
 			$Pipeline = @(Get-BuildPipeline)
 
@@ -348,7 +387,7 @@ Describe "BuildPipeline" {
 
 			$HiveIndex = [Array]::IndexOf(
 				$Names,
-				"Montage de la ruche SOFTWARE"
+				"Montage des ruches de registre"
 			)
 
 			$DriverIndex |
@@ -367,14 +406,243 @@ Describe "BuildPipeline" {
 				Should -BeLessThan $HiveIndex
 
 		}
+        It "Place SyncWimToIsoSource entre DismountWim et DismountIso" {
 
+            $Pipeline = @(Get-BuildPipeline)
+
+			$Ids = @(
+				$Pipeline | ForEach-Object { $_.Id }
+			)
+
+            $IndexDismountWim =
+                [Array]::IndexOf(
+                    $Ids,
+                    "DismountWim"
+                )
+
+            $IndexSync =
+                [Array]::IndexOf(
+                    $Ids,
+                    "SyncWimToIsoSource"
+                )
+
+            $IndexDismountIso =
+                [Array]::IndexOf(
+                    $Ids,
+                    "DismountIso"
+                )
+
+            $IndexDismountWim |
+                Should -BeGreaterOrEqual 0
+
+            $IndexSync |
+                Should -BeGreaterOrEqual 0
+
+            $IndexDismountIso |
+                Should -BeGreaterOrEqual 0
+
+            $IndexSync |
+                Should -BeGreaterThan $IndexDismountWim
+
+            $IndexSync |
+                Should -BeLessThan $IndexDismountIso
+        }
+
+
+        It "Place NewPimsOSIso après SyncWimToIsoSource et DismountIso" {
+
+            $Pipeline = @(Get-BuildPipeline)
+
+			$Ids = @(
+				$Pipeline | ForEach-Object { $_.Id }
+			)
+
+            $IndexSync =
+                [Array]::IndexOf(
+                    $Ids,
+                    "SyncWimToIsoSource"
+                )
+
+            $IndexDismountIso =
+                [Array]::IndexOf(
+                    $Ids,
+                    "DismountIso"
+                )
+
+            $IndexNewIso =
+                [Array]::IndexOf(
+                    $Ids,
+                    "NewPimsOSIso"
+                )
+
+            $IndexSync |
+                Should -BeGreaterOrEqual 0
+
+            $IndexDismountIso |
+                Should -BeGreaterOrEqual 0
+
+            $IndexNewIso |
+                Should -BeGreaterOrEqual 0
+
+            $IndexNewIso |
+                Should -BeGreaterThan $IndexSync
+
+            $IndexNewIso |
+                Should -BeGreaterThan $IndexDismountIso
+        }
+
+
+        It "Place les étapes finales du pipeline dans le bon ordre" {
+
+            $Pipeline = @(Get-BuildPipeline)
+
+			$Ids = @(
+				$Pipeline | ForEach-Object { $_.Id }
+			)
+
+            $ExpectedOrder = @(
+                "DismountWim"
+                "SyncWimToIsoSource"
+                "DismountIso"
+                "NewPimsOSIso"
+            )
+
+            $ActualOrder = @(
+                $ExpectedOrder |
+                    ForEach-Object {
+                        [PSCustomObject]@{
+                            Id = $_
+                            Index = [Array]::IndexOf(
+                                $Ids,
+                                $_
+                            )
+                        }
+                    }
+            )
+
+            foreach ($Item in $ActualOrder) {
+
+                $Item.Index |
+                    Should -BeGreaterOrEqual 0
+
+            }
+
+            $ActualOrder[0].Index |
+                Should -BeLessThan $ActualOrder[1].Index
+
+            $ActualOrder[1].Index |
+                Should -BeLessThan $ActualOrder[2].Index
+
+            $ActualOrder[2].Index |
+                Should -BeLessThan $ActualOrder[3].Index
+        }
+
+		It "Synchronise le WIM de travail vers la source ISO et vérifie le SHA256" {
+
+            $Pipeline = @(Get-BuildPipeline)
+
+            $Step = $Pipeline |
+                Where-Object {
+                    $_.Id -eq "SyncWimToIsoSource"
+                }
+
+            $Step |
+                Should -Not -BeNullOrEmpty
+
+            $TestRoot = Join-Path `
+                -Path $TestDrive `
+                -ChildPath "SyncWim"
+
+            $Sources = Join-Path `
+                -Path $TestRoot `
+                -ChildPath "Sources"
+
+            $IsoSources = Join-Path `
+                -Path $TestRoot `
+                -ChildPath "ISOSource\sources"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $Sources `
+                -Force |
+                Out-Null
+
+            New-Item `
+                -ItemType Directory `
+                -Path $IsoSources `
+                -Force |
+                Out-Null
+
+            $WimName = "install.wim"
+
+            $SourceWim = Join-Path `
+                -Path $Sources `
+                -ChildPath $WimName
+
+            $IsoWim = Join-Path `
+                -Path $IsoSources `
+                -ChildPath $WimName
+
+            [System.IO.File]::WriteAllText(
+                $SourceWim,
+                "PimsOS Sync Test"
+            )
+
+            Mock Get-ProjectRoot {
+                return $TestRoot
+            }
+
+            Mock Get-Config {
+
+                return [PSCustomObject]@{
+                    Workspace = [PSCustomObject]@{
+                        Sources = "Sources"
+                        ISOSource = "ISOSource"
+                    }
+                }
+
+            }
+
+            Mock Write-Log {
+            }
+
+            $Context = [PSCustomObject]@{
+                WIM = [PSCustomObject]@{
+                    Name = $WimName
+                }
+            }
+
+            $Result = & $Step.Action $Context
+
+            Test-Path `
+                -LiteralPath $IsoWim `
+                -PathType Leaf |
+                Should -BeTrue
+
+            $SourceHash = (
+                Get-FileHash `
+                    -LiteralPath $SourceWim `
+                    -Algorithm SHA256
+            ).Hash
+
+            $IsoHash = (
+                Get-FileHash `
+                    -LiteralPath $IsoWim `
+                    -Algorithm SHA256
+            ).Hash
+
+            $IsoHash |
+                Should -Be $SourceHash
+
+            $Result |
+                Should -Not -BeNullOrEmpty
+        }
 	}
 
     # ==================================================
     # Apply-Drivers
     # ==================================================
-
-    Context "Apply-Drivers" {
+ {
 
         It "Ne fait rien lorsque la source est None" {
 
@@ -987,6 +1255,113 @@ Describe "BuildPipeline" {
 
         }
 
+        It "Crée le runtime et unattend.xml dans le WIM" {
+
+            $script:Context.BuildState.Image =
+                [pscustomobject]@{
+                    MountPath = $TestDrive
+                }
+
+            Mock Get-PostInstallRuntimePath {
+                return (Join-Path $TestDrive "Runtime")
+            }
+
+            $RuntimePath = Join-Path $TestDrive "Runtime"
+
+            New-Item `
+                -ItemType Directory `
+                -Path $RuntimePath `
+                -Force |
+                Out-Null
+
+            foreach ($FileName in @(
+                "Bootstrap.ps1"
+                "Logger.ps1"
+                "Network.ps1"
+                "UI.ps1"
+                "DriverCheck.ps1"
+                "PostInstall.ps1"
+                "State.ps1"
+            )) {
+
+                New-Item `
+                    -ItemType File `
+                    -Path (
+                        Join-Path `
+                            $RuntimePath `
+                            $FileName
+                    ) `
+                    -Force |
+                    Out-Null
+
+            }
+
+            Mock Install-PimsOSPostInstallRuntime {
+
+                return [pscustomobject]@{
+                    Installed = $true
+                }
+
+            }
+
+            Mock Install-PimsOSFirstBoot {
+
+                param(
+                    [string]$MountPath,
+                    [string]$BootstrapPath
+                )
+
+                $UnattendPath = Join-Path `
+                    $MountPath `
+                    "Windows\Panther\unattend.xml"
+
+                New-Item `
+                    -ItemType Directory `
+                    -Path (
+                        Split-Path $UnattendPath -Parent
+                    ) `
+                    -Force |
+                    Out-Null
+
+                New-Item `
+                    -ItemType File `
+                    -Path $UnattendPath `
+                    -Force |
+                    Out-Null
+
+                return [pscustomobject]@{
+                    UnattendPath = $UnattendPath
+                }
+
+            }
+
+            $Result = Prepare-PostInstall `
+                -Context $script:Context
+
+            $RuntimePathInImage = Join-Path `
+                $TestDrive `
+                "ProgramData\PimsOS\PostInstall"
+
+            $UnattendPathInImage = Join-Path `
+                $TestDrive `
+                "Windows\Panther\unattend.xml"
+
+            Should -Invoke `
+                -CommandName Install-PimsOSPostInstallRuntime `
+                -Times 1 `
+                -Exactly
+
+            Should -Invoke `
+                -CommandName Install-PimsOSFirstBoot `
+                -Times 1 `
+                -Exactly
+
+            Test-Path `
+                -LiteralPath $UnattendPathInImage `
+                -PathType Leaf |
+                Should -BeTrue
+
+        }
         It "Refuse un contexte sans montage WIM" {
 
             $script:Context.BuildState.Image = [pscustomobject]@{

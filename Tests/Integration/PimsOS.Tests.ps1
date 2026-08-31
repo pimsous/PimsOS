@@ -55,7 +55,7 @@ Describe "API publique PimsOS" {
                         [psobject]$Context
                     )
 
-                    $Context.Configuration.Drivers =
+                    $Context.Project.Config.Drivers =
                         [pscustomobject]@{
 
                             Source        = "Folder"
@@ -138,16 +138,16 @@ Describe "API publique PimsOS" {
                 $Context |
                     Should -Not -BeNullOrEmpty
 
-                $Context.Configuration.Drivers |
+                $Context.Project.Config.Drivers |
                     Should -Not -BeNullOrEmpty
 
-                $Context.Configuration.Drivers.Source |
+                $Context.Project.Config.Drivers.Source |
                     Should -Be "Folder"
 
-                $Context.Configuration.Drivers.Path |
+                $Context.Project.Config.Drivers.Path |
                     Should -Be "C:\Projets\PimsOS\Drivers"
 
-                $Context.Configuration.Drivers.Recurse |
+                $Context.Project.Config.Drivers.Recurse |
                     Should -BeTrue
 
                 Should -Invoke `

@@ -1,7 +1,7 @@
 # ==========================================
 # Module : Profile
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.1
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -34,7 +34,9 @@ function Get-TweakDefinitions {
 
         Write-Log "Utilisation du cache des tweaks."
 
-        return $script:TweakDefinitions
+        return @(
+            $script:TweakDefinitions.ToArray()
+        )
 
     }
 
@@ -44,7 +46,19 @@ function Get-TweakDefinitions {
     # Localisation du dossier
     # --------------------------------------------------
 
-    $ProjectRoot = $Context.Project.Root
+    # Le contexte est la source de vérité pour la racine du projet.
+    # Cela permet notamment de tester ou d'exécuter le module avec
+    # un BuildContext pointant vers une autre racine que le processus courant.
+    if (
+        $null -eq $Context.Project -or
+        [string]::IsNullOrWhiteSpace([string]$Context.Project.Root)
+    ) {
+
+        throw "La racine du projet est absente du contexte."
+
+    }
+
+    $ProjectRoot = [string]$Context.Project.Root
 
     $TweaksPath = Join-Path `
         -Path $ProjectRoot `
@@ -173,7 +187,7 @@ function Get-TweakDefinitions {
     # --------------------------------------------------
 
     $script:TweakDefinitions = $Definitions
-	
+
 	if ($Context) {
 
 		$Context.BuildState.Image.TweaksLoaded = $true
@@ -185,7 +199,9 @@ function Get-TweakDefinitions {
         $Definitions.Count
     ) SUCCESS
 
-    return $script:TweakDefinitions
+    return @(
+        $script:TweakDefinitions.ToArray()
+    )
 
 }
 
@@ -198,43 +214,50 @@ function Get-ProfileList {
     [CmdletBinding()]
     param(
 
-		[Parameter(Mandatory)]
-		[psobject]$Context
+        [Parameter(Mandatory)]
+        [psobject]$Context
 
-	)
+    )
 
     Write-Log "Recherche des profils..."
 
     # --------------------------------------------------
-    # Localisation du dossier
+    # Localisation
     # --------------------------------------------------
 
-    $ProjectRoot = $Context.Project.Root
+    if (
+        $null -eq $Context.Project -or
+        [string]::IsNullOrWhiteSpace([string]$Context.Project.Root)
+    ) {
+        throw "La racine du projet est absente du contexte."
+    }
+
+    $ProjectRoot = [string]$Context.Project.Root
 
     $ProfilesPath = Join-Path `
         -Path $ProjectRoot `
         -ChildPath "Profiles"
 
-    if (-not (Test-Path $ProfilesPath)) {
-
+    if (-not (Test-Path -LiteralPath $ProfilesPath -PathType Container)) {
         throw "Le dossier '$ProfilesPath' est introuvable."
-
     }
 
     # --------------------------------------------------
-    # Recherche des profils
+    # Recherche récursive des profils JSON
     # --------------------------------------------------
 
-    $Profiles = @(Get-ChildItem `
-		-Path $ProfilesPath `
-		-Filter "*.json" `
-		-File |
-		Sort-Object Name)
+    $Profiles = @(
+        Get-ChildItem `
+            -LiteralPath $ProfilesPath `
+            -Filter "*.json" `
+            -File `
+            -Recurse |
+            Sort-Object FullName
+    )
 
     if ($Profiles.Count -eq 0) {
 
         Write-Log "Aucun profil trouvé." WARNING
-
         return @()
 
     }
@@ -247,18 +270,37 @@ function Get-ProfileList {
 
     foreach ($Profile in $Profiles) {
 
+        $ProfileLength = 1
+
+        if ($Profile.PSObject.Properties["Length"]) {
+            $ProfileLength = [int64]$Profile.Length
+        }
+
+        if ($ProfileLength -eq 0) {
+            Write-Log (
+                "Profil vide ignoré : {0}" -f
+                $Profile.FullName
+            ) WARNING
+            continue
+        }
+
+        $RelativePath = $Profile.FullName.Substring(
+            $ProfilesPath.Length
+        ).TrimStart('\')
+
+        $Extension = [System.IO.Path]::GetExtension($RelativePath)
+
+        $Name = $RelativePath.Substring(
+            0,
+            $RelativePath.Length - $Extension.Length
+        )
+
         $Result.Add(
-
             [PSCustomObject]@{
-
-                Name = $Profile.BaseName
-
+                Name     = $Name
                 FileName = $Profile.Name
-
                 FullName = $Profile.FullName
-
             }
-
         )
 
     }
@@ -267,12 +309,15 @@ function Get-ProfileList {
         "{0} profil(s) trouvé(s)." -f $Result.Count
     ) SUCCESS
 
-    return $Result
+    return @(
+        $Result.ToArray()
+    )
 
 }
 # --------------------------------------------------
 # Charge un profil
 # --------------------------------------------------
+
 
 function Load-Profile {
 
@@ -293,7 +338,14 @@ function Load-Profile {
     # Localisation
     # --------------------------------------------------
 
-    $ProjectRoot = $Context.Project.Root
+    if (
+        $null -eq $Context.Project -or
+        [string]::IsNullOrWhiteSpace([string]$Context.Project.Root)
+    ) {
+        throw "La racine du projet est absente du contexte."
+    }
+
+    $ProjectRoot = [string]$Context.Project.Root
 
     $ProfilesPath = Join-Path `
         -Path $ProjectRoot `
@@ -309,14 +361,30 @@ function Load-Profile {
     # Profil
     # --------------------------------------------------
 
+    # Normalise le nom : accepte un chemin relatif (ex. Tests\Registry)
+    # et accepte ou non l'extension .json.
+    $RelativeName = $Name.Trim().TrimStart('\','/')
+
+    if ([string]::IsNullOrWhiteSpace($RelativeName)) {
+        throw "Le nom du profil est vide."
+    }
+
+    if ($RelativeName.EndsWith('.json', [System.StringComparison]::OrdinalIgnoreCase)) {
+        $RelativeName = $RelativeName.Substring(0, $RelativeName.Length - 5)
+    }
+
     $ProfilePath = Join-Path `
         -Path $ProfilesPath `
-        -ChildPath "$Name.json"
+        -ChildPath "$RelativeName.json"
 
-    if (-not (Test-Path $ProfilePath)) {
-
+    if (-not (Test-Path -LiteralPath $ProfilePath -PathType Leaf)) {
         throw "Le profil '$Name' est introuvable."
+    }
 
+    $ProfileFile = Get-Item -LiteralPath $ProfilePath -ErrorAction Stop
+
+    if ($ProfileFile.Length -eq 0) {
+        throw "Le profil '$Name' est vide : '$ProfilePath'."
     }
 
     # --------------------------------------------------
@@ -325,23 +393,29 @@ function Load-Profile {
 
     try {
 
-        $Profile = Get-Content `
-			-Path $ProfilePath `
-			-Raw `
-			-Encoding UTF8 `
-			-ErrorAction Stop |
-			ConvertFrom-Json
+        $Raw = Get-Content `
+            -LiteralPath $ProfilePath `
+            -Raw `
+            -Encoding UTF8 `
+            -ErrorAction Stop
+
+        if ([string]::IsNullOrWhiteSpace($Raw)) {
+            throw "Le fichier est vide."
+        }
+
+        $Profile = $Raw | ConvertFrom-Json -ErrorAction Stop
 
     }
     catch {
-
         throw "Impossible de charger le profil '$Name'.`n$($_.Exception.Message)"
-
     }
 
+    if ($null -eq $Profile) {
+        throw "Le profil '$Name' ne contient aucune donnée exploitable."
+    }
 
     Write-Log "Profil '$Name' chargé." SUCCESS
-	
+
 	if ($Context) {
 
 		$Context.ConfigurationProfile = $Name
@@ -371,81 +445,89 @@ function New-ConfigurationItem {
     )
 
     $ConfigurationItem = $Tweak.PSObject.Copy()
-	
-	# ------------------------------------------
-	# Catégorie
-	# ------------------------------------------
 
-	$Category = Get-CategoryDefinition `
-		-Id $Tweak.CategoryId
+    # ------------------------------------------
+    # Catégorie
+    # ------------------------------------------
 
-	$ConfigurationItem | Add-Member `
-		-NotePropertyName Category `
-		-NotePropertyValue $Category.Name `
-		-Force
+    $Category = Get-CategoryDefinition `
+        -Id $Tweak.CategoryId
 
-	$ConfigurationItem | Add-Member `
-		-NotePropertyName CategoryDescription `
-		-NotePropertyValue (
-			Get-ObjectProperty `
-				-Object $Category `
-				-Name Description
-		) `
-		-Force
+            $ConfigurationItem | Add-Member `
+                -NotePropertyName Category `
+                -NotePropertyValue (
+                        Get-ObjectProperty `
+                                -Object $Category `
+                                -Name Name `
+                                -Default $Tweak.CategoryId
+                ) `
+                -Force
 
-	$ConfigurationItem | Add-Member `
-		-NotePropertyName CategoryColor `
-		-NotePropertyValue (
-			Get-ObjectProperty `
-				-Object $Category `
-				-Name Color
-		) `
-		-Force
+        $ConfigurationItem | Add-Member `
+                -NotePropertyName CategoryDescription `
+                -NotePropertyValue (
+                        Get-ObjectProperty `
+                                -Object $Category `
+                                -Name Description `
+                                -Default $null
+                ) `
+                -Force
 
-	$ConfigurationItem | Add-Member `
-		-NotePropertyName CategoryIcon `
-		-NotePropertyValue (
-			Get-ObjectProperty `
-				-Object $Category `
-				-Name Icon
-		) `
-		-Force
+        $ConfigurationItem | Add-Member `
+                -NotePropertyName CategoryColor `
+                -NotePropertyValue (
+                        Get-ObjectProperty `
+                                -Object $Category `
+                                -Name Color `
+                                -Default $null
+                ) `
+                -Force
 
-	$ConfigurationItem | Add-Member `
-		-NotePropertyName CategoryOrder `
-		-NotePropertyValue (
-			Get-ObjectProperty `
-				-Object $Category `
-				-Name Order `
-				-Default 0
-		) `
-		-Force
+        $ConfigurationItem | Add-Member `
+                -NotePropertyName CategoryIcon `
+                -NotePropertyValue (
+                        Get-ObjectProperty `
+                                -Object $Category `
+                                -Name Icon `
+                                -Default $null
+                ) `
+                -Force
 
-	$ConfigurationItem | Add-Member `
-		-NotePropertyName CategoryVisible `
-		-NotePropertyValue (
-			Get-ObjectProperty `
-				-Object $Category `
-				-Name Visible `
-				-Default $true
-		) `
-		-Force
+        $ConfigurationItem | Add-Member `
+                -NotePropertyName CategoryOrder `
+                -NotePropertyValue (
+                        Get-ObjectProperty `
+                                -Object $Category `
+                                -Name Order `
+                                -Default 0
+                ) `
+                -Force
 
-	$ConfigurationItem | Add-Member `
-		-NotePropertyName CategoryGroups `
-		-NotePropertyValue (
-			Get-ObjectProperty `
-				-Object $Category `
-				-Name Groups `
-				-Default @()
-		) `
-		-Force
+        $ConfigurationItem | Add-Member `
+                -NotePropertyName CategoryVisible `
+                -NotePropertyValue (
+                        Get-ObjectProperty `
+                                -Object $Category `
+                                -Name Visible `
+                                -Default $true
+                ) `
+                -Force
 
-	# Etat d'activation du profil
+        $ConfigurationItem | Add-Member `
+                -NotePropertyName CategoryGroups `
+                -NotePropertyValue (
+                        Get-ObjectProperty `
+                                -Object $Category `
+                                -Name Groups `
+                                -Default @()
+                ) `
+                -Force
 
-	$ConfigurationItem.Enabled = $Enabled
-	
-	return $ConfigurationItem
+    # Etat d'activation du profil
+
+    $ConfigurationItem.Enabled = $Enabled
+
+    return $ConfigurationItem
 
 }
 # --------------------------------------------------
@@ -472,22 +554,50 @@ function Merge-Profile {
 
     $Configuration = [System.Collections.Generic.List[object]]::new()
 
+    # --------------------------------------------------
+    # Résolution du preset
+    # --------------------------------------------------
+
+    $Preset = Resolve-ProfilePreset `
+        -Profile $Profile `
+        -Tweaks $Tweaks
+
+    $SelectedMap = @{}
+
+    foreach ($Id in $Preset.SelectedIds) {
+
+        $SelectedMap[[string]$Id] = $true
+
+    }
+
+    $DisabledMap = @{}
+
+    foreach ($Id in $Preset.DisabledIds) {
+
+        $DisabledMap[[string]$Id] = $true
+
+    }
+
     foreach ($Tweak in $Tweaks) {
 
         # ------------------------------------------
         # Valeur par défaut
         # ------------------------------------------
 
-        $Enabled = $Tweak.Default
+        $Enabled = [bool]$Tweak.Default
 
         # ------------------------------------------
-        # Valeur du profil
+        # Valeur explicite du profil
         # ------------------------------------------
 
-        if ($Profile.PSObject.Properties["Tweaks"] -and
-            $Profile.Tweaks.PSObject.Properties[$Tweak.Id]) {
+        if ($SelectedMap.ContainsKey([string]$Tweak.Id)) {
 
-            $Enabled = $Profile.Tweaks.$($Tweak.Id)
+            $Enabled = $true
+
+        }
+        elseif ($DisabledMap.ContainsKey([string]$Tweak.Id)) {
+
+            $Enabled = $false
 
         }
 
@@ -510,9 +620,305 @@ function Merge-Profile {
     ) SUCCESS
 
     $Context.BuildState.Image.ProfileMerged = $true
-	
-	$Context.Configuration = $Configuration
 
-	return $Configuration
+    # Le BuildContext expose toujours une configuration de tweaks plate.
+    $Context.Configuration = @(
+        $Configuration.ToArray()
+    )
+
+    return $Context.Configuration
+
+}
+
+# --------------------------------------------------
+# Résout un preset de profil
+# --------------------------------------------------
+
+function Resolve-ProfilePreset {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Profile,
+
+        [Parameter(Mandatory)]
+        [object[]]$Tweaks
+
+    )
+
+    $SelectedIds = [System.Collections.Generic.List[string]]::new()
+    $DisabledIds = [System.Collections.Generic.List[string]]::new()
+
+    # --------------------------------------------------
+    # Format historique :
+    #
+    # "Tweaks": [
+    #     {
+    #         "Id": "Privacy.DisableTelemetry",
+    #         "Enabled": true
+    #     }
+    # ]
+    # --------------------------------------------------
+
+    if (
+        $Profile.PSObject.Properties["Tweaks"] -and
+        $Profile.Tweaks -is [System.Collections.IEnumerable] -and
+        -not ($Profile.Tweaks -is [string])
+    ) {
+
+        foreach ($Item in @($Profile.Tweaks)) {
+
+            if (
+                $null -eq $Item -or
+                [string]::IsNullOrWhiteSpace([string]$Item.Id)
+            ) {
+
+                continue
+
+            }
+
+            $Id = [string]$Item.Id
+
+            $Enabled = $true
+
+            if ($Item.PSObject.Properties["Enabled"]) {
+
+                $Enabled = [bool]$Item.Enabled
+
+            }
+
+            if ($Enabled) {
+
+                if (-not $SelectedIds.Contains($Id)) {
+
+                    $SelectedIds.Add($Id)
+
+                }
+
+            }
+            else {
+
+                if (-not $DisabledIds.Contains($Id)) {
+
+                    $DisabledIds.Add($Id)
+
+                }
+
+            }
+
+        }
+
+    }
+
+    # --------------------------------------------------
+    # Nouveau format :
+    #
+    # "Tweaks": {
+    #     "Privacy.DisableTelemetry": true,
+    #     "Xbox.DisableGameBar": false
+    # }
+    # --------------------------------------------------
+
+    elseif ($Profile.PSObject.Properties["Tweaks"]) {
+
+        foreach ($Property in $Profile.Tweaks.PSObject.Properties) {
+
+            $Id = [string]$Property.Name
+
+            if ([string]::IsNullOrWhiteSpace($Id)) {
+
+                continue
+
+            }
+
+            $Enabled = [bool]$Property.Value
+
+            if ($Enabled) {
+
+                if (-not $SelectedIds.Contains($Id)) {
+
+                    $SelectedIds.Add($Id)
+
+                }
+
+            }
+            else {
+
+                if (-not $DisabledIds.Contains($Id)) {
+
+                    $DisabledIds.Add($Id)
+
+                }
+
+            }
+
+        }
+
+    }
+
+    # --------------------------------------------------
+    # Vérification des identifiants
+    # --------------------------------------------------
+
+    $KnownIds = @{}
+
+    foreach ($Tweak in $Tweaks) {
+
+        if (
+            $null -ne $Tweak -and
+            -not [string]::IsNullOrWhiteSpace([string]$Tweak.Id)
+        ) {
+
+            $KnownIds[[string]$Tweak.Id] = $true
+
+        }
+
+    }
+
+    $SelectedIds =
+        @(
+            $SelectedIds |
+                Where-Object {
+                    $KnownIds.ContainsKey($_)
+                }
+        )
+
+    $DisabledIds =
+        @(
+            $DisabledIds |
+                Where-Object {
+                    $KnownIds.ContainsKey($_)
+                }
+        )
+
+    return [PSCustomObject]@{
+
+        Name        = if ($Profile.PSObject.Properties["Name"]) {
+            [string]$Profile.Name
+        }
+        else {
+            ""
+        }
+
+        Description = if ($Profile.PSObject.Properties["Description"]) {
+            [string]$Profile.Description
+        }
+        else {
+            ""
+        }
+
+        SelectedIds = @($SelectedIds)
+        DisabledIds = @($DisabledIds)
+
+    }
+
+}
+
+# --------------------------------------------------
+# Résout la sélection finale des Tweaks
+# --------------------------------------------------
+
+function Resolve-TweakSelection {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [object[]]$Tweaks,
+
+        [object[]]$SelectedIds = @(),
+
+        [object[]]$DisabledIds = @()
+
+    )
+
+    $SelectedMap = @{}
+
+    foreach ($Id in $SelectedIds) {
+
+        if (-not [string]::IsNullOrWhiteSpace([string]$Id)) {
+
+            $SelectedMap[[string]$Id] = $true
+
+        }
+
+    }
+
+    $DisabledMap = @{}
+
+    foreach ($Id in $DisabledIds) {
+
+        if (-not [string]::IsNullOrWhiteSpace([string]$Id)) {
+
+            $DisabledMap[[string]$Id] = $true
+
+        }
+
+    }
+
+    $Result = [System.Collections.Generic.List[object]]::new()
+
+    foreach ($Tweak in $Tweaks) {
+
+        if (
+            $null -eq $Tweak -or
+            [string]::IsNullOrWhiteSpace([string]$Tweak.Id)
+        ) {
+
+            continue
+
+        }
+
+        $Id = [string]$Tweak.Id
+
+        # --------------------------------------------------
+        # Sélection explicite utilisateur
+        # --------------------------------------------------
+
+        if ($SelectedMap.ContainsKey($Id)) {
+
+            if (-not $DisabledMap.ContainsKey($Id)) {
+
+                $Result.Add($Tweak)
+
+            }
+
+            continue
+
+        }
+
+        # --------------------------------------------------
+        # Désactivation explicite utilisateur
+        # --------------------------------------------------
+
+        if ($DisabledMap.ContainsKey($Id)) {
+
+            continue
+
+        }
+
+        # --------------------------------------------------
+        # Aucun choix explicite :
+        # utiliser Default
+        # --------------------------------------------------
+
+        $Enabled = $false
+
+        if ($Tweak.PSObject.Properties["Default"]) {
+
+            $Enabled = [bool]$Tweak.Default
+
+        }
+
+        if ($Enabled) {
+
+            $Result.Add($Tweak)
+
+        }
+
+    }
+
+    return @($Result)
 
 }

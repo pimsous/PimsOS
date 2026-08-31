@@ -42,7 +42,20 @@ function Invoke-Configuration {
 
     foreach ($Tweak in $Configuration) {
 
-		if (-not $Tweak.Enabled) {
+        if ($null -eq $Tweak) {
+            throw "La configuration contient un tweak null."
+        }
+
+        if ($Tweak.PSObject.Properties.Name -notcontains "Enabled") {
+            throw (
+                "Tweak sans propriété 'Enabled' : Id='{0}', Name='{1}', Type='{2}'." -f
+                $(if ($Tweak.PSObject.Properties["Id"]) { $Tweak.Id } else { "<absent>" }),
+                $(if ($Tweak.PSObject.Properties["Name"]) { $Tweak.Name } else { "<absent>" }),
+                $Tweak.GetType().FullName
+            )
+        }
+
+        if (-not [bool]$Tweak.Enabled) {
 
 			Write-Log (
 				"Tweak ignoré : $($Tweak.Name)"
@@ -104,9 +117,22 @@ function Invoke-Tweak {
 
     try {
 
-        foreach ($Action in $Tweak.Actions) {
+        foreach ($Action in @($Tweak.Actions)) {
 
-            if (-not $Action.Enabled) {
+            if ($null -eq $Action) {
+                throw ("Le tweak '{0}' contient une action null." -f $Tweak.Id)
+            }
+
+            if ($Action.PSObject.Properties.Name -notcontains "Enabled") {
+                throw (
+                    "Action sans propriété 'Enabled' dans le tweak '{0}' : Id='{1}', Type='{2}'." -f
+                    $Tweak.Id,
+                    $(if ($Action.PSObject.Properties["Id"]) { $Action.Id } else { "<absent>" }),
+                    $(if ($Action.PSObject.Properties["Type"]) { $Action.Type } else { "<absent>" })
+                )
+            }
+
+            if (-not [bool]$Action.Enabled) {
 
                 continue
 

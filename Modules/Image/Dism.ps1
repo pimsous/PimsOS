@@ -449,5 +449,295 @@ function Export-DismCurrentSystemDrivers {
         )
 
     }
+}
+
+# --------------------------------------------------
+# Applique une fonctionnalité Windows via DISM
+# --------------------------------------------------
+
+function Invoke-DismFeature {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context,
+
+        [Parameter(Mandatory)]
+        [psobject]$Action
+
+    )
+
+    Write-Log (
+        "DISM Feature : {0}" -f
+        $Action.Name
+    ) INFO
+
+    # --------------------------------------------------
+    # Validation
+    # --------------------------------------------------
+
+    if ([string]::IsNullOrWhiteSpace($Action.Name)) {
+
+        throw "Le nom de la fonctionnalité Windows est obligatoire."
+
+    }
+
+    # --------------------------------------------------
+    # Détermination de la cible
+    # --------------------------------------------------
+
+    $ImagePath = $null
+
+	if (
+		$null -ne $Context.WIM -and
+		$null -ne $Context.WIM.Mount -and
+		$Context.WIM.Mount.PSObject.Properties.Match("Path").Count -gt 0
+	) {
+
+		$ImagePath = $Context.WIM.Mount.Path
+
+	}
+
+    if ([string]::IsNullOrWhiteSpace($ImagePath)) {
+
+        throw "Aucune image Windows montée n'est disponible pour appliquer la fonctionnalité."
+
+    }
+
+    if (-not (Test-Path -LiteralPath $ImagePath -PathType Container)) {
+
+        throw (
+            "Le dossier de montage de l'image Windows est introuvable : {0}" -f
+            $ImagePath
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Etat demandé
+    # --------------------------------------------------
+
+    $Enable = $true
+
+    if ($Action.PSObject.Properties.Match("Enable").Count -gt 0) {
+
+        $Enable = [bool]$Action.Enable
+
+    }
+
+    # --------------------------------------------------
+    # Application
+    # --------------------------------------------------
+
+    try {
+
+        if ($Enable) {
+
+            Write-Log (
+                "Activation de la fonctionnalité '{0}'..." -f
+                $Action.Name
+            ) INFO
+
+            $Result = Enable-WindowsOptionalFeature `
+                -Path $ImagePath `
+                -FeatureName $Action.Name `
+                -All `
+                -NoRestart `
+                -ErrorAction Stop
+
+        }
+        else {
+
+            Write-Log (
+                "Désactivation de la fonctionnalité '{0}'..." -f
+                $Action.Name
+            ) INFO
+
+            $Result = Disable-WindowsOptionalFeature `
+                -Path $ImagePath `
+                -FeatureName $Action.Name `
+                -NoRestart `
+                -ErrorAction Stop
+
+        }
+
+    }
+    catch {
+
+        throw (
+            "Impossible de modifier la fonctionnalité Windows '{0}'.`r`n{1}" -f
+            $Action.Name,
+            $_.Exception.Message
+        )
+
+    }
+
+    Write-Log (
+        "Fonctionnalité Windows '{0}' appliquée via DISM." -f
+        $Action.Name
+    ) SUCCESS
+
+    return $Context
+
+`r`n}
+
+# --------------------------------------------------
+# Applique une Capability Windows via DISM
+# --------------------------------------------------
+
+function Invoke-DismCapability {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context,
+
+        [Parameter(Mandatory)]
+        [psobject]$Action
+
+    )
+
+    Write-Log (
+        "DISM Capability : {0}" -f
+        $Action.Name
+    ) INFO
+
+    # --------------------------------------------------
+    # Validation
+    # --------------------------------------------------
+
+    if ([string]::IsNullOrWhiteSpace($Action.Name)) {
+
+        throw "Le nom de la capability Windows est obligatoire."
+
+    }
+
+    # --------------------------------------------------
+    # Détermination de la cible
+    # --------------------------------------------------
+
+    $ImagePath = $null
+
+    if (
+        $null -ne $Context.WIM -and
+        $null -ne $Context.WIM.Mount -and
+        $Context.WIM.Mount.PSObject.Properties.Match("Path").Count -gt 0
+    ) {
+
+        $ImagePath = $Context.WIM.Mount.Path
+
+    }
+
+    if ([string]::IsNullOrWhiteSpace($ImagePath)) {
+
+        throw "Aucune image Windows montée n'est disponible pour appliquer la capability."
+
+    }
+
+    if (-not (Test-Path -LiteralPath $ImagePath -PathType Container)) {
+
+        throw (
+            "Le dossier de montage de l'image Windows est introuvable : {0}" -f
+            $ImagePath
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Etat demandé
+    # --------------------------------------------------
+
+    $Enable = $true
+
+    if ($Action.PSObject.Properties.Match("Enable").Count -gt 0) {
+
+        $Enable = [bool]$Action.Enable
+
+    }
+
+    # --------------------------------------------------
+    # Paramètres optionnels
+    # --------------------------------------------------
+
+    $Parameters = @{
+
+        Path        = $ImagePath
+        Name        = $Action.Name
+        ErrorAction = "Stop"
+
+    }
+
+    if (
+        $Action.PSObject.Properties.Match("Source").Count -gt 0 -and
+        -not [string]::IsNullOrWhiteSpace($Action.Source)
+    ) {
+
+        $Parameters.Source = $Action.Source
+
+    }
+
+    if (
+        $Action.PSObject.Properties.Match("LimitAccess").Count -gt 0 -and
+        [bool]$Action.LimitAccess
+    ) {
+
+        $Parameters.LimitAccess = $true
+
+    }
+
+    # --------------------------------------------------
+    # Application
+    # --------------------------------------------------
+
+    try {
+
+        if ($Enable) {
+
+            Write-Log (
+                "Activation de la capability '{0}'..." -f
+                $Action.Name
+            ) INFO
+
+            $Result = Add-WindowsCapability @Parameters
+
+        }
+        else {
+
+            Write-Log (
+                "Désactivation de la capability '{0}'..." -f
+                $Action.Name
+            ) INFO
+
+            $RemoveParameters = @{
+
+                Path        = $ImagePath
+                Name        = $Action.Name
+                ErrorAction = "Stop"
+
+            }
+
+            $Result = Remove-WindowsCapability @RemoveParameters
+
+        }
+
+        Write-Log (
+            "Capability '{0}' traitée avec succès." -f
+            $Action.Name
+        ) SUCCESS
+
+        return $Result
+
+    }
+    catch {
+
+        throw (
+            "Impossible de modifier la capability Windows '{0}'.`r`n{1}" -f
+            $Action.Name,
+            $_.Exception.Message
+        )
+
+    }
 
 }

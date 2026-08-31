@@ -188,6 +188,160 @@ function Invoke-DismDriver {
 }
 
 # --------------------------------------------------
+# Provider PNP
+# --------------------------------------------------
+
+function Invoke-PnpDriver {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context,
+
+        [Parameter(Mandatory)]
+        [psobject]$Action
+
+    )
+
+    # --------------------------------------------------
+    # Validation
+    # --------------------------------------------------
+
+    if ($null -eq $Context) {
+
+        throw "Le contexte de build est null."
+
+    }
+
+    if ($null -eq $Action) {
+
+        throw "L'action Driver est null."
+
+    }
+
+    if (
+        $null -eq $Action.PSObject.Properties["Name"] -or
+        [string]::IsNullOrWhiteSpace([string]$Action.Name)
+    ) {
+
+        throw "Le nom du pilote est obligatoire."
+
+    }
+
+    if (
+        $null -eq $Action.PSObject.Properties["Source"] -or
+        [string]::IsNullOrWhiteSpace([string]$Action.Source)
+    ) {
+
+        throw "La source du pilote est obligatoire."
+
+    }
+
+    $DriverSource = [string]$Action.Source
+
+    if (-not (Test-Path -LiteralPath $DriverSource)) {
+
+        throw (
+            "La source du pilote est introuvable : {0}" -f
+            $DriverSource
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Vérification de PnPUtil
+    # --------------------------------------------------
+
+    $PnpUtil = Get-Command `
+        -Name "pnputil.exe" `
+        -ErrorAction SilentlyContinue
+
+    if ($null -eq $PnpUtil) {
+
+        throw "PnPUtil est introuvable sur ce système."
+
+    }
+
+    # --------------------------------------------------
+    # Journal
+    # --------------------------------------------------
+
+    Write-Log (
+        "Driver PNP : {0}" -f
+        $Action.Name
+    ) INFO
+
+    Write-Log (
+        "Source : {0}" -f
+        $DriverSource
+    ) INFO
+
+    # --------------------------------------------------
+    # Construction de la commande
+    # --------------------------------------------------
+
+    $Arguments = @(
+        "/add-driver"
+        $DriverSource
+        "/install"
+    )
+
+    if (
+        $Action.PSObject.Properties.Match("Recurse").Count -gt 0 -and
+        [bool]$Action.Recurse
+    ) {
+
+        $Arguments = @(
+            "/add-driver"
+            $DriverSource
+            "/subdirs"
+            "/install"
+        )
+
+    }
+
+    # --------------------------------------------------
+    # Installation
+    # --------------------------------------------------
+
+    try {
+
+        $Output = & $PnpUtil.Source @Arguments 2>&1
+
+        $ExitCode = $LASTEXITCODE
+
+        if ($ExitCode -ne 0) {
+
+            throw (
+                "PnPUtil a retourné le code {0}.`r`n{1}" -f
+                $ExitCode,
+                ($Output -join "`r`n")
+            )
+
+        }
+
+        Write-Log (
+            "Pilote '{0}' installé avec succès via PNP." -f
+            $Action.Name
+        ) SUCCESS
+
+        return $Context
+
+    }
+    catch {
+
+        throw (
+            "Erreur lors de l'installation PNP du pilote '{0}'.`r`n{1}" -f
+            $Action.Name,
+            $_.Exception.Message
+        )
+
+    }
+
+}
+
+# --------------------------------------------------
 # Applique un pilote
 # --------------------------------------------------
 

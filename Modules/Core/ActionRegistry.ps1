@@ -12,9 +12,18 @@ Set-StrictMode -Version Latest
 # --------------------------------------------------
 
 $script:ActionRegistry = @{
-    Registry = "Invoke-RegistryAction"
-    Service  = "Invoke-ServiceAction"
-    Driver   = "Invoke-DriverAction"
+    Registry       = "Invoke-RegistryAction"
+    Service        = "Invoke-ServiceAction"
+    Driver         = "Invoke-DriverAction"
+    Feature        = "Invoke-FeatureAction"
+    Capability     = "Invoke-CapabilityAction"
+    Command        = "Invoke-CommandAction"
+    File           = "Invoke-FileAction"
+    Folder         = "Invoke-FolderAction"
+    Environment    = "Invoke-EnvironmentAction"
+    ScheduledTask  = "Invoke-ScheduledTaskAction"
+    Shortcut       = "Invoke-ShortcutAction"
+    Package        = "Invoke-PackageAction"
 }
 
 # --------------------------------------------------
@@ -60,10 +69,19 @@ function Reset-ActionRegistry {
     param()
 
     $script:ActionRegistry = @{
-		Registry = "Invoke-RegistryAction"
-		Service  = "Invoke-ServiceAction"
-		Driver   = "Invoke-DriverAction"
-	}
+        Registry       = "Invoke-RegistryAction"
+        Service        = "Invoke-ServiceAction"
+        Driver         = "Invoke-DriverAction"
+        Feature        = "Invoke-FeatureAction"
+        Capability     = "Invoke-CapabilityAction"
+        Command        = "Invoke-CommandAction"
+        File           = "Invoke-FileAction"
+        Folder         = "Invoke-FolderAction"
+        Environment    = "Invoke-EnvironmentAction"
+        ScheduledTask  = "Invoke-ScheduledTaskAction"
+        Shortcut       = "Invoke-ShortcutAction"
+        Package        = "Invoke-PackageAction"
+    }
 
     Write-ActionRegistryLog `
         -Message "Registre des moteurs réinitialisé." `

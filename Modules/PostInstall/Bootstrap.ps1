@@ -42,6 +42,10 @@ function Start-PimsOSPostInstall {
 
     }
 
+    $LoggerPath = Join-Path `
+        -Path $RuntimePath `
+        -ChildPath "Logger.ps1"
+
     $StatePath = Join-Path `
         -Path $RuntimePath `
         -ChildPath "State.ps1"
@@ -59,6 +63,7 @@ function Start-PimsOSPostInstall {
         -ChildPath "PostInstall.ps1"
 
     foreach ($Path in @(
+        $LoggerPath,
         $StatePath,
         $NetworkPath,
         $UIPath,
@@ -75,6 +80,19 @@ function Start-PimsOSPostInstall {
         }
 
     }
+
+    # --------------------------------------------------
+    # Initialise le Logger
+    # --------------------------------------------------
+
+    . $LoggerPath
+
+    Start-Logger `
+        -Path (
+            Join-Path `
+                -Path $RuntimePath `
+                -ChildPath "PostInstall.log"
+        )
 
     . $StatePath
     . $NetworkPath

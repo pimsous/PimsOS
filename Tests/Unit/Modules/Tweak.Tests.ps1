@@ -13,6 +13,41 @@ BeforeAll {
 
 }
 
+Describe "New-Action" {
+
+    It "Conserve les propriétés spécifiques d'un moteur" {
+
+        $Definition = [pscustomobject]@{
+            Id = "Package.Test"
+            Type = "Package"
+            Provider = "Chocolatey"
+            Name = "7zip"
+            Operation = "Install"
+            Version = "24.0"
+            Enabled = $true
+        }
+
+        $Action = New-Action -Definition $Definition
+
+        $Action.Id |
+            Should -Be "Package.Test"
+
+        $Action.Provider |
+            Should -Be "Chocolatey"
+
+        $Action.Operation |
+            Should -Be "Install"
+
+        $Action.Version |
+            Should -Be "24.0"
+
+        $Action.Enabled |
+            Should -BeTrue
+
+    }
+
+}
+
 Describe "Tweak" {
 
     BeforeEach {
@@ -275,6 +310,8 @@ Describe "Tweak" {
                 Id = "Test.Tweak"
                 Name = "Tweak de test"
                 Description = "Description de test"
+                Risk = "Safe"
+                Impact = "Impact de test"
                 Actions = @(
                     [pscustomobject]@{
                         Id = "Test.Action"
@@ -332,6 +369,12 @@ Describe "Tweak" {
 
             $Tweak.SourceFile |
                 Should -Be "Test.json"
+
+            $Tweak.Risk |
+                Should -Be "Safe"
+
+            $Tweak.Impact |
+                Should -Be "Impact de test"
         }
 
 

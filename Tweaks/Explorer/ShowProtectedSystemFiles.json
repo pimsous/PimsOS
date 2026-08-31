@@ -1,0 +1,30 @@
+{
+    "Id": "Explorer.ShowProtectedSystemFiles",
+    "Name": "Afficher les fichiers système protégés",
+    "Description": "Affiche également les fichiers système protégés que Windows masque normalement, par exemple pagefile.sys, swapfile.sys et certains desktop.ini.",
+    "Help": "Désactive le masquage des fichiers qui possèdent à la fois les attributs Système et Caché dans l'Explorateur.",
+    "CategoryId": "Explorer",
+    "Group": "File Explorer",
+    "Level": "Official",
+    "Risk": "Advanced",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Des fichiers système sensibles, comme pagefile.sys, swapfile.sys, System Volume Information ou certains desktop.ini, deviennent visibles et peuvent être modifiés ou supprimés accidentellement. Ce réglage est distinct de l'affichage des simples fichiers cachés.",
+    "Actions": [
+        {
+            "Id": "Explorer.ShowProtectedSystemFiles.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive le masquage des fichiers protégés du système.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+            "Name": "ShowSuperHidden",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

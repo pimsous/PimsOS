@@ -1,52 +1,70 @@
 {
     "Categories": [
-
         {
-            "Id": "Privacy",
-            "Name": "Confidentialité",
-            "Description": "Paramètres liés à la confidentialité.",
-
-            "Icon": "Shield",
-
-            "Color": "#0078D4",
-
-            "Visible": true,
-
-            "Order": 10,
-
+            "Id": "Applications",
             "Groups": [
-                "Privacy",
-                "Telemetry",
-                "Advertising",
-                "Diagnostics",
-                "Cloud",
-                "Location"
+                "Suggestions"
             ]
         },
-
         {
-            "Id": "Xbox",
-            "Name": "Xbox",
-
-            "Description": "Paramètres liés aux composants Xbox.",
-
-            "Icon": "Xbox",
-
-            "Color": "#107C10",
-
-            "Visible": true,
-
-            "Order": 20,
-
+            "Id": "Edge",
             "Groups": [
-                "Gaming",
-                "Capture",
-                "Overlay",
-                "Services",
-                "Applications",
-                "Input"
+                "First Run",
+                "Performance"
+            ]
+        },
+        {
+            "Id": "Explorer",
+            "Groups": [
+                "File Explorer"
+            ]
+        },
+        {
+            "Id": "Gaming",
+            "Groups": [
+                "Xbox"
+            ]
+        },
+        {
+            "Id": "OneDrive",
+            "Groups": [
+                "Synchronization"
+            ]
+        },
+        {
+            "Id": "Performance",
+            "Groups": [
+                "Services"
+            ]
+        },
+        {
+            "Id": "Privacy",
+            "Groups": [
+                "",
+                "Activity History",
+                "Advertising",
+                "Suggestions",
+                "Telemetry"
+            ]
+        },
+        {
+            "Id": "Widgets",
+            "Groups": [
+                "Taskbar"
+            ]
+        },
+        {
+            "Id": "Windows",
+            "Groups": [
+                "Keyboard",
+                "Suggestions"
+            ]
+        },
+        {
+            "Id": "WindowsUpdate",
+            "Groups": [
+                "Restart"
             ]
         }
-
     ]
 }

@@ -1,0 +1,25 @@
+{
+    "Id": "Services.DisableSysMain",
+    "Name": "Désactiver SysMain",
+    "Description": "Désactive le service SysMain, anciennement Superfetch, qui optimise le chargement des applications.",
+    "Help": "Peut réduire certaines activités disque en arrière-plan, mais peut aussi diminuer les performances de lancement sur certains systèmes.",
+    "CategoryId": "Performance",
+    "Group": "Services",
+    "Level": "Official",
+    "Risk": "Optional",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "L'optimisation SysMain des applications est désactivée.",
+    "Actions": [
+        {
+            "Id": "Services.DisableSysMain.Service01",
+            "Type": "Service",
+            "Description": "Arrête et désactive le service SysMain.",
+            "Name": "SysMain",
+            "StartupType": "Disabled",
+            "Stop": true
+        }
+    ]
+}

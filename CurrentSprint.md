@@ -1,3 +1,48 @@
+# État de clôture du sprint — 31/08/2026
+
+Le sprint a franchi un jalon important : le pipeline PimsOS a produit une ISO réelle avec succès et le Wizard de personnalisation des Tweaks est maintenant validé par ses tests.
+
+## Réalisé
+
+- Pipeline complet exécuté avec succès, code retour `0`.
+- Windows 11 Professionnel, index 6 sélectionné.
+- Drivers : étape intégrée et validée ; aucun driver à intégrer dans le scénario de build réalisé.
+- PostInstall préparé dans le WIM et `unattend.xml` généré.
+- Configuration chargée et fusionnée avec le profil `Tests\Registry`.
+- Trois Tweaks du profil ont été appliqués dans le Build réel.
+- Démontage des ruches et du WIM réussi.
+- WIM synchronisé vers la source ISO avec vérification SHA256.
+- ISO PimsOS générée avec succès.
+- Wizard Tweaks : sélection individuelle, liste et plage validées ; campagne `Wizard.Tests.ps1` à **15/15**.
+- Campagne PostInstall/Unattend communiquée : **744/744 passés, 1 skip**.
+
+## Points restant à fermer
+
+- Régénérer `Tests\testResults.xml` afin qu’il corresponde à la dernière campagne.
+- Réaliser la validation Hyper-V de la **nouvelle ISO du 31/08/2026**, notamment FirstBoot, `Write-Log`, réseau et idempotence.
+- Réaliser ensuite la validation physique/Rufus.
+- Continuer l’enrichissement du catalogue Tweaks et des profils.
+- Finaliser les providers Chocolatey/Winget et les composants encore au backlog.
+
+## Prochaine séquence
+
+```text
+ISO 3.0.0 générée
+    ↓
+validation Hyper-V
+    ↓
+FirstBoot / PostInstall
+    ↓
+réseau / Write-Log / état
+    ↓
+validation physique
+    ↓
+régénération des résultats Pester
+    ↓
+commit Git
+```
+
+
 # PimsOS Builder
 
 # Sprint 6 — Stabilisation du moteur de Build
@@ -6,7 +51,7 @@
 >
 > Statut : **Architecture stabilisée / développement fonctionnel en cours**
 >
-> Dernière mise à jour : **2026-08-16**
+> Dernière mise à jour : **2026-08-31**
 
 ---
 

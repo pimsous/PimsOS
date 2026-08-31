@@ -31,10 +31,12 @@ Describe "PostInstall Installer" {
 
         foreach ($FileName in @(
             "Bootstrap.ps1"
-            "Network.ps1"
-            "UI.ps1"
-            "PostInstall.ps1"
-            "State.ps1"
+			"Logger.ps1"
+			"Network.ps1"
+			"UI.ps1"
+			"DriverCheck.ps1"
+			"PostInstall.ps1"
+			"State.ps1"
         )) {
 
             Set-Content `
@@ -91,37 +93,60 @@ Describe "PostInstall Installer" {
 
         }
 
-        It "Copie les cinq fichiers du runtime" {
 
-			$null =
-				Install-PimsOSPostInstallRuntime `
-					-MountPath $script:MountPath `
-					-SourcePath $script:SourcePath
+        It "Copie les sept fichiers du runtime" {
 
-			$Destination = Join-Path `
-				$script:MountPath `
-				"ProgramData\PimsOS\PostInstall"
+            $null =
+                Install-PimsOSPostInstallRuntime `
+                    -MountPath $script:MountPath `
+                    -SourcePath $script:SourcePath
 
-			foreach ($FileName in @(
-				"Bootstrap.ps1"
+            $Destination = Join-Path `
+                $script:MountPath `
+                "ProgramData\PimsOS\PostInstall"
+
+            foreach ($FileName in @(
+                "Bootstrap.ps1"
+				"Logger.ps1"
 				"Network.ps1"
 				"UI.ps1"
+				"DriverCheck.ps1"
 				"PostInstall.ps1"
 				"State.ps1"
-			)) {
+            )) {
 
-				$FilePath = Join-Path `
-					$Destination `
-					$FileName
+                $FilePath = Join-Path `
+                    $Destination `
+                    $FileName
 
-				Test-Path `
-					-LiteralPath $FilePath `
-					-PathType Leaf |
-					Should -BeTrue
+                Test-Path `
+                    -LiteralPath $FilePath `
+                    -PathType Leaf |
+                    Should -BeTrue
 
-			}
+            }
 
-		}
+        }
+
+
+        It "Inclut Logger.ps1 dans le runtime" {
+
+            $null =
+                Install-PimsOSPostInstallRuntime `
+                    -MountPath $script:MountPath `
+                    -SourcePath $script:SourcePath
+
+            $LoggerPath = Join-Path `
+                $script:MountPath `
+                "ProgramData\PimsOS\PostInstall\Logger.ps1"
+
+            Test-Path `
+                -LiteralPath $LoggerPath `
+                -PathType Leaf |
+                Should -BeTrue
+
+        }
+
 
         It "Retourne le chemin de destination" {
 
@@ -138,6 +163,7 @@ Describe "PostInstall Installer" {
                 Should -Be $Expected
 
         }
+
 
         It "Refuse un montage inexistant" {
 
@@ -156,6 +182,7 @@ Describe "PostInstall Installer" {
 
         }
 
+
         It "Refuse un runtime source inexistant" {
 
             {
@@ -172,6 +199,7 @@ Describe "PostInstall Installer" {
                 Should -Throw "*runtime PostInstall source est introuvable*"
 
         }
+
 
         It "Refuse un runtime incomplet" {
 
@@ -196,6 +224,7 @@ Describe "PostInstall Installer" {
 
     }
 
+
     # ==================================================
     # Install-PimsOSFirstBoot
     # ==================================================
@@ -219,6 +248,7 @@ Describe "PostInstall Installer" {
 
         }
 
+
         It "Crée le dossier Panther automatiquement" {
 
             $BootstrapPath =
@@ -239,6 +269,7 @@ Describe "PostInstall Installer" {
                 Should -BeTrue
 
         }
+
 
         It "Produit un XML FirstBoot valide" {
 
@@ -263,6 +294,7 @@ Describe "PostInstall Installer" {
                 Should -Not -Throw
 
         }
+
 
         It "Transmet le chemin du Bootstrap" {
 
@@ -291,6 +323,7 @@ Describe "PostInstall Installer" {
 
         }
 
+
         It "Refuse un montage inexistant" {
 
             {
@@ -309,6 +342,7 @@ Describe "PostInstall Installer" {
 
         }
 
+
         It "Refuse un Bootstrap vide" {
 
             {
@@ -323,6 +357,7 @@ Describe "PostInstall Installer" {
         }
 
     }
+
 
     # ==================================================
     # Get-PostInstallRuntimePath
@@ -343,6 +378,7 @@ Describe "PostInstall Installer" {
                 Should -Be $Expected
 
         }
+
 
         It "Retourne un dossier existant" {
 

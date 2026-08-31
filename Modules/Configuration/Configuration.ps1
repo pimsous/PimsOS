@@ -27,6 +27,88 @@ function Get-Configuration {
     Write-Log "Construction de la configuration..."
 
     # --------------------------------------------------
+    # Configuration personnalisée
+    # --------------------------------------------------
+    #
+    # "Custom" n'est pas un profil JSON : l'assistant a déjà
+    # construit la sélection dans Context.Configuration.
+    #
+    if ($Profile -eq "Custom") {
+
+        $ExistingConfiguration = @(
+            $Context.Configuration
+        )
+
+        # Tolérance aux anciennes versions qui encapsulaient une
+        # List[object] dans un tableau à un seul élément.
+        if (
+            $ExistingConfiguration.Count -eq 1 -and
+            $ExistingConfiguration[0] -is [System.Collections.IList]
+        ) {
+
+            $ExistingConfiguration = @(
+                $ExistingConfiguration[0].ToArray()
+            )
+
+        }
+
+        if ($ExistingConfiguration.Count -eq 0) {
+
+            throw (
+                "La configuration personnalisée est vide. " +
+                "Configurez les Tweaks avant de lancer le build."
+            )
+
+        }
+
+        foreach ($Tweak in $ExistingConfiguration) {
+
+            if ($null -eq $Tweak) {
+
+                throw "La configuration personnalisée contient un élément null."
+
+            }
+
+            if (
+                $Tweak.PSObject.Properties.Name -notcontains "Id" -or
+                $Tweak.PSObject.Properties.Name -notcontains "Name" -or
+                $Tweak.PSObject.Properties.Name -notcontains "Enabled"
+            ) {
+
+                throw (
+                    "La configuration personnalisée contient un tweak invalide. " +
+                    "Les propriétés 'Id', 'Name' et 'Enabled' sont obligatoires."
+                )
+
+            }
+
+        }
+
+        $Context.Configuration = @(
+            $ExistingConfiguration
+        )
+
+        $Context.Tweaks = @(
+            $ExistingConfiguration
+        )
+
+        $Context.ConfigurationProfile = "Custom"
+        $Context.BuildState.Image.TweaksLoaded = $true
+        $Context.BuildState.Image.ProfileLoaded = $false
+        $Context.BuildState.Image.ProfileMerged = $false
+        $Context.BuildState.Image.ConfigLoaded = $true
+
+        Write-Log (
+            "Configuration personnalisée conservée : {0} tweak(s), dont {1} activé(s)." -f
+            $ExistingConfiguration.Count,
+            @($ExistingConfiguration | Where-Object { $_.Enabled }).Count
+        ) SUCCESS
+
+        return $Context
+
+    }
+
+    # --------------------------------------------------
     # Chargement des tweaks
     # --------------------------------------------------
 
@@ -84,9 +166,18 @@ function Get-Configuration {
     # Mise à jour du contexte
     # --------------------------------------------------
 
-    $Context.Configuration = $Configuration
+    # Configuration = liste plate des tweaks sélectionnés.
+    # Project.Config conserve la configuration globale (Drivers, Requirements, etc.).
+    $Context.Configuration = @(
+        $Configuration
+    )
 
-	$Context.BuildState.Image.TweaksLoaded = $true
+    # Compatibilité avec la collection Tweaks historique du contexte.
+    $Context.Tweaks = @(
+        $Configuration
+    )
+
+    $Context.BuildState.Image.TweaksLoaded = $true
     $Context.BuildState.Image.ProfileLoaded = $true
     $Context.BuildState.Image.ProfileMerged = $true
     $Context.BuildState.Image.ConfigLoaded = $true

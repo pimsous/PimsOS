@@ -12,8 +12,9 @@ BeforeAll {
     # --------------------------------------------------
 
     . "$ProjectRoot\Modules\PostInstall\State.ps1"
-    . "$ProjectRoot\Modules\PostInstall\Network.ps1"
-    . "$ProjectRoot\Modules\PostInstall\PostInstall.ps1"
+	. "$ProjectRoot\Modules\PostInstall\Network.ps1"
+	. "$ProjectRoot\Modules\PostInstall\DriverCheck.ps1"
+	. "$ProjectRoot\Modules\PostInstall\PostInstall.ps1"
 
 }
 
@@ -64,7 +65,7 @@ Describe "PostInstall" {
         It "Recharge un état existant" {
 
             $script:State.Status = "Running"
-            $script:State.CurrentPhase = "Local"
+            $script:State.CurrentPhase = "DriverCheck"
 
             Save-PostInstallState `
                 -State $script:State |
@@ -77,7 +78,7 @@ Describe "PostInstall" {
                 Should -Be "Running"
 
             $Result.CurrentPhase |
-                Should -Be "Local"
+                Should -Be "DriverCheck"
 
         }
 
@@ -119,7 +120,46 @@ Describe "PostInstall" {
 
         }
 
-        It "Exécute la phase locale" {
+        It "Exécute les phases dans le bon ordre" {
+
+            Mock Save-PostInstallState {
+
+                param(
+                    [psobject]$State,
+                    [string]$StatePath
+                )
+
+                return $State
+
+            }
+
+            $Result = Invoke-PostInstall `
+                -State $script:State
+
+            $Result.Status |
+                Should -Be "Completed"
+
+            $Result.CompletedTasks |
+                Should -Contain "DriverCheck"
+
+            $Result.CompletedTasks |
+                Should -Contain "Chocolatey"
+
+            $Result.CompletedTasks |
+                Should -Contain "Applications"
+
+            $Result.CompletedTasks |
+                Should -Contain "MicrosoftStore"
+
+            $Result.CompletedTasks |
+                Should -Contain "Configuration"
+
+            $Result.CompletedTasks |
+                Should -Contain "Cleanup"
+
+        }
+
+		It "Enregistre les phases dans le bon ordre" {
 
             Mock Save-PostInstallState {
 
@@ -136,7 +176,103 @@ Describe "PostInstall" {
                 -State $script:State
 
             $Result.CompletedTasks |
-                Should -Contain "Local"
+                Should -Be @(
+                    "Initialize",
+                    "Network",
+                    "DriverCheck",
+                    "Chocolatey",
+                    "Applications",
+                    "MicrosoftStore",
+                    "Configuration",
+                    "Cleanup"
+                )
+
+        }
+
+
+        It "Reprend après les phases déjà terminées" {
+
+            $script:State.CompletedTasks = @(
+                "Initialize",
+                "Network",
+                "DriverCheck",
+                "Chocolatey"
+            )
+
+            Mock Save-PostInstallState {
+
+                param(
+                    [psobject]$State,
+                    [string]$StatePath
+                )
+
+                return $State
+
+            }
+
+            $Result = Invoke-PostInstall `
+                -State $script:State
+
+            $Result.Status |
+                Should -Be "Completed"
+
+            $Result.CompletedTasks |
+                Should -Be @(
+                    "Initialize",
+                    "Network",
+                    "DriverCheck",
+                    "Chocolatey",
+                    "Applications",
+                    "MicrosoftStore",
+                    "Configuration",
+                    "Cleanup"
+                )
+
+        }
+
+		It "Ne réexécute pas un PostInstall déjà terminé" {
+
+            $script:State.Status = "Completed"
+            $script:State.Started = $true
+            $script:State.Completed = $true
+            $script:State.CompletedTasks = @("DriverCheck")
+
+            Mock Save-PostInstallState {
+
+                param(
+                    [psobject]$State,
+                    [string]$StatePath
+                )
+
+                return $State
+
+            }
+
+            Mock Set-PostInstallStatus {
+
+                throw "Set-PostInstallStatus ne doit pas être appelé."
+
+            }
+
+            $Result = Invoke-PostInstall `
+                -State $script:State
+
+            $Result.Status |
+                Should -Be "Completed"
+
+            $Result.Completed |
+                Should -BeTrue
+
+            $Result.CompletedTasks |
+                Should -HaveCount 1
+
+            $Result.CompletedTasks |
+                Should -Contain "DriverCheck"
+
+            Should -Invoke `
+                -CommandName Save-PostInstallState `
+                -Times 0 `
+                -Exactly
 
         }
 
@@ -415,7 +551,7 @@ Describe "PostInstall" {
                 -WaitForNetwork
 
             $Result.CompletedTasks |
-                Should -Contain "Local"
+                Should -Contain "DriverCheck"
 
             $Result.CompletedTasks |
                 Should -Contain "Network"
@@ -480,5 +616,46 @@ Describe "PostInstall" {
 
     }
 
-}
 
+        It "Exécute réellement la vérification des pilotes" {
+
+            Mock Save-PostInstallState {
+
+                param(
+                    [psobject]$State,
+                    [string]$StatePath
+                )
+
+                return $State
+
+            }
+
+            Mock Test-PostInstallDrivers {
+
+                return [pscustomobject]@{
+
+                    Available      = $true
+                    Success        = $true
+                    ProblemCount   = 0
+                    ProblemDevices = @()
+
+                }
+
+            }
+
+            $Result = Invoke-PostInstall `
+                -State $script:State
+
+            $Result.Status |
+                Should -Be "Completed"
+
+            $Result.CompletedTasks |
+                Should -Contain "DriverCheck"
+
+            Should -Invoke `
+                -CommandName Test-PostInstallDrivers `
+                -Times 1 `
+                -Exactly
+
+        }
+}

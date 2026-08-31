@@ -12,21 +12,6 @@ BeforeAll {
     . "$ProjectRoot\Modules\Managers\DriverManager.ps1"
 
     # --------------------------------------------------
-    # Provider PNP de test
-    # --------------------------------------------------
-
-    function global:Invoke-PnpDriver {
-
-        param(
-            [psobject]$Context,
-            [psobject]$Action
-        )
-
-        return $Context
-
-    }
-
-    # --------------------------------------------------
     # Provider de test
     # --------------------------------------------------
 
@@ -198,6 +183,74 @@ Describe "DriverManager" {
                 Should -Be $script:Context
 
         }
+
+		It "Applique le provider PNP avec l'action sélectionnée" {
+
+			$script:Action.Provider = "PNP"
+
+			Mock Get-Command {
+
+				[pscustomobject]@{
+					Source = "pnputil.exe"
+				}
+
+			} -ParameterFilter {
+				$Name -eq "pnputil.exe"
+			}
+
+			Mock Test-Path {
+				$true
+			} -ParameterFilter {
+				$LiteralPath -eq $script:DriverPath
+			}
+
+			Mock pnputil.exe {
+				$global:LASTEXITCODE = 0
+			}
+
+			$Result = Invoke-Driver `
+				-Context $script:Context `
+				-Action $script:Action
+
+			$Result |
+				Should -Be $script:Context
+
+		}
+
+		It "Utilise réellement le provider PNP lorsqu'il est sélectionné" {
+
+			$script:Action.Provider = "PNP"
+
+			Mock Get-Command {
+
+				[pscustomobject]@{
+					Source = "pnputil.exe"
+				}
+
+			} -ParameterFilter {
+				$Name -eq "pnputil.exe"
+			}
+
+			Mock Test-Path {
+				$true
+			} -ParameterFilter {
+				$LiteralPath -eq $script:DriverPath
+			}
+
+			Mock pnputil.exe {
+				$global:LASTEXITCODE = 0
+			}
+
+			$null = Invoke-Driver `
+				-Context $script:Context `
+				-Action $script:Action
+
+			Should -Invoke `
+				-CommandName pnputil.exe `
+				-Times 1 `
+				-Exactly
+
+		}
 
         It "Refuse un provider absent" {
 

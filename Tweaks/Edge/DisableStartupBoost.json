@@ -1,0 +1,30 @@
+{
+    "Id": "Edge.DisableStartupBoost",
+    "Name": "Désactiver l'accélération au démarrage d'Edge",
+    "Description": "Empêche Microsoft Edge de maintenir des processus en arrière-plan pour accélérer son démarrage.",
+    "Help": "Désactive la fonction Startup Boost de Microsoft Edge.",
+    "CategoryId": "Edge",
+    "Group": "Performance",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Edge peut démarrer légèrement plus lentement, mais aucun processus Startup Boost n'est maintenu en arrière-plan.",
+    "Actions": [
+        {
+            "Id": "Edge.DisableStartupBoost.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive Startup Boost de Microsoft Edge.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Edge",
+            "Name": "StartupBoostEnabled",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

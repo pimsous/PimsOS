@@ -1,0 +1,39 @@
+{
+    "Id": "WindowsAI.DisableRecall",
+    "Name": "Désactiver Recall",
+    "Description": "Rend le composant Recall indisponible et empêche son activation par l'utilisateur.",
+    "Help": "Désactive la possibilité d'activer Recall sur l'appareil. La suppression du composant Recall nécessite un redémarrage.",
+    "CategoryId": "Privacy",
+    "Group": "Telemetry",
+    "Level": "Official",
+    "Risk": "Advanced",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": true,
+    "Impact": "Recall devient indisponible et ses composants peuvent être supprimés de l'appareil ; un redémarrage est nécessaire.",
+    "Actions": [
+        {
+            "Id": "WindowsAI.DisableRecall.Registry01",
+            "Type": "Registry",
+            "Description": "Empêche l'activation de Recall.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\WindowsAI",
+            "Name": "AllowRecallEnablement",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": true,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Privacy",
+        "WindowsAI",
+        "Recall"
+    ],
+    "Supported": {
+        "MinBuild": 26100,
+        "MaxBuild": 99999
+    }
+}

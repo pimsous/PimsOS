@@ -1,0 +1,30 @@
+{
+    "Id": "Widgets.DisableTaskbarWidgets",
+    "Name": "Désactiver les Widgets",
+    "Description": "Désactive l'accès aux Widgets Windows depuis la barre des tâches.",
+    "Help": "Empêche l'utilisation du panneau Widgets et de son contenu depuis Windows.",
+    "CategoryId": "Widgets",
+    "Group": "Taskbar",
+    "Level": "Official",
+    "Risk": "Optional",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Le panneau Widgets n'est plus accessible depuis la barre des tâches.",
+    "Actions": [
+        {
+            "Id": "Widgets.DisableTaskbarWidgets.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive les Widgets Windows.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Dsh",
+            "Name": "AllowNewsAndInterests",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

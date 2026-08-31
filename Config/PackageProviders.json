@@ -1,0 +1,19 @@
+{
+  "Providers": {
+    "Chocolatey": {
+      "Enabled": false,
+      "Handler": "Invoke-ChocolateyPackage",
+      "CachePath": "Workspace\\Packages\\Chocolatey"
+    },
+    "Winget": {
+      "Enabled": false,
+      "Handler": "Invoke-WingetPackage",
+      "CachePath": "Workspace\\Packages\\Winget"
+    },
+    "MicrosoftStore": {
+      "Enabled": false,
+      "Handler": "Invoke-WingetPackage",
+      "CachePath": "Workspace\\Packages\\MicrosoftStore"
+    }
+  }
+}

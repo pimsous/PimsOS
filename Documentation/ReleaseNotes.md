@@ -1,3 +1,13 @@
+# Mise à jour de validation — 31/08/2026
+
+Depuis la rédaction initiale des notes 3.0.0, une validation réelle Hyper-V du cycle PostInstall/FirstBoot a été obtenue. Une correction de disponibilité de `Write-Log` dans le runtime installé a ensuite été apportée et doit encore être validée dans une nouvelle ISO.
+
+Le dépôt courant contient également un catalogue Tweaks partiellement rempli : 19 définitions JSON actives et 9 placeholders vides. Le raccordement `TweakCatalog` ↔ Wizard est désormais intégré au module central et le menu Tweaks est couvert par 15 tests verts.
+
+Le dernier résultat global Pester communiqué pendant la session est 971 Passed / 0 Failed / 1 Skipped ; le XML présent dans le ZIP est plus ancien et doit être régénéré.
+
+---
+
 # PimsOS Builder - Notes de version
 
 ## Objectif
@@ -30,7 +40,7 @@ Chaque version documente, lorsque cela est pertinent :
 
 La version 3.0.0 représente l'état technique actuel du framework.
 
-Elle ne constitue pas encore une release complète du produit.
+Une ISO 3.0.0 a été générée avec succès le 31/08/2026. La version ne constitue toutefois pas encore une release finale stable tant que la nouvelle ISO n’a pas passé la validation réelle FirstBoot/PostInstall.
 
 ---
 
@@ -201,17 +211,15 @@ Tests\Legacy
 
 et ne font pas partie de la campagne officielle.
 
-La campagne de référence actuelle donne :
+Les résultats communiqués à la fin de la session sont :
 
 ```text
-684 Passed
+971 Passed
 0 Failed
 1 Skipped
-0 Inconclusive
-0 NotRun
 ```
 
-Les dernières campagnes ciblées PostInstall et intégration sont également validées sans échec.
+La campagne ciblée `Wizard.Tests.ps1` est à `15 Passed / 0 Failed / 0 Skipped`. La campagne PostInstall/Unattend communiquée est à `744 Passed / 0 Failed / 1 Skipped`. Le fichier `Tests\testResults.xml` présent dans l’archive reste plus ancien et doit être régénéré.
 
 ---
 
@@ -393,3 +401,28 @@ Consulter également :
 * `Testing.md`
 * `PostInstall.md`
 * `Legacy.md`
+
+
+## 3.0.0 — Catalogue Tweaks enrichi — 2026-09-01
+
+### Ajouts
+
+- affichage des secondes dans l'horloge ;
+- désactivation des surbrillances de recherche ;
+- contrôle des recommandations du menu Démarrer ;
+- désactivation des expériences personnalisées basées sur les diagnostics ;
+- contrôle des suggestions tierces de Windows Spotlight ;
+- contrôle de l'enregistrement des instantanés Recall ;
+- désactivation complète de Recall.
+
+### Corrections documentaires
+
+- clarification de la différence entre fichiers cachés et fichiers système
+  protégés ;
+- précision du comportement réel du Tweak Xbox/Game DVR ;
+- documentation du choix `DEFAULT` vs `SOFTWARE`.
+
+### Tests
+
+Ajout de tests de contrat pour les nouveaux fichiers JSON et leurs Actions
+registre.

@@ -4,7 +4,7 @@
 >
 > Statut : Référence historique
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -227,4 +227,3 @@ Modules techniques
 ```
 
 Les composants Legacy sont utilisés uniquement comme références historiques ou techniques et ne font pas partie du chemin d'exécution normal du Builder.
-

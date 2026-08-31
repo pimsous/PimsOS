@@ -1,0 +1,24 @@
+{
+    "Id": "Privacy.DisableAdvertisingId",
+    "Name": "Désactiver l'identifiant publicitaire",
+    "Description": "Empêche les applications d'utiliser l'identifiant publicitaire Windows pour personnaliser les expériences entre applications.",
+    "CategoryId": "Privacy",
+    "Group": "Advertising",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les publicités peuvent être moins personnalisées.",
+    "Actions": [
+        {
+            "Id": "Privacy.DisableAdvertisingId.Registry01",
+            "Type": "Registry",
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\AdvertisingInfo",
+            "Name": "DisabledByGroupPolicy",
+            "Value": 1,
+            "DataType": "DWord"
+        }
+    ]
+}

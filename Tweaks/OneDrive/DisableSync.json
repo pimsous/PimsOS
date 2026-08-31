@@ -1,0 +1,30 @@
+{
+    "Id": "OneDrive.DisableSync",
+    "Name": "Désactiver la synchronisation OneDrive",
+    "Description": "Empêche OneDrive d'être utilisé pour synchroniser les fichiers de l'utilisateur.",
+    "Help": "Désactive la synchronisation OneDrive au niveau de la stratégie Windows.",
+    "CategoryId": "OneDrive",
+    "Group": "Synchronization",
+    "Level": "Official",
+    "Risk": "Optional",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "La synchronisation OneDrive est désactivée pour les utilisateurs concernés.",
+    "Actions": [
+        {
+            "Id": "OneDrive.DisableSync.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive la synchronisation OneDrive.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\OneDrive",
+            "Name": "DisableFileSyncNGSC",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "Id": "WindowsUpdate.DisableAutoRestart",
+    "Name": "Empêcher le redémarrage automatique",
+    "Description": "Empêche Windows Update de redémarrer automatiquement le PC lorsqu'un utilisateur est connecté.",
+    "Help": "Windows Update peut toujours télécharger et installer les mises à jour, mais évite le redémarrage automatique pendant une session utilisateur.",
+    "CategoryId": "WindowsUpdate",
+    "Group": "Restart",
+    "Level": "Official",
+    "Risk": "Optional",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les redémarrages automatiques liés à Windows Update peuvent être reportés.",
+    "Actions": [
+        {
+            "Id": "WindowsUpdate.DisableAutoRestart.Registry01",
+            "Type": "Registry",
+            "Description": "Empêche le redémarrage automatique lorsqu'un utilisateur est connecté.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\WindowsUpdate\\AU",
+            "Name": "NoAutoRebootWithLoggedOnUsers",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

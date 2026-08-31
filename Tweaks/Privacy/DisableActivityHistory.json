@@ -1,0 +1,42 @@
+{
+    "Id": "Privacy.DisableActivityHistory",
+    "Name": "Désactiver l'historique des activités",
+    "Description": "Empêche Windows de publier et de synchroniser les activités utilisateur.",
+    "CategoryId": "Privacy",
+    "Group": "Activity History",
+    "Risk": "Optional",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "L'historique des activités et sa synchronisation sont indisponibles.",
+    "Actions": [
+        {
+            "Id": "Privacy.DisableActivityHistory.Registry01",
+            "Type": "Registry",
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\System",
+            "Name": "EnableActivityFeed",
+            "Value": 0,
+            "DataType": "DWord"
+        },
+        {
+            "Id": "Privacy.DisableActivityHistory.Registry02",
+            "Type": "Registry",
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\System",
+            "Name": "PublishUserActivities",
+            "Value": 0,
+            "DataType": "DWord"
+        },
+        {
+            "Id": "Privacy.DisableActivityHistory.Registry03",
+            "Type": "Registry",
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\System",
+            "Name": "UploadUserActivities",
+            "Value": 0,
+            "DataType": "DWord"
+        }
+    ]
+}

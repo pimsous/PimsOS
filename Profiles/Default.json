@@ -1,11 +1,42 @@
 {
     "Name": "Default",
     "Description": "Profil par défaut de PimsOS",
-
     "Tweaks": [
         {
             "Id": "Privacy.DisableTelemetry",
             "Enabled": true
+        },
+        {
+            "Id": "Explorer.ShowSecondsInSystemClock",
+            "Enabled": false
+        },
+        {
+            "Id": "Search.DisableSearchHighlights",
+            "Enabled": false
+        },
+        {
+            "Id": "Start.HideRecommendedPersonalizedSites",
+            "Enabled": false
+        },
+        {
+            "Id": "Start.HideRecommendedSection",
+            "Enabled": false
+        },
+        {
+            "Id": "Privacy.DisableTailoredExperiences",
+            "Enabled": false
+        },
+        {
+            "Id": "Privacy.DisableThirdPartySpotlightSuggestions",
+            "Enabled": false
+        },
+        {
+            "Id": "WindowsAI.DisableRecallSnapshots",
+            "Enabled": false
+        },
+        {
+            "Id": "WindowsAI.DisableRecall",
+            "Enabled": false
         }
     ]
 }

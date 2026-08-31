@@ -90,7 +90,7 @@ Cette séparation permet de construire un framework :
 | Image ISO / WIM | ✅ Implémentée |
 | Tests Pester | ✅ Forte couverture / extension en cours |
 | Reporting | 🟡 À enrichir |
-| Génération ISO finale | 🟡 En cours de finalisation |
+| Génération ISO | ✅ ISO 3.0.0 générée le 31/08 ; validation de l’artefact restante |
 | Providers Chocolatey / Winget | 🟡 À finaliser |
 | Converters | ⬜ À implémenter |
 
@@ -124,7 +124,7 @@ Les principales étapes du Build sont actuellement implémentées :
 - ✔ Nettoyage
 - ✔ Finalisation du Build
 
-La validation complète d'un scénario de Build de bout en bout et la génération finale de l'ISO restent en cours de finalisation.
+Un Build réel de bout en bout a été exécuté avec succès le 31/08/2026 et une ISO PimsOS 3.0.0 a été générée. La validation fonctionnelle de cette nouvelle ISO reste à effectuer.
 
 ---
 

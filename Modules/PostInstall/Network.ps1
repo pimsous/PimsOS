@@ -132,9 +132,13 @@ function Wait-PostInstallNetwork {
 
         if (Test-PostInstallNetwork) {
 
-            return $true
+			if (Test-PostInstallInternet) {
 
-        }
+				return $true
+
+			}
+
+		}
 
         if ($TimeoutMinutes -gt 0) {
 

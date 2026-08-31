@@ -898,9 +898,9 @@ function New-PimsOSIso {
 		$IsoPath
 	)
 
-    & $OsCdImgPath @Arguments
+    $null = & $OsCdImgPath @Arguments
 
-    $ExitCode = $LASTEXITCODE
+	$ExitCode = $LASTEXITCODE
 
     if ($ExitCode -ne 0) {
 

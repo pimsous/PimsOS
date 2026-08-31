@@ -292,20 +292,23 @@ function Invoke-PipelineCleanup {
 
 
     # ------------------------------------------
-    # 1. Ruche SOFTWARE
+    # 1. Ruches de registre
     # ------------------------------------------
 
     try {
 
         if (
-            $Context.BuildState.Image.RegistryLoaded -eq $true
+            $null -ne $Context.Registry -and
+            $null -ne $Context.Registry.Mounted -and
+            $Context.Registry.Mounted.Count -gt 0
         ) {
-        # ------------------------------------------
-        # Montage de la ruche SOFTWARE
-        # ------------------------------------------
-            $Context = Dismount-RegistryHive `
-                -Context $Context `
-                -Hive SOFTWARE
+
+            Write-Log `
+                "Vérification des ruches de registre montées..." `
+                INFO
+
+            $Context = Dismount-ConfigurationRegistryHives `
+                -Context $Context
 
         }
 
@@ -313,54 +316,54 @@ function Invoke-PipelineCleanup {
     catch {
 
         $CleanupErrors +=
-            "Ruche SOFTWARE : $($_.Exception.Message)"
+            "Registre : $($_.Exception.Message)"
 
         Write-Log (
-            "Erreur lors du démontage de SOFTWARE : $($_.Exception.Message)"
+            "Erreur lors du démontage des ruches de registre : $($_.Exception.Message)"
         ) ERROR
 
     }
 
 
     # ------------------------------------------
-	# 2. WIM
-	# ------------------------------------------
+    # 2. WIM
+    # ------------------------------------------
 
-	try {
+    try {
 
-		if ($null -ne $Context.WIM) {
+        if ($null -ne $Context.WIM) {
 
-			Write-Log `
-				"Vérification d'un éventuel montage WIM actif..." `
-				INFO
+            Write-Log `
+                "Vérification d'un éventuel montage WIM actif..." `
+                INFO
 
-			if ($Discard) {
+            if ($Discard) {
 
-				$Context = Dismount-Wim `
-					-Context $Context `
-					-Discard
+                $Context = Dismount-Wim `
+                    -Context $Context `
+                    -Discard
 
-			}
-			else {
+            }
+            else {
 
-				$Context = Dismount-Wim `
-					-Context $Context
+                $Context = Dismount-Wim `
+                    -Context $Context
 
-			}
+            }
 
-		}
+        }
 
-	}
-	catch {
+    }
+    catch {
 
-		$CleanupErrors +=
-			"WIM : $($_.Exception.Message)"
+        $CleanupErrors +=
+            "WIM : $($_.Exception.Message)"
 
-		Write-Log (
-			"Erreur lors du démontage du WIM : $($_.Exception.Message)"
-		) ERROR
+        Write-Log (
+            "Erreur lors du démontage du WIM : $($_.Exception.Message)"
+        ) ERROR
 
-	}
+    }
 
 
     # ------------------------------------------
@@ -486,14 +489,14 @@ function Apply-Drivers {
 
         $Action = [PSCustomObject]@{
 
-            Id             = "Drivers.Folder"
-            Type           = "Driver"
-            Name           = "Drivers"
-            Provider       = "DISM"
-            Source         = $DriverConfig.Path
-            Recurse        = $DriverConfig.Recurse
-            ForceUnsigned  = $DriverConfig.ForceUnsigned
-            Enabled        = $true
+            Id              = "Drivers.Folder"
+            Type            = "Driver"
+            Name            = "Drivers"
+            Provider        = "DISM"
+            Source          = $DriverConfig.Path
+            Recurse         = $DriverConfig.Recurse
+            ForceUnsigned   = $DriverConfig.ForceUnsigned
+            Enabled         = $true
             ContinueOnError = $false
 
         }
@@ -506,10 +509,6 @@ function Apply-Drivers {
         $Context = Invoke-DriverAction `
             -Context $Context `
             -Action $Action
-
-        # --------------------------------------------------
-        # Historique runtime
-        # --------------------------------------------------
 
         $Context.Drivers.Add($Action)
 
@@ -549,17 +548,9 @@ function Apply-Drivers {
             $CurrentSystemPath
         ) INFO
 
-        # --------------------------------------------------
-        # Export du système actuel
-        # --------------------------------------------------
-
         $null = Export-DismCurrentSystemDrivers `
             -DestinationPath $CurrentSystemPath `
             -ErrorAction Stop
-
-        # --------------------------------------------------
-        # Création de l'action
-        # --------------------------------------------------
 
         $Action = [PSCustomObject]@{
 
@@ -580,17 +571,9 @@ function Apply-Drivers {
             $CurrentSystemPath
         ) SUCCESS
 
-        # --------------------------------------------------
-        # Injection dans le WIM
-        # --------------------------------------------------
-
         $Context = Invoke-DriverAction `
             -Context $Context `
             -Action $Action
-
-        # --------------------------------------------------
-        # Historique runtime
-        # --------------------------------------------------
 
         $Context.Drivers.Add($Action)
 
@@ -638,9 +621,8 @@ function Prepare-PostInstall {
     $MountPath =
         [string]$Context.BuildState.Image.MountPath
 
-        $RuntimeSource =
-			Get-PostInstallRuntimePath
-
+    $RuntimeSource =
+        Get-PostInstallRuntimePath
 
     $RuntimeResult =
         Install-PimsOSPostInstallRuntime `
@@ -648,7 +630,7 @@ function Prepare-PostInstall {
             -SourcePath $RuntimeSource
 
     $BootstrapPath =
-		"C:\ProgramData\PimsOS\PostInstall\Bootstrap.ps1"
+        "C:\ProgramData\PimsOS\PostInstall\Bootstrap.ps1"
 
     $FirstBootResult =
         Install-PimsOSFirstBoot `
@@ -667,6 +649,225 @@ function Prepare-PostInstall {
     return $Context
 
 }
+
+# ==========================================
+# Monte les ruches nécessaires à la configuration
+# ==========================================
+
+function Mount-ConfigurationRegistryHives {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    Write-Log `
+        "Analyse des ruches nécessaires à la configuration..." `
+        INFO
+
+    # --------------------------------------------------
+    # Liste des ruches demandées par les actions registre
+    # --------------------------------------------------
+
+    $RequiredHives = @()
+
+    foreach ($Tweak in @($Context.Configuration)) {
+
+        if ($null -eq $Tweak) {
+            continue
+        }
+
+        if (
+            $Tweak.PSObject.Properties.Name -contains "Enabled" -and
+            -not [bool]$Tweak.Enabled
+        ) {
+            continue
+        }
+
+        if (
+            $Tweak.PSObject.Properties.Name -notcontains "Actions"
+        ) {
+            continue
+        }
+
+        foreach ($Action in @($Tweak.Actions)) {
+
+            if ($null -eq $Action) {
+                continue
+            }
+
+            if (
+                $Action.PSObject.Properties.Name -contains "Enabled" -and
+                -not [bool]$Action.Enabled
+            ) {
+                continue
+            }
+
+            if (
+                $Action.PSObject.Properties.Name -contains "Type" -and
+                $Action.Type -ne "Registry"
+            ) {
+                continue
+            }
+
+            if (
+                $Action.PSObject.Properties.Name -contains "Hive" -and
+                -not [string]::IsNullOrWhiteSpace(
+                    [string]$Action.Hive
+                )
+            ) {
+
+                $Hive = $Action.Hive.ToUpper()
+
+                if ($RequiredHives -notcontains $Hive) {
+
+                    $RequiredHives += $Hive
+
+                }
+
+            }
+
+        }
+
+    }
+
+    # --------------------------------------------------
+    # Aucune ruche nécessaire
+    # --------------------------------------------------
+
+    if ($RequiredHives.Count -eq 0) {
+
+        Write-Log `
+            "Aucune ruche de registre supplémentaire n'est nécessaire." `
+            INFO
+
+        return $Context
+
+    }
+
+    Write-Log (
+        "Ruches nécessaires : {0}" -f
+        ($RequiredHives -join ", ")
+    ) INFO
+
+    # --------------------------------------------------
+    # Montage
+    # --------------------------------------------------
+
+    foreach ($Hive in $RequiredHives) {
+
+        if (
+            $Context.Registry.Mounted -contains $Hive
+        ) {
+
+            Write-Log (
+                "Ruche $Hive déjà montée."
+            ) INFO
+
+            continue
+
+        }
+
+        Write-Log (
+            "Montage de la ruche nécessaire : $Hive"
+        ) INFO
+
+        $Context = Mount-RegistryHive `
+            -Context $Context `
+            -Hive $Hive
+
+    }
+
+    Write-Log `
+        "Toutes les ruches nécessaires sont montées." `
+        SUCCESS
+
+    return $Context
+}
+
+
+# ==========================================
+# Démonte les ruches utilisées par la configuration
+# ==========================================
+
+function Dismount-ConfigurationRegistryHives {
+
+    [CmdletBinding()]
+    param(
+
+        [Parameter(Mandatory)]
+        [psobject]$Context
+
+    )
+
+    Write-Log `
+        "Démontage des ruches de registre..." `
+        INFO
+
+    $MountedHives = @(
+        @($Context.Registry.Mounted)
+    )
+
+    if ($MountedHives.Count -eq 0) {
+
+        Write-Log `
+            "Aucune ruche de registre à démonter." `
+            INFO
+
+        return $Context
+
+    }
+
+    [array]::Reverse($MountedHives)
+
+    foreach ($Hive in $MountedHives) {
+
+        if (
+            [string]::IsNullOrWhiteSpace([string]$Hive)
+        ) {
+            continue
+        }
+
+        try {
+
+            if (
+                $Context.Registry.Mounted -contains $Hive
+            ) {
+
+                Write-Log (
+                    "Démontage de la ruche $Hive..."
+                ) INFO
+
+                $Context = Dismount-RegistryHive `
+                    -Context $Context `
+                    -Hive $Hive
+
+            }
+
+        }
+        catch {
+
+            Write-Log (
+                "Erreur lors du démontage de la ruche $Hive : {0}" -f
+                $_.Exception.Message
+            ) ERROR
+
+            throw
+
+        }
+
+    }
+
+    Write-Log `
+        "Toutes les ruches de registre ont été démontées." `
+        SUCCESS
+
+    return $Context
+}
+
 # ==========================================
 # Retourne le pipeline du Build
 # ==========================================
@@ -698,7 +899,7 @@ function Get-BuildPipeline {
 
         },
 
-		# ------------------------------------------
+        # ------------------------------------------
         # Copie du contenu ISO dans Workspace
         # ------------------------------------------
 
@@ -737,7 +938,6 @@ function Get-BuildPipeline {
             }
 
         },
-
 
         # ------------------------------------------
         # Copie du WIM
@@ -779,7 +979,6 @@ function Get-BuildPipeline {
 
         },
 
-
         # ------------------------------------------
         # Lecture des images WIM
         # ------------------------------------------
@@ -800,7 +999,6 @@ function Get-BuildPipeline {
 
         },
 
-
         # ------------------------------------------
         # Sélection de l'image Windows
         # ------------------------------------------
@@ -820,7 +1018,6 @@ function Get-BuildPipeline {
             }
 
         },
-
 
         # ------------------------------------------
         # Montage du WIM
@@ -883,28 +1080,6 @@ function Get-BuildPipeline {
         },
 
         # ------------------------------------------
-		# Montage de la ruche SOFTWARE
-		# ------------------------------------------
-
-        @{
-
-            Id   = "MountSoftwareHive"
-            Name = "Montage de la ruche SOFTWARE"
-
-            Action = {
-
-                param($Context)
-
-                Mount-RegistryHive `
-                    -Context $Context `
-                    -Hive SOFTWARE
-
-            }
-
-        },
-
-
-        # ------------------------------------------
         # Chargement de la configuration
         # ------------------------------------------
 
@@ -917,14 +1092,65 @@ function Get-BuildPipeline {
 
                 param($Context)
 
-                Get-Configuration `
+                # ------------------------------------------
+                # Profil personnalisé
+                # ------------------------------------------
+
+                if ($Context.ConfigurationProfile -eq "Custom") {
+
+                    if (
+                        $null -eq $Context.Configuration -or
+                        @($Context.Configuration).Count -eq 0
+                    ) {
+
+                        throw "La configuration personnalisée est absente du contexte."
+
+                    }
+
+                    Write-Log (
+                        "Configuration personnalisée conservée : {0} tweak(s)." -f
+                        @($Context.Configuration).Count
+                    ) INFO
+
+                    return $Context
+
+                }
+
+                # ------------------------------------------
+                # Profil standard
+                # ------------------------------------------
+
+                $Context = Get-Configuration `
                     -Context $Context `
                     -Profile $Context.ConfigurationProfile
+
+                return $Context
+
+            }
+
+
+
+        },
+
+        # ------------------------------------------
+        # Montage des ruches nécessaires
+        # ------------------------------------------
+
+        @{
+
+            Id   = "MountConfigurationRegistryHives"
+            Name = "Montage des ruches de registre"
+
+            Action = {
+
+                param($Context)
+
+                Mount-ConfigurationRegistryHives `
+                    -Context $Context
 
             }
 
         },
-
 
         # ------------------------------------------
         # Application de la configuration
@@ -940,38 +1166,123 @@ function Get-BuildPipeline {
                 param($Context)
 
                 Invoke-Configuration `
-					-Context $Context `
-					-Configuration $Context.Configuration
+                    -Context $Context `
+                    -Configuration $Context.Configuration
 
             }
 
         },
 
-
         # ------------------------------------------
-        # Démontage de la ruche SOFTWARE
+        # Démontage des ruches de registre
         # ------------------------------------------
 
         @{
 
-            Id   = "DismountSoftwareHive"
-            Name = "Démontage de la ruche SOFTWARE"
+            Id   = "DismountConfigurationRegistryHives"
+            Name = "Démontage des ruches de registre"
 
             Action = {
 
                 param($Context)
 
-                Dismount-RegistryHive `
-                    -Context $Context `
-                    -Hive SOFTWARE
+                Dismount-ConfigurationRegistryHives `
+                    -Context $Context
 
             }
 
         },
 
+        # ------------------------------------------
+        # Validation du déploiement PostInstall
+        # ------------------------------------------
+
+        @{
+
+            Id   = "ValidatePostInstallDeployment"
+            Name = "Validation du déploiement PostInstall"
+
+            Action = {
+
+                param($Context)
+
+                # --------------------------------------------------
+                # Chargement du module de validation
+                # --------------------------------------------------
+
+                $ValidationPath = Join-Path `
+                    -Path $ProjectRoot `
+                    -ChildPath "Modules\PostInstall\DeploymentValidation.ps1"
+
+                if (-not (Test-Path `
+                    -LiteralPath $ValidationPath `
+                    -PathType Leaf)) {
+
+                    throw (
+                        "Module DeploymentValidation introuvable : {0}" -f
+                        $ValidationPath
+                    )
+
+                }
+
+                . $ValidationPath
+
+                # --------------------------------------------------
+                # Chemins dans le WIM
+                # --------------------------------------------------
+
+                $MountPath = $Context.WIM.Mount.Path
+
+                $PostInstallPath = Join-Path `
+                    -Path $MountPath `
+                    -ChildPath "ProgramData\PimsOS\PostInstall"
+
+                $UnattendPath = Join-Path `
+                    -Path $MountPath `
+                    -ChildPath "Windows\Panther\unattend.xml"
+
+                # --------------------------------------------------
+                # Validation
+                # --------------------------------------------------
+
+                Write-Log `
+                    "Validation du déploiement PostInstall." `
+                    INFO
+
+                $ValidationResult =
+                    Test-PostInstallDeployment `
+                        -PostInstallPath $PostInstallPath `
+                        -UnattendPath $UnattendPath
+
+                if (-not $ValidationResult.Success) {
+
+                    if ($ValidationResult.MissingFiles.Count -gt 0) {
+
+                        Write-Log (
+                            "Fichiers PostInstall manquants : {0}" -f
+                            ($ValidationResult.MissingFiles -join ", ")
+                        ) ERROR
+
+                    }
+
+                    throw (
+                        "La validation du déploiement PostInstall a échoué."
+                    )
+
+                }
+
+                Write-Log `
+                    "Déploiement PostInstall validé avec succès." `
+                    SUCCESS
+
+                return $Context
+
+            }
+
+        },
 
         # ------------------------------------------
-        # Démontage du WIM
+        # Démontage WIM
         # ------------------------------------------
 
         @{
@@ -990,6 +1301,104 @@ function Get-BuildPipeline {
 
         },
 
+        # ------------------------------------------
+        # Synchronisation du WIM dans la source ISO
+        # ------------------------------------------
+
+        @{
+
+            Id   = "SyncWimToIsoSource"
+            Name = "Synchronisation du WIM"
+
+            Action = {
+
+                param($Context)
+
+                $Config = Get-Config
+
+                $SourceWim = Join-Path `
+                    -Path (Get-ProjectRoot) `
+                    -ChildPath (
+                        Join-Path `
+                            -Path $Config.Workspace.Sources `
+                            -ChildPath $Context.WIM.Name
+                    )
+
+                $IsoWim = Join-Path `
+                    -Path (Get-ProjectRoot) `
+                    -ChildPath (
+                        Join-Path `
+                            -Path $Config.Workspace.ISOSource `
+                            -ChildPath "sources\$($Context.WIM.Name)"
+                    )
+
+                if (-not (Test-Path -LiteralPath $SourceWim -PathType Leaf)) {
+
+                    throw (
+                        "WIM de travail introuvable : {0}" -f
+                        $SourceWim
+                    )
+
+                }
+
+                $IsoSources = Split-Path `
+                    -Path $IsoWim `
+                    -Parent
+
+                if (-not (Test-Path -LiteralPath $IsoSources -PathType Container)) {
+
+                    New-Item `
+                        -ItemType Directory `
+                        -Path $IsoSources `
+                        -Force `
+                        -ErrorAction Stop |
+                        Out-Null
+
+                }
+
+                Write-Log (
+                    "Synchronisation du WIM : {0} -> {1}" -f
+                    $SourceWim,
+                    $IsoWim
+                ) INFO
+
+                Copy-Item `
+                    -LiteralPath $SourceWim `
+                    -Destination $IsoWim `
+                    -Force `
+                    -ErrorAction Stop
+
+                $SourceHash = (
+                    Get-FileHash `
+                        -LiteralPath $SourceWim `
+                        -Algorithm SHA256 `
+                        -ErrorAction Stop
+                ).Hash
+
+                $IsoHash = (
+                    Get-FileHash `
+                        -LiteralPath $IsoWim `
+                        -Algorithm SHA256 `
+                        -ErrorAction Stop
+                ).Hash
+
+                if ($SourceHash -ne $IsoHash) {
+
+                    throw `
+                        "Échec de synchronisation du WIM : les hashes SHA256 diffèrent."
+
+                }
+
+                Write-Log (
+                    "WIM synchronisé avec succès. SHA256 : {0}" -f
+                    $IsoHash
+                ) SUCCESS
+
+                return $Context
+
+            }
+
+        },
 
         # ------------------------------------------
         # Démontage ISO
@@ -1005,6 +1414,26 @@ function Get-BuildPipeline {
                 param($Context)
 
                 Dismount-Iso `
+                    -Context $Context
+
+            }
+
+        },
+
+        # ------------------------------------------
+        # Création de l'ISO PimsOS
+        # ------------------------------------------
+
+        @{
+
+            Id   = "NewPimsOSIso"
+            Name = "Création de l'ISO PimsOS"
+
+            Action = {
+
+                param($Context)
+
+                New-PimsOSIso `
                     -Context $Context
 
             }
@@ -1031,7 +1460,6 @@ function Invoke-BuildPipeline {
 
     )
 
-
     # ------------------------------------------
     # Phase Pipeline
     # ------------------------------------------
@@ -1040,10 +1468,8 @@ function Invoke-BuildPipeline {
         -Context $Context `
         -Name "Pipeline"
 
-
     $PipelineSucceeded = $false
     $PipelineError = $null
-
 
     try {
 
@@ -1065,7 +1491,6 @@ function Invoke-BuildPipeline {
 
             }
 
-
             # ------------------------------------------
             # Condition
             # ------------------------------------------
@@ -1086,7 +1511,6 @@ function Invoke-BuildPipeline {
 
             }
 
-
             # ------------------------------------------
             # Exécution
             # ------------------------------------------
@@ -1097,7 +1521,6 @@ function Invoke-BuildPipeline {
                 -Action $Step.Action
 
         }
-
 
         # ------------------------------------------
         # Toutes les étapes ont réussi
@@ -1151,24 +1574,23 @@ function Invoke-BuildPipeline {
 
     }
 
-
     # ------------------------------------------
-	# Etat final
-	# ------------------------------------------
+    # Etat final
+    # ------------------------------------------
 
-	if ($PipelineSucceeded) {
+    if ($PipelineSucceeded) {
 
-		$Context.BuildState.Pipeline.Current = $null
-		$Context.BuildState.Status = "PipelineCompleted"
+        $Context.BuildState.Pipeline.Current = $null
+        $Context.BuildState.Status = "PipelineCompleted"
 
-		$Context.BuildState.Success = $true
-		$Context.BuildState.Completed = $true
+        $Context.BuildState.Success = $true
+        $Context.BuildState.Completed = $true
 
-		Write-Log (
-			"Pipeline terminé avec succès."
-		) SUCCESS
+        Write-Log (
+            "Pipeline terminé avec succès."
+        ) SUCCESS
 
-	}
+    }
     else {
 
         $Context.BuildState.Pipeline.Current = $null
@@ -1181,7 +1603,6 @@ function Invoke-BuildPipeline {
         }
 
     }
-
 
     return $Context
 }

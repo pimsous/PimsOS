@@ -1,7 +1,7 @@
 # ==========================================
 # Module : Tweak
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.1
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -21,141 +21,82 @@ function New-Action {
 
     )
 
-    return [PSCustomObject]@{
+    if ($null -eq $Definition) {
+        throw "La définition de l'action est null."
+    }
 
-        # ------------------------------------------
-        # Identification
-        # ------------------------------------------
+    if (-not $Definition.PSObject.Properties["Id"]) {
+        throw "Une action ne possède pas de propriété 'Id'."
+    }
 
-        ObjectType = "Action"
+    if (-not $Definition.PSObject.Properties["Type"]) {
+        throw "L'action '$($Definition.Id)' ne possède pas de propriété 'Type'."
+    }
 
-        Id   = $Definition.Id
-        Type = $Definition.Type
+    # Conserver toutes les propriétés fonctionnelles de la définition.
+    # Les moteurs d'actions sont ainsi extensibles sans devoir modifier
+    # ce constructeur à chaque nouveau provider ou type d'action.
+    $Action = $Definition.PSObject.Copy()
 
-        Description = Get-ObjectProperty `
-            -Object $Definition `
-            -Name Description
+    $Action | Add-Member `
+        -MemberType NoteProperty `
+        -Name ObjectType `
+        -Value "Action" `
+        -Force
 
-        # ------------------------------------------
-        # Configuration
-        # ------------------------------------------
+    # Valeurs normalisées communes à toutes les actions.
+    if (-not $Action.PSObject.Properties["Enabled"]) {
+        $Action | Add-Member -MemberType NoteProperty -Name Enabled -Value $true
+    }
 
-        Enabled = Get-ObjectProperty `
-            -Object $Definition `
-            -Name Enabled `
-            -Default $true
+    if (-not $Action.PSObject.Properties["RequiresRestart"]) {
+        $Action | Add-Member -MemberType NoteProperty -Name RequiresRestart -Value $false
+    }
 
-        RequiresRestart = Get-ObjectProperty `
-            -Object $Definition `
-            -Name RequiresRestart `
-            -Default $false
+    if (-not $Action.PSObject.Properties["ContinueOnError"]) {
+        $Action | Add-Member -MemberType NoteProperty -Name ContinueOnError -Value $false
+    }
 
-        ContinueOnError = Get-ObjectProperty `
-            -Object $Definition `
-            -Name ContinueOnError `
-            -Default $false
+	if (-not $Action.PSObject.Properties["Stop"]) {
+		$Action | Add-Member `
+			-MemberType NoteProperty `
+			-Name Stop `
+			-Value $false
+	}
 
-        # ------------------------------------------
-        # Registry
-        # ------------------------------------------
-
-        Hive = Get-ObjectProperty `
-            -Object $Definition `
-            -Name Hive
-
-        Key = Get-ObjectProperty `
-            -Object $Definition `
-            -Name Key
-
-        Name = Get-ObjectProperty `
-            -Object $Definition `
-            -Name Name
-
-        Value = Get-ObjectProperty `
-            -Object $Definition `
-            -Name Value
-
-        DataType = Get-ObjectProperty `
-            -Object $Definition `
-            -Name DataType
-
-        # ------------------------------------------
-        # Service
-        # ------------------------------------------
-
-        StartupType = Get-ObjectProperty `
-            -Object $Definition `
-            -Name StartupType
-
-        Stop = Get-ObjectProperty `
-            -Object $Definition `
-            -Name Stop `
-            -Default $false
-		
-		# ------------------------------------------
-		# Général (Managers)
-		# ------------------------------------------
-
-		Provider = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Provider
-
-		Command = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Command
-
-		Version = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Version
-
-		Source = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Source
-
-		Destination = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Destination
-
-		Target = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Target
-
-		Path = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Path
-
-		Arguments = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Arguments
-
-		WorkingDirectory = Get-ObjectProperty `
-			-Object $Definition `
-			-Name WorkingDirectory
-
-		Timeout = Get-ObjectProperty `
-			-Object $Definition `
-			-Name Timeout
-
-		Wait = Get-ObjectProperty `
-			-Object $Definition `
+	if (-not $Action.PSObject.Properties["Wait"]) {
+		$Action | Add-Member `
+			-MemberType NoteProperty `
 			-Name Wait `
-			-Default $true
+			-Value $true
+	}
 
-		RunAs = Get-ObjectProperty `
-			-Object $Definition `
+	if (-not $Action.PSObject.Properties["RunAs"]) {
+		$Action | Add-Member `
+			-MemberType NoteProperty `
 			-Name RunAs `
-			-Default $false
-			
-        # ------------------------------------------
-        # Etat d'exécution
-        # ------------------------------------------
+			-Value $false
+	}
 
+    # Etat runtime : ne jamais écraser une valeur fournie par un test
+    # ou une couche appelante.
+    $RuntimeProperties = @{
         Executed = $false
         Success  = $false
         Duration = [timespan]::Zero
         Error    = $null
-
     }
+
+    foreach ($PropertyName in $RuntimeProperties.Keys) {
+        if (-not $Action.PSObject.Properties[$PropertyName]) {
+            $Action | Add-Member `
+                -MemberType NoteProperty `
+                -Name $PropertyName `
+                -Value $RuntimeProperties[$PropertyName]
+        }
+    }
+
+    return $Action
 
 }
 
@@ -221,6 +162,16 @@ function New-Tweak {
         Name = $Definition.Name
 
         Description = $Definition.Description
+
+        Risk = Get-ObjectProperty `
+            -Object $Definition `
+            -Name Risk `
+            -Default "Optional"
+
+        Impact = Get-ObjectProperty `
+            -Object $Definition `
+            -Name Impact `
+            -Default ""
 
         SourceFile = $SourceFile
 

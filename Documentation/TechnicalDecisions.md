@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -668,4 +668,3 @@ Failed
 La vérification réseau distingue l'état de l'adaptateur, la connexion réseau et l'accès Internet.
 
 La validation automatisée du sous-système PostInstall couvre également l'interface UI et l'attente réseau avec des tests Pester dédiés.
-

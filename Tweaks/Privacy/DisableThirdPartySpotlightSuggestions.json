@@ -1,0 +1,39 @@
+{
+    "Id": "Privacy.DisableThirdPartySpotlightSuggestions",
+    "Name": "Désactiver les suggestions tierces de Windows Spotlight",
+    "Description": "Empêche les éditeurs tiers de proposer du contenu dans les fonctionnalités Windows Spotlight.",
+    "Help": "Bloque les suggestions provenant d'éditeurs tiers dans les expériences Windows Spotlight, sans désactiver Spotlight lui-même.",
+    "CategoryId": "Privacy",
+    "Group": "Suggestions",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les suggestions provenant d'éditeurs tiers dans Windows Spotlight ne sont plus proposées ; Spotlight lui-même reste disponible.",
+    "Actions": [
+        {
+            "Id": "Privacy.DisableThirdPartySpotlightSuggestions.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive les suggestions de contenu provenant d'éditeurs tiers dans Windows Spotlight.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Software\\Policies\\Microsoft\\Windows\\CloudContent",
+            "Name": "DisableThirdPartySuggestions",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Privacy",
+        "Spotlight",
+        "Suggestions"
+    ],
+    "Supported": {
+        "MinBuild": 14393,
+        "MaxBuild": 99999
+    }
+}

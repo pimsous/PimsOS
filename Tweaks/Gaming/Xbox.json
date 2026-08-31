@@ -1,40 +1,37 @@
 {
     "Id": "Xbox.DisableGameBar",
-    "Name": "Désactiver Xbox Game Bar",
-    "Description": "Empêche le lancement de Xbox Game Bar.",
-    "Help": "Désactive Xbox Game Bar et ses raccourcis.",
-
-    "CategoryId": "Xbox",
-    "Group": "Gaming",
+    "Name": "Désactiver l'enregistrement et la diffusion de jeux",
+    "Description": "Désactive l'enregistrement et la diffusion de jeux via la stratégie Game DVR.",
+    "Help": "Empêche Windows d'utiliser Game DVR pour enregistrer ou diffuser les jeux.",
+    "CategoryId": "Gaming",
+    "Group": "Xbox",
     "Level": "Official",
-
+    "Risk": "Optional",
     "Default": true,
     "Recommended": true,
     "Reversible": true,
     "RequiresRestart": false,
-
+    "Impact": "Les fonctions d'enregistrement et de diffusion de jeux sont désactivées. Cela ne signifie pas nécessairement que toute l'interface Xbox Game Bar est supprimée.",
     "Supported": {
         "MinBuild": 26100,
         "MaxBuild": null
     },
-
     "Scores": {
         "Privacy": 0,
         "Performance": 1,
         "Memory": 0,
         "Compatibility": 1
     },
-
     "Tags": [
         "Xbox",
-        "Gaming"
+        "Gaming",
+        "GameDVR"
     ],
-
     "Actions": [
         {
             "Id": "Xbox.DisableGameBar.Registry01",
             "Type": "Registry",
-            "Description": "Désactive Xbox Game Bar.",
+            "Description": "Désactive Xbox Game Bar et Game DVR.",
             "Enabled": true,
             "Hive": "SOFTWARE",
             "Key": "Policies\\Microsoft\\Windows\\GameDVR",

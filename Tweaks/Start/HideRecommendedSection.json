@@ -1,0 +1,38 @@
+{
+    "Id": "Start.HideRecommendedSection",
+    "Name": "Masquer la section Recommandé du menu Démarrer",
+    "Description": "Masque complètement la section Recommandé du menu Démarrer, qui contient notamment des applications et fichiers recommandés.",
+    "Help": "Supprime toute la section Recommandé. Ce réglage est plus radical que le masquage des seules recommandations de sites.",
+    "CategoryId": "Windows",
+    "Group": "Suggestions",
+    "Level": "Official",
+    "Risk": "Optional",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "La section Recommandé n'est plus affichée dans le menu Démarrer ; les éléments épinglés restent disponibles.",
+    "Actions": [
+        {
+            "Id": "Start.HideRecommendedSection.Registry01",
+            "Type": "Registry",
+            "Description": "Masque la section Recommandé du menu Démarrer.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\Explorer",
+            "Name": "HideRecommendedSection",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Start",
+        "Recommendations"
+    ],
+    "Supported": {
+        "MinBuild": 22621,
+        "MaxBuild": 99999
+    }
+}

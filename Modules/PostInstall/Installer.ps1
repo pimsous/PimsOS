@@ -1,4 +1,3 @@
-
 # ==========================================
 # Module : PostInstall Installer
 # Projet : PimsOS Builder
@@ -49,22 +48,45 @@ function Install-PimsOSPostInstallRuntime {
     }
 
     # --------------------------------------------------
+    # Chemin du Logger
+    # --------------------------------------------------
+
+    $ProjectRoot = Resolve-Path `
+        "$PSScriptRoot\..\.." `
+        -ErrorAction Stop
+
+    $LoggerSourcePath = Join-Path `
+        -Path $ProjectRoot.Path `
+        -ChildPath "Modules\Infrastructure\Logger.ps1"
+
+    # --------------------------------------------------
     # Vérifie les fichiers obligatoires
     # --------------------------------------------------
 
     $RequiredFiles = @(
 		"Bootstrap.ps1"
+		"Logger.ps1"
 		"Network.ps1"
 		"UI.ps1"
+		"DriverCheck.ps1"
 		"PostInstall.ps1"
 		"State.ps1"
 	)
 
     foreach ($FileName in $RequiredFiles) {
 
-        $SourceFile = Join-Path `
-            -Path $SourcePath `
-            -ChildPath $FileName
+        if ($FileName -eq "Logger.ps1") {
+
+            $SourceFile = $LoggerSourcePath
+
+        }
+        else {
+
+            $SourceFile = Join-Path `
+                -Path $SourcePath `
+                -ChildPath $FileName
+
+        }
 
         if (-not (Test-Path -LiteralPath $SourceFile -PathType Leaf)) {
 
@@ -102,9 +124,18 @@ function Install-PimsOSPostInstallRuntime {
 
     foreach ($FileName in $RequiredFiles) {
 
-        $SourceFile = Join-Path `
-            -Path $SourcePath `
-            -ChildPath $FileName
+        if ($FileName -eq "Logger.ps1") {
+
+            $SourceFile = $LoggerSourcePath
+
+        }
+        else {
+
+            $SourceFile = Join-Path `
+                -Path $SourcePath `
+                -ChildPath $FileName
+
+        }
 
         $DestinationFile = Join-Path `
             -Path $DestinationPath `
@@ -144,6 +175,8 @@ function Install-PimsOSPostInstallRuntime {
         ObjectType = "PimsOSPostInstallRuntime"
 
         SourcePath = $SourcePath
+
+        LoggerSourcePath = $LoggerSourcePath
 
         MountPath = $MountPath
 
@@ -256,6 +289,7 @@ function Install-PimsOSFirstBoot {
     }
 
 }
+
 # --------------------------------------------------
 # Retourne le chemin du runtime PostInstall du projet
 # --------------------------------------------------

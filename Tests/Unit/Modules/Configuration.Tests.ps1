@@ -52,7 +52,9 @@ Describe "Configuration" {
 
             Configuration = $null
 
-            ConfigurationProfile = $null
+			Tweaks = @()
+
+			ConfigurationProfile = $null
 
             BuildState = [pscustomobject]@{
 
@@ -130,9 +132,13 @@ Describe "Configuration" {
 
         Mock Merge-Profile {
 
-            $script:Configuration
+			$Context.Configuration = @(
+				$script:Configuration
+			)
 
-        }
+			return $Context.Configuration
+
+		}
 
     }
 
@@ -168,6 +174,49 @@ Describe "Configuration" {
 
             $Result.Project.Root |
                 Should -Be $ProjectRoot
+
+        }
+
+        It "Stocke une configuration de tweaks plate avec Enabled" {
+
+            Get-Configuration `
+                -Context $script:Context `
+                -Profile "Default" |
+                Out-Null
+
+            $Configuration = @(
+                $script:Context.Configuration
+            )
+
+            $Configuration.Count |
+                Should -Be 1
+
+            $Configuration[0].PSObject.Properties.Name |
+                Should -Contain "Id"
+
+            $Configuration[0].PSObject.Properties.Name |
+                Should -Contain "Enabled"
+
+            $Configuration[0].Id |
+                Should -Be "Test.Tweak"
+
+            $Configuration[0].Enabled |
+                Should -BeTrue
+
+        }
+
+        It "Conserve la configuration globale dans Project.Config" {
+
+            Get-Configuration `
+                -Context $script:Context `
+                -Profile "Default" |
+                Out-Null
+
+            $script:Context.Project.Config.Drivers |
+                Should -Not -BeNullOrEmpty
+
+            $script:Context.Project.Config.Drivers.Source |
+                Should -Be "None"
 
         }
 
@@ -279,6 +328,78 @@ Describe "Configuration" {
                 Should -BeTrue
 
         }
+
+        It "Conserve une configuration personnalisée sans charger un profil JSON" {
+
+            $CustomConfiguration = @(
+                [pscustomobject]@{
+                    Id = "Test.Tweak"
+                    Name = "Test Tweak"
+                    Enabled = $false
+                }
+            )
+
+            $script:Context.ConfigurationProfile = "Custom"
+            $script:Context.Configuration = $CustomConfiguration
+
+            Mock Load-Profile {
+                throw "Load-Profile ne doit pas être appelé pour Custom."
+            }
+
+            Mock Get-TweakDefinitions {
+                throw "Get-TweakDefinitions ne doit pas être appelé pour Custom."
+            }
+
+            $Result = Get-Configuration `
+                -Context $script:Context `
+                -Profile "Custom"
+
+            @($Result.Configuration).Count |
+                Should -Be 1
+
+            $Result.Configuration[0].Id |
+                Should -Be "Test.Tweak"
+
+            $Result.Configuration[0].Enabled |
+                Should -BeFalse
+
+            $Result.ConfigurationProfile |
+                Should -Be "Custom"
+
+            Should -Invoke `
+                -CommandName Load-Profile `
+                -Times 0 `
+                -Exactly
+
+            Should -Invoke `
+                -CommandName Get-TweakDefinitions `
+                -Times 0 `
+                -Exactly
+
+        }
+
+
+        It "Refuse une configuration personnalisée sans Enabled" {
+
+            $script:Context.ConfigurationProfile = "Custom"
+
+            $script:Context.Configuration = @(
+                [pscustomobject]@{
+                    Id = "Test.Tweak"
+                    Name = "Test Tweak"
+                }
+            )
+
+            {
+                Get-Configuration `
+                    -Context $script:Context `
+                    -Profile "Custom"
+
+            } |
+                Should -Throw
+
+        }
+
 
         It "Lève une exception si aucun tweak n'est chargé" {
 

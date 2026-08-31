@@ -5,11 +5,14 @@
 
 BeforeAll {
 
-    $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
+    $ProjectRoot = (
+        Resolve-Path "$PSScriptRoot\..\..\..\.."
+    ).Path
 
     . "$ProjectRoot\Modules\PostInstall\Network.ps1"
 
 }
+
 Describe "PostInstall Network" {
 
     # ==================================================
@@ -25,9 +28,9 @@ Describe "PostInstall Network" {
                 @(
                     [pscustomobject]@{
 
-                        Name              = "Ethernet"
-                        IPv4Connectivity  = "Internet"
-                        IPv6Connectivity  = "Internet"
+                        Name             = "Ethernet"
+                        IPv4Connectivity = "Internet"
+                        IPv6Connectivity = "Internet"
 
                     }
                 )
@@ -48,9 +51,9 @@ Describe "PostInstall Network" {
                 @(
                     [pscustomobject]@{
 
-                        Name              = "Ethernet"
-                        IPv4Connectivity  = "Disconnected"
-                        IPv6Connectivity  = "Disconnected"
+                        Name             = "Ethernet"
+                        IPv4Connectivity = "Disconnected"
+                        IPv6Connectivity = "Disconnected"
 
                     }
                 )
@@ -220,9 +223,15 @@ Describe "PostInstall Network" {
 
     Context "Wait-PostInstallNetwork" {
 
-        It "Retourne immédiatement lorsque le réseau est disponible" {
+        It "Retourne immédiatement lorsque le réseau et Internet sont disponibles" {
 
             Mock Test-PostInstallNetwork {
+
+                return $true
+
+            }
+
+            Mock Test-PostInstallInternet {
 
                 return $true
 
@@ -238,21 +247,37 @@ Describe "PostInstall Network" {
                 Should -BeTrue
 
             Should -Invoke `
+                -CommandName Test-PostInstallNetwork `
+                -Times 1 `
+                -Exactly
+
+            Should -Invoke `
+                -CommandName Test-PostInstallInternet `
+                -Times 1 `
+                -Exactly
+
+            Should -Invoke `
                 -CommandName Start-Sleep `
                 -Times 0 `
                 -Exactly
 
         }
 
-        It "Attend jusqu'à ce que le réseau soit disponible" {
+        It "Attend lorsque le réseau local est disponible mais Internet est indisponible" {
 
-            $script:NetworkChecks = 0
+            $script:InternetChecks = 0
 
             Mock Test-PostInstallNetwork {
 
-                $script:NetworkChecks++
+                return $true
 
-                if ($script:NetworkChecks -lt 3) {
+            }
+
+            Mock Test-PostInstallInternet {
+
+                $script:InternetChecks++
+
+                if ($script:InternetChecks -lt 3) {
 
                     return $false
 
@@ -271,7 +296,7 @@ Describe "PostInstall Network" {
             $Result |
                 Should -BeTrue
 
-            $script:NetworkChecks |
+            $script:InternetChecks |
                 Should -Be 3
 
             Should -Invoke `
@@ -281,11 +306,66 @@ Describe "PostInstall Network" {
 
         }
 
-        It "Retourne False lorsque le délai est dépassé" {
+        It "Attend lorsque le réseau local est indisponible" {
+
+            $script:NetworkChecks = 0
 
             Mock Test-PostInstallNetwork {
 
+                $script:NetworkChecks++
+
+                if ($script:NetworkChecks -lt 3) {
+
+                    return $false
+
+                }
+
+                return $true
+
+            }
+
+            Mock Test-PostInstallInternet {
+
+                return $true
+
+            }
+
+            Mock Start-Sleep {}
+
+            $Result = Wait-PostInstallNetwork `
+                -IntervalSeconds 1 `
+                -TimeoutMinutes 1
+
+            $Result |
+                Should -BeTrue
+
+            $script:NetworkChecks |
+                Should -Be 3
+
+            Should -Invoke `
+                -CommandName Test-PostInstallInternet `
+                -Times 1 `
+                -Exactly
+
+            Should -Invoke `
+                -CommandName Start-Sleep `
+                -Times 2 `
+                -Exactly
+
+        }
+
+        It "Retourne False lorsque le délai est dépassé sans accès Internet" {
+
+            Mock Test-PostInstallNetwork {
+
+                return $true
+
+            }
+
+            Mock Test-PostInstallInternet {
+
                 return $false
+
             }
 
             Mock Start-Sleep {}
@@ -317,9 +397,63 @@ Describe "PostInstall Network" {
 
         }
 
+        It "Ne teste pas Internet si le réseau local est indisponible" {
+
+            Mock Test-PostInstallNetwork {
+
+                return $false
+
+            }
+
+            Mock Test-PostInstallInternet {
+
+                throw "Le test Internet ne devrait pas être appelé."
+
+            }
+
+            Mock Start-Sleep {}
+
+            $script:NetworkTestDateCall = 0
+
+            Mock Get-Date {
+
+                $script:NetworkTestDateCall++
+
+                if ($script:NetworkTestDateCall -eq 1) {
+
+                    return [datetime]::Now
+
+                }
+
+                return [datetime]::Now.AddMinutes(1)
+
+            }
+
+            $Result = Wait-PostInstallNetwork `
+                -IntervalSeconds 1 `
+                -TimeoutMinutes 1
+
+            $Result |
+                Should -BeFalse
+
+            Should -Invoke `
+                -CommandName Test-PostInstallInternet `
+                -Times 0 `
+                -Exactly
+
+            $script:NetworkTestDateCall = $null
+
+        }
+
         It "Corrige un intervalle inférieur à une seconde" {
 
             Mock Test-PostInstallNetwork {
+
+                return $true
+
+            }
+
+            Mock Test-PostInstallInternet {
 
                 return $true
 

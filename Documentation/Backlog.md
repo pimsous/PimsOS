@@ -1,10 +1,38 @@
+# Mise à jour du backlog — 31/08/2026
+
+## Priorité immédiate — Wizard / Tweaks
+
+- [x] Charger `TweakCatalog.ps1` dans `PimsOS.psm1`.
+- [x] Stabiliser le catalogue de présentation du Wizard.
+- [x] Permettre la sélection individuelle, par liste et par plage.
+- [x] Corriger la résolution des profils depuis `Profiles\`.
+- [x] Ajouter les tests du flux de sélection Tweaks.
+- [ ] Continuer l’enrichissement du catalogue et des profils.
+
+## Tweaks / catégories
+
+- [ ] Compléter les 9 fichiers JSON placeholders.
+- [ ] Vérifier les 19 définitions existantes et leurs Actions.
+- [ ] Harmoniser `Config\Categories.json` avec les `CategoryId` réellement utilisés.
+- [ ] Ne pas considérer un placeholder comme un Tweak terminé.
+
+## Validation
+
+- [x] Régénérer/valider les campagnes ciblées Pester du sprint.
+- [ ] Régénérer `Tests\testResults.xml`.
+- [x] Générer une ISO PimsOS 3.0.0 avec le pipeline réel.
+- [ ] Revalider Bootstrap/PostInstall/Write-Log dans Hyper-V sur la nouvelle ISO.
+- [ ] Vérifier `state.json` et l’idempotence.
+
+---
+
 # PimsOS Builder - Backlog
 
-> Version : 2.0.0
+> Version technique : 3.0.0
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 

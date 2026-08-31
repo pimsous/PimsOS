@@ -1,0 +1,39 @@
+{
+    "Id": "WindowsAI.DisableRecallSnapshots",
+    "Name": "Désactiver l'enregistrement des instantanés Recall",
+    "Description": "Empêche Windows d'enregistrer les instantanés d'écran utilisés par Recall.",
+    "Help": "Bloque l'enregistrement des captures d'écran destinées à Recall. Les instantanés éventuellement présents sont supprimés lorsque la stratégie est activée.",
+    "CategoryId": "Privacy",
+    "Group": "Telemetry",
+    "Level": "Official",
+    "Risk": "Advanced",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Recall ne peut pas enregistrer les instantanés d'écran. Les instantanés existants sont supprimés lorsque la stratégie prend effet.",
+    "Actions": [
+        {
+            "Id": "WindowsAI.DisableRecallSnapshots.Registry01",
+            "Type": "Registry",
+            "Description": "Empêche l'enregistrement des instantanés d'écran pour Recall.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\WindowsAI",
+            "Name": "DisableAIDataAnalysis",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Privacy",
+        "WindowsAI",
+        "Recall"
+    ],
+    "Supported": {
+        "MinBuild": 26100,
+        "MaxBuild": 99999
+    }
+}

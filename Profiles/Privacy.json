@@ -1,0 +1,33 @@
+{
+    "Name": "Privacy",
+    "Description": "Profil orienté confidentialité.",
+    "Tweaks": {
+        "Applications.DisableSuggestedApps": false,
+        "Edge.DisableBackgroundMode": false,
+        "Edge.DisableStartupBoost": false,
+        "Edge.HideFirstRunExperience": false,
+        "Explorer.ShowFileExtensions": false,
+        "Explorer.ShowHiddenFiles": false,
+        "Explorer.ShowProtectedSystemFiles": false,
+        "OneDrive.DisableSync": false,
+        "Privacy.DisableActivityHistory": true,
+        "Privacy.DisableAdvertisingId": true,
+        "Privacy.DisableSuggestions": true,
+        "Privacy.DisableTelemetry": true,
+        "SERVICE_DIAGTRACK_DISABLE": true,
+        "Services.DisableSysMain": false,
+        "Widgets.DisableTaskbarWidgets": false,
+        "Windows.DisableWindowsTips": false,
+        "Windows.EnableNumLock": false,
+        "WindowsUpdate.DisableAutoRestart": false,
+        "Xbox.DisableGameBar": false,
+        "Explorer.ShowSecondsInSystemClock": false,
+        "Search.DisableSearchHighlights": false,
+        "Start.HideRecommendedPersonalizedSites": false,
+        "Start.HideRecommendedSection": false,
+        "Privacy.DisableTailoredExperiences": true,
+        "Privacy.DisableThirdPartySpotlightSuggestions": true,
+        "WindowsAI.DisableRecallSnapshots": true,
+        "WindowsAI.DisableRecall": true
+    }
+}

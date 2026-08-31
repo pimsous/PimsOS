@@ -1,0 +1,39 @@
+{
+    "Id": "Privacy.DisableTailoredExperiences",
+    "Name": "Désactiver les expériences personnalisées basées sur les diagnostics",
+    "Description": "Empêche Windows d'utiliser les données de diagnostic pour personnaliser les recommandations, conseils et offres.",
+    "Help": "Les recommandations, conseils et offres peuvent toujours exister, mais Windows ne doit plus utiliser les données de diagnostic de l'appareil pour les personnaliser.",
+    "CategoryId": "Privacy",
+    "Group": "Suggestions",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les expériences personnalisées basées sur les données de diagnostic sont désactivées ; les recommandations peuvent rester présentes mais être moins pertinentes.",
+    "Actions": [
+        {
+            "Id": "Privacy.DisableTailoredExperiences.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive l'utilisation des données de diagnostic pour personnaliser l'expérience utilisateur.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Software\\Policies\\Microsoft\\Windows\\CloudContent",
+            "Name": "DisableTailoredExperiencesWithDiagnosticData",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Privacy",
+        "Diagnostics",
+        "Personalization"
+    ],
+    "Supported": {
+        "MinBuild": 15063,
+        "MaxBuild": 99999
+    }
+}

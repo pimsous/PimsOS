@@ -233,6 +233,26 @@ Describe "Profile" {
         }
 
 
+        It "Retourne les noms de profils sans extension ni point final" {
+
+            $Profiles = @(
+                Get-ProfileList `
+                    -Context $script:Context
+            )
+
+            foreach ($Profile in $Profiles) {
+
+                $Profile.Name |
+                    Should -Not -Match '\.json$'
+
+                $Profile.Name |
+                    Should -Not -Match '\.$'
+
+            }
+
+        }
+
+
         It "Retourne les profils triés par nom" {
 
             $Profiles = @(
@@ -250,6 +270,25 @@ Describe "Profile" {
 
             $Names |
                 Should -Be $Sorted
+
+        }
+
+        It "Expose les profils imbriqués avec leur chemin relatif" {
+
+            $NestedProfile = Join-Path `
+                -Path $ProjectRoot `
+                -ChildPath "Profiles\Tests\Registry.json"
+
+            Test-Path $NestedProfile |
+                Should -BeTrue
+
+            $Profiles = @(
+                Get-ProfileList `
+                    -Context $script:Context
+            )
+
+            ($Profiles | Where-Object Name -eq "Tests\Registry") |
+                Should -Not -BeNullOrEmpty
 
         }
 
@@ -398,7 +437,7 @@ Describe "Profile" {
                 -Enabled $false
 
             $Item.Category |
-                Should -Be $Category.Name
+				Should -Be $Category.Id
 
             $Item.PSObject.Properties.Name |
                 Should -Contain "CategoryDescription"
@@ -667,6 +706,41 @@ Describe "Profile" {
 
             $script:Context.Configuration |
                 Should -Be $Configuration
+
+        }
+
+        It "Expose une configuration plate contenant Enabled" {
+
+            $Categories = @(
+                Get-CategoryDefinitions -Reload
+            )
+
+            $Tweak = [pscustomobject]@{
+                Id = "Test.Tweak"
+                Name = "Test Tweak"
+                Description = "Description"
+                CategoryId = $Categories[0].Id
+                Default = $true
+                Enabled = $false
+                Actions = @()
+            }
+
+            $Configuration = Merge-Profile `
+                -Context $script:Context `
+                -Tweaks @($Tweak) `
+                -Profile ([pscustomobject]@{})
+
+            @($Configuration).Count |
+                Should -Be 1
+
+            $Configuration[0].Id |
+                Should -Be "Test.Tweak"
+
+            $Configuration[0].Enabled |
+                Should -BeTrue
+
+            $script:Context.Configuration[0].Enabled |
+                Should -BeTrue
 
         }
 

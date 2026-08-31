@@ -187,6 +187,31 @@ Describe "ActionRegistry" {
 
         }
 
+        It "Contient tous les moteurs actuellement implémentés" {
+
+            $Registry = Get-RegisteredActionHandlers
+
+            $Expected = @{
+                Registry      = "Invoke-RegistryAction"
+                Service       = "Invoke-ServiceAction"
+                Driver        = "Invoke-DriverAction"
+                Feature       = "Invoke-FeatureAction"
+                Capability    = "Invoke-CapabilityAction"
+                Command       = "Invoke-CommandAction"
+                File          = "Invoke-FileAction"
+                Folder        = "Invoke-FolderAction"
+                Environment   = "Invoke-EnvironmentAction"
+                ScheduledTask = "Invoke-ScheduledTaskAction"
+                Shortcut      = "Invoke-ShortcutAction"
+                Package       = "Invoke-PackageAction"
+            }
+
+            foreach ($Entry in $Expected.GetEnumerator()) {
+                $Registry[$Entry.Key] |
+                    Should -Be $Entry.Value
+            }
+        }
+
     }
 
 }

@@ -1,0 +1,30 @@
+{
+    "Id": "Explorer.ShowHiddenFiles",
+    "Name": "Afficher les fichiers et dossiers cachés",
+    "Description": "Affiche les fichiers et dossiers auxquels l'attribut Caché est appliqué, sans désactiver à lui seul le masquage des fichiers système protégés.",
+    "Help": "Affiche les éléments marqués comme cachés. Les fichiers système protégés restent masqués tant que ShowSuperHidden n'est pas activé.",
+    "CategoryId": "Explorer",
+    "Group": "File Explorer",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les éléments ordinaires marqués comme cachés, par exemple ProgramData ou certains dossiers système, deviennent visibles. Les fichiers système protégés comme pagefile.sys restent masqués si le tweak correspondant n'est pas activé.",
+    "Actions": [
+        {
+            "Id": "Explorer.ShowHiddenFiles.Registry01",
+            "Type": "Registry",
+            "Description": "Active l'affichage des fichiers et dossiers cachés.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+            "Name": "Hidden",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

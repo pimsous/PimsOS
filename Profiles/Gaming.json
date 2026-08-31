@@ -8,6 +8,14 @@
   },
   "Tweaks": {
     "Privacy.DisableTelemetry": true,
-    "Explorer.ShowFileExtensions": true
+    "Explorer.ShowFileExtensions": true,
+    "Explorer.ShowSecondsInSystemClock": false,
+    "Search.DisableSearchHighlights": false,
+    "Start.HideRecommendedPersonalizedSites": false,
+    "Start.HideRecommendedSection": false,
+    "Privacy.DisableTailoredExperiences": false,
+    "Privacy.DisableThirdPartySpotlightSuggestions": false,
+    "WindowsAI.DisableRecallSnapshots": false,
+    "WindowsAI.DisableRecall": false
   }
 }

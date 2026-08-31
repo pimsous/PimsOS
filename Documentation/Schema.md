@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -293,7 +293,7 @@ La validation du comportement réel lors de la première connexion Windows reste
 La dernière campagne officielle de tests donne :
 
 ```text id="fny8oe"
-701 Passed
+971 Passed
 0 Failed
 1 Skipped
 0 Inconclusive

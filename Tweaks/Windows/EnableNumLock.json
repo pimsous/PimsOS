@@ -1,0 +1,30 @@
+{
+    "Id": "Windows.EnableNumLock",
+    "Name": "Activer le pavé numérique au démarrage",
+    "Description": "Active automatiquement le verrouillage numérique au démarrage de Windows et avant l'ouverture de session.",
+    "Help": "Configure l'état initial du pavé numérique dans le profil utilisateur par défaut de Windows.",
+    "CategoryId": "Windows",
+    "Group": "Keyboard",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": true,
+    "Impact": "Le pavé numérique est activé automatiquement au démarrage de Windows.",
+    "Actions": [
+        {
+            "Id": "Windows.EnableNumLock.Registry01",
+            "Type": "Registry",
+            "Description": "Active le pavé numérique au démarrage de Windows.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Control Panel\\Keyboard",
+            "Name": "InitialKeyboardIndicators",
+            "Value": "2",
+            "DataType": "String",
+            "RequiresRestart": true,
+            "ContinueOnError": false
+        }
+    ]
+}

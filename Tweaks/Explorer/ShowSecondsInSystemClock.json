@@ -1,0 +1,35 @@
+{
+    "Id": "Explorer.ShowSecondsInSystemClock",
+    "Name": "Afficher les secondes dans l'horloge",
+    "Description": "Affiche les secondes dans l'horloge de la barre des tâches Windows.",
+    "Help": "Ajoute l'affichage HH:mm:ss à l'horloge de la zone de notification. Le réglage est appliqué au profil utilisateur par défaut et sera hérité par les nouveaux comptes.",
+    "CategoryId": "Explorer",
+    "Group": "File Explorer",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "L'horloge affiche les heures, minutes et secondes. L'actualisation de l'horloge chaque seconde entraîne une activité système légèrement supérieure.",
+    "Actions": [
+        {
+            "Id": "Explorer.ShowSecondsInSystemClock.Registry01",
+            "Type": "Registry",
+            "Description": "Active l'affichage des secondes dans l'horloge de la barre des tâches.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+            "Name": "ShowSecondsInSystemClock",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Explorer",
+        "Taskbar",
+        "Clock"
+    ]
+}

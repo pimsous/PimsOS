@@ -1,0 +1,39 @@
+{
+    "Id": "Search.DisableSearchHighlights",
+    "Name": "Désactiver les surbrillances de recherche",
+    "Description": "Désactive les contenus et surbrillances dynamiques affichés dans l'accueil de Windows Search et la zone de recherche du menu Démarrer.",
+    "Help": "Supprime les contenus dynamiques de type actualités, événements et suggestions affichés par Windows Search.",
+    "CategoryId": "Windows",
+    "Group": "Suggestions",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "La recherche Windows reste disponible, mais les contenus et surbrillances dynamiques ne sont plus affichés.",
+    "Actions": [
+        {
+            "Id": "Search.DisableSearchHighlights.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive les surbrillances dynamiques de Windows Search.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\Windows Search",
+            "Name": "EnableDynamicContentInWSB",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Search",
+        "Privacy",
+        "Suggestions"
+    ],
+    "Supported": {
+        "MinBuild": 22000,
+        "MaxBuild": 99999
+    }
+}

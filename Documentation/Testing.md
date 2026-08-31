@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -143,11 +143,13 @@ avec les tests correspondant à l'architecture actuelle de PimsOS Builder.
 La dernière exécution complète de la campagne officielle a produit :
 
 ```text
-Tests Passed: 708
+Tests Passed: 971 (dernier résultat communiqué)
 Tests Failed: 0
 Tests Skipped: 1
 Tests Inconclusive: 0
 Tests NotRun: 0
+
+> Le fichier `Tests\testResults.xml` de l’archive reste historique et correspond à une campagne du 28/08/2026. Il doit être régénéré pour refléter la campagne finale communiquée le 31/08.
 ```
 
 Durée totale :
@@ -427,7 +429,7 @@ automatisée lorsque :
 L'état de référence actuellement validé est :
 
 ```text
-708 Passed
+971 Passed
 0 Failed
 1 Skipped
 0 Inconclusive

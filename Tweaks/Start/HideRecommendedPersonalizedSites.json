@@ -1,0 +1,39 @@
+{
+    "Id": "Start.HideRecommendedPersonalizedSites",
+    "Name": "Masquer les recommandations de sites du menu Démarrer",
+    "Description": "Supprime les recommandations personnalisées de sites web affichées dans la section Recommandé du menu Démarrer.",
+    "Help": "Conserve la section Recommandé pour les autres contenus, mais retire les recommandations personnalisées de sites web.",
+    "CategoryId": "Windows",
+    "Group": "Suggestions",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les recommandations personnalisées de sites web ne sont plus affichées dans la section Recommandé.",
+    "Actions": [
+        {
+            "Id": "Start.HideRecommendedPersonalizedSites.Registry01",
+            "Type": "Registry",
+            "Description": "Masque les recommandations personnalisées de sites web du menu Démarrer.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\Explorer",
+            "Name": "HideRecommendedPersonalizedSites",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ],
+    "Tags": [
+        "Start",
+        "Recommendations",
+        "Privacy"
+    ],
+    "Supported": {
+        "MinBuild": 22621,
+        "MaxBuild": 99999
+    }
+}

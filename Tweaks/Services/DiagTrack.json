@@ -1,30 +1,32 @@
 {
     "Id": "SERVICE_DIAGTRACK_DISABLE",
-    "Name": "Disable Connected User Experiences and Telemetry",
-    "Description": "Disable the DiagTrack service used for telemetry.",
-    "CategoryId": "PRIVACY",
+    "Name": "Désactiver le service DiagTrack",
+    "Description": "Désactive le service Connected User Experiences and Telemetry utilisé notamment pour la télémétrie Windows.",
+    "Help": "Arrête le service DiagTrack et empêche son démarrage automatique.",
+    "CategoryId": "Privacy",
     "Group": "Telemetry",
-
+    "Level": "Official",
+    "Risk": "Optional",
     "Default": false,
     "Recommended": true,
-
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Le service DiagTrack est arrêté et désactivé. Certaines fonctions de diagnostic et de télémétrie peuvent être limitées.",
     "Scores": {
         "Privacy": 5,
         "Performance": 1,
         "Memory": 1,
         "Compatibility": 2
     },
-
     "Supported": {
         "MinBuild": 22000,
         "MaxBuild": null
     },
-
     "Actions": [
         {
             "Id": "DisableDiagTrack",
             "Type": "Service",
-            "Description": "Disable the DiagTrack service.",
+            "Description": "Arrête et désactive le service DiagTrack.",
             "Name": "DiagTrack",
             "StartupType": "Disabled",
             "Stop": true

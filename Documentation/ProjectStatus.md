@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -75,9 +75,9 @@ L'objectif final est de produire automatiquement une image Windows personnalisé
 | Chocolatey            | ⬜ Non implémenté                                                |
 | Winget                | ⬜ Non implémenté                                                |
 | Microsoft Store       | ⬜ Non intégré                                                   |
-| Génération ISO finale | 🟡 En cours de finalisation                                     |
-| Tests Pester          | ✅ 708 tests validés, 0 échec                                    |
-| Documentation         | 🟡 Synchronisation en cours                                     |
+| Génération ISO         | ✅ Build réel réussi ; validation de l’artefact restante       |
+| Tests Pester          | 🟡 971 Passed / 0 Failed / 1 Skipped (dernier résultat communiqué) |
+| Documentation         | 🟢 Synchronisée au 31/08/2026                                 |
 
 ---
 
@@ -99,24 +99,17 @@ Tests\Legacy
 
 sont conservés séparément et ne font pas partie de la campagne officielle.
 
-La campagne de référence actuelle comprend :
+Les derniers résultats communiqués pendant la session sont :
 
 ```text
-Tests\Unit          : 684 tests
-Tests\Integration   : 24 tests
+971 Passed
+0 Failed
+1 Skipped
 ```
 
-Résultat global :
+La campagne ciblée du Wizard est à `15 Passed / 0 Failed / 0 Skipped`. La campagne PostInstall/Unattend communiquée est à `744 Passed / 0 Failed / 1 Skipped`.
 
-| Résultat           | Valeur |
-| ------------------ | ------ |
-| Tests réussis      | 708    |
-| Tests échoués      | 0      |
-| Tests ignorés      | 1      |
-| Tests inconclusifs | 0      |
-| Tests non exécutés | 0      |
-
-Le test ignoré est conditionnel et concerne le comportement d'une catégorie sans groupes alors que les catégories actuellement définies dans `Config\Categories.json` possèdent toutes des groupes.
+Le seul test ignoré signalé dans ces campagnes est conditionnel. Le fichier `Tests\testResults.xml` présent dans l’archive reste historique et doit être régénéré.
 
 Ce `Skipped` est intentionnel et ne correspond pas à un échec fonctionnel.
 
@@ -361,7 +354,7 @@ Le système de configuration prend en charge :
 Les profils sont sélectionnés depuis :
 
 ```text
-Config\Profiles
+Profiles\
 ```
 
 Le système conserve le profil sélectionné dans le contexte du Build.
@@ -436,7 +429,7 @@ Les composants Image prennent en charge :
 * la gestion du cycle de vie de l'image ;
 * la génération de l'ISO.
 
-La génération finale de l'ISO reste en cours de finalisation.
+Un Build réel a généré une ISO PimsOS 3.0.0 le 31/08/2026. La validation fonctionnelle de cet artefact reste à effectuer.
 
 ---
 
@@ -483,7 +476,7 @@ Winget
 Microsoft Store
 ```
 
-La génération complète de l'ISO finale reste également en cours de finalisation.
+La génération de l’ISO est démontrée par le Build réel du 31/08 ; la validation Hyper-V de l’artefact reste à effectuer.
 
 ---
 
@@ -494,13 +487,13 @@ La suite officielle Pester est exécutée avec Pester 5.8.0.
 Résultat de référence actuel :
 
 ```text
-684 Unit Passed
-24 Integration Passed
-708 Passed
+971 Passed
 0 Failed
 1 Skipped
 0 Inconclusive
 0 NotRun
+
+> Résultat communiqué pendant la session ; à régénérer dans `testResults.xml`.
 ```
 
 La durée de la campagne peut varier selon l'environnement et les tests exécutés.
@@ -535,7 +528,7 @@ La documentation couvre notamment :
 * le cycle de vie ;
 * les composants Legacy.
 
-La documentation est actuellement en cours de synchronisation avec l'implémentation.
+La documentation active a été synchronisée avec l’implémentation et l’état du Build au 31/08/2026.
 
 ---
 
@@ -543,7 +536,7 @@ La documentation est actuellement en cours de synchronisation avec l'implémenta
 
 Les prochaines étapes prioritaires sont :
 
-1. finaliser la génération de l'ISO ;
+1. valider l’ISO générée le 31/08/2026 ;
 2. compléter la validation réelle du cycle FirstBoot ;
 3. valider la reprise réelle du PostInstall après perte puis disponibilité du réseau ;
 4. compléter la couverture Recovery et Security ;

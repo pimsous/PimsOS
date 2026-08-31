@@ -1,0 +1,30 @@
+{
+    "Id": "Applications.DisableSuggestedApps",
+    "Name": "Désactiver les applications suggérées",
+    "Description": "Désactive les suggestions d'applications affichées par Windows dans le menu Démarrer.",
+    "Help": "Empêche Windows de proposer certaines applications et recommandations dans le menu Démarrer.",
+    "CategoryId": "Applications",
+    "Group": "Suggestions",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Certaines suggestions et recommandations d'applications ne sont plus affichées.",
+    "Actions": [
+        {
+            "Id": "Applications.DisableSuggestedApps.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive les suggestions d'applications Windows.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+            "Name": "SystemPaneSuggestionsEnabled",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

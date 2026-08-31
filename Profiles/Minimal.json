@@ -1,0 +1,33 @@
+{
+    "Name": "Minimal",
+    "Description": "Configuration minimale : aucun tweak optionnel activé.",
+    "Tweaks": {
+        "Applications.DisableSuggestedApps": false,
+        "Edge.DisableBackgroundMode": false,
+        "Edge.DisableStartupBoost": false,
+        "Edge.HideFirstRunExperience": false,
+        "Explorer.ShowFileExtensions": false,
+        "Explorer.ShowHiddenFiles": false,
+        "Explorer.ShowProtectedSystemFiles": false,
+        "OneDrive.DisableSync": false,
+        "Privacy.DisableActivityHistory": false,
+        "Privacy.DisableAdvertisingId": false,
+        "Privacy.DisableSuggestions": false,
+        "Privacy.DisableTelemetry": false,
+        "SERVICE_DIAGTRACK_DISABLE": false,
+        "Services.DisableSysMain": false,
+        "Widgets.DisableTaskbarWidgets": false,
+        "Windows.DisableWindowsTips": false,
+        "Windows.EnableNumLock": false,
+        "WindowsUpdate.DisableAutoRestart": false,
+        "Xbox.DisableGameBar": false,
+        "Explorer.ShowSecondsInSystemClock": false,
+        "Search.DisableSearchHighlights": false,
+        "Start.HideRecommendedPersonalizedSites": false,
+        "Start.HideRecommendedSection": false,
+        "Privacy.DisableTailoredExperiences": false,
+        "Privacy.DisableThirdPartySpotlightSuggestions": false,
+        "WindowsAI.DisableRecallSnapshots": false,
+        "WindowsAI.DisableRecall": false
+    }
+}

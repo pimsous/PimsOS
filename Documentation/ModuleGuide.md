@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -588,4 +588,3 @@ Le dossier `Modules/PostInstall/` contient :
 Les tests sont regroupés dans :
 
 `Tests/Unit/Modules/PostInstall/`
-

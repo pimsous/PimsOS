@@ -1,0 +1,30 @@
+{
+    "Id": "Edge.DisableBackgroundMode",
+    "Name": "Désactiver l'exécution en arrière-plan d'Edge",
+    "Description": "Empêche Microsoft Edge de continuer à exécuter des applications et extensions en arrière-plan après sa fermeture.",
+    "Help": "Désactive l'exécution des processus Edge en arrière-plan lorsque le navigateur est fermé.",
+    "CategoryId": "Edge",
+    "Group": "Performance",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": false,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les applications et extensions Edge ne peuvent plus continuer à fonctionner en arrière-plan après la fermeture du navigateur.",
+    "Actions": [
+        {
+            "Id": "Edge.DisableBackgroundMode.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive le mode d'exécution en arrière-plan de Microsoft Edge.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Edge",
+            "Name": "BackgroundModeEnabled",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

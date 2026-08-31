@@ -6,7 +6,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -1325,3 +1325,151 @@ Le Build et PostInstall possèdent des responsabilités différentes.
 Cette séparation conserve une frontière claire entre les opérations
 offline du Build et les opérations runtime réalisées après
 l'installation de Windows.
+
+## État de validation — PostInstall / FirstBoot
+
+### Fonctionnalités validées
+
+- FirstBoot validé réellement dans une VM Hyper-V Generation 2.
+- TPM virtuel activé dans la VM de test.
+- Installation de Windows depuis l'ISO PimsOS validée.
+- `RunOnce` présent dans la ruche `SOFTWARE` de l'image installée.
+- `RunOnce` exécuté au premier démarrage puis consommé.
+- `state.json` créé par le PostInstall.
+- `state.json` validé avec une seule tâche `Local`.
+- Protection contre une seconde exécution du PostInstall ajoutée.
+- Synchronisation du WIM de travail vers la source ISO implémentée.
+- Vérification SHA256 du WIM après synchronisation implémentée et testée.
+- Ordre des étapes critiques du BuildPipeline testé.
+
+### Tests automatisés
+
+- `PostInstall.Tests.ps1` : 13/13 tests réussis.
+- `BuildPipeline.Tests.ps1` : 22/22 tests réussis.
+- Suite globale : 971 tests réussis, 0 échec, 1 test ignoré.
+- Le test ignoré est conditionnel et concerne `Categories.Tests.ps1`.
+- Les trois fichiers sous `Tests/Legacy/Modules/` ne font pas partie de la suite fonctionnelle actuelle et sont actuellement signalés comme containers non exécutables par Pester.
+
+### Point restant à valider
+
+La correction de la dépendance `Write-Log` du Bootstrap doit encore être validée dans l’ISO générée le 31/08/2026.
+
+La validation Hyper-V précédente a permis de valider le mécanisme FirstBoot / RunOnce, mais elle ne constitue pas à elle seule une validation de la nouvelle version du Bootstrap corrigée.
+
+### Procédure de validation ISO
+
+La chaîne de validation est :
+
+1. `BuildPimsOS`
+2. génération de l'ISO PimsOS
+3. test de l'ISO dans Hyper-V
+4. validation de l'installation
+5. validation du FirstBoot
+6. validation du PostInstall
+7. validation de `state.json`
+8. validation du comportement réseau
+9. validation finale de l'ISO avant utilisation avec Rufus.
+
+Pour une installation physique, la procédure de référence est :
+
+`BuildPimsOS → ISO → Rufus → clé USB`
+
+Le nom du compte Windows utilisé pendant l'installation ne doit pas être utilisé comme dépendance pour le fonctionnement du PostInstall.
+
+# Architecture PimsOS 3.0
+
+## Configuration
+
+`Context.Project.Config` contient la configuration globale du projet (Workspace, Requirements, Image, Drivers, Build, etc.).
+
+`Context.Configuration` contient exclusivement la configuration finale des tweaks : une liste plate d'objets possédant au minimum `Id`, `Name`, `Enabled` et `Actions`.
+
+Le profil `Custom` n'est pas un fichier JSON. La sélection effectuée dans l'assistant est conservée dans `Context.Configuration` jusqu'à `ApplyConfiguration`.
+
+## Pipeline de configuration
+
+```text
+Wizard
+  -> Context.Configuration
+  -> LoadConfiguration
+  -> MountConfigurationRegistryHives
+  -> ApplyConfiguration
+  -> Invoke-Configuration
+  -> Invoke-Tweak
+  -> Invoke-Action
+  -> ActionRegistry
+  -> moteur spécialisé
+```
+
+Les étapes du pipeline doivent toujours retourner le même `BuildContext`. Une étape ne doit jamais remplacer `Context.Configuration` par la configuration globale de `Project.Config`.
+
+## Profils
+
+Les profils JSON peuvent être placés dans des sous-dossiers de `Profiles`. Leur nom logique est leur chemin relatif sans extension, par exemple `Tests\Registry`.
+
+Les fichiers JSON vides ne sont pas proposés par l'assistant et sont refusés par `Load-Profile`.
+
+## Moteurs d'actions
+
+Le registre couvre les moteurs actuellement présents dans le projet :
+
+- Registry
+- Service
+- Driver
+- Feature
+- Capability
+- Command
+- File
+- Folder
+- Environment
+- ScheduledTask
+- Shortcut
+- Package
+
+`New-Action` conserve les propriétés spécifiques de la définition JSON. L'ajout d'un nouveau moteur ou provider ne nécessite donc pas de modifier le modèle commun de l'action.
+
+## Extensions prévues
+
+### Chocolatey
+
+Provider de packages destiné à l'installation d'applications pendant le PostInstall, avec possibilité de cache local préparé dans `Workspace\Packages\Chocolatey`.
+
+### Microsoft Store
+
+Provider d'applications Microsoft Store, à isoler du moteur de tweaks. La stratégie d'installation devra être définie avant activation dans les profils.
+
+### Widgets Windows
+
+Les Widgets sont traités comme une capacité de configuration Windows via les tweaks existants dans `Tweaks\Widgets`. Les améliorations futures doivent rester compatibles avec la chaîne générique des actions.
+
+### Applications
+
+Les applications devront utiliser les providers de packages (Chocolatey, Winget, Microsoft Store) sans mélanger leur logique avec le moteur générique des tweaks.
+
+
+---
+
+# Catalogue des Tweaks
+
+Les personnalisations Windows sont décrites par des fichiers JSON situés dans
+`Tweaks`.
+
+Chaque définition sépare :
+
+- les métadonnées destinées au Wizard ;
+- le niveau de risque et la réversibilité ;
+- les contraintes de compatibilité ;
+- les Actions exécutables.
+
+Les réglages utilisateur destinés aux nouveaux comptes utilisent la ruche
+`DEFAULT` (`C:\Users\Default\NTUSER.DAT`). Les stratégies machine utilisent
+`SOFTWARE` lorsqu'elles doivent s'appliquer au niveau de l'image.
+
+Le catalogue doit privilégier les réglages documentés, réversibles et
+indépendants. Les Tweaks Explorer `ShowHiddenFiles` et
+`ShowProtectedSystemFiles` restent volontairement séparés : le premier affiche
+les éléments marqués Caché, tandis que le second expose également les fichiers
+système protégés tels que `pagefile.sys` ou certains `desktop.ini`.
+
+Le catalogue détaillé et les références Microsoft associées sont maintenus
+dans `Documentation/Tweaks.md`.

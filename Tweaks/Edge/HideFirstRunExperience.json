@@ -1,0 +1,30 @@
+{
+    "Id": "Edge.HideFirstRunExperience",
+    "Name": "Masquer la première expérience Edge",
+    "Description": "Masque l'expérience de première exécution et l'écran de démarrage affichés lors du premier lancement de Microsoft Edge.",
+    "Help": "Edge démarre directement sans afficher son assistant de première utilisation.",
+    "CategoryId": "Edge",
+    "Group": "First Run",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "L'expérience de première exécution et l'écran de démarrage Edge ne sont plus affichés. Un redémarrage d'Edge est nécessaire pour appliquer le changement.",
+    "Actions": [
+        {
+            "Id": "Edge.HideFirstRunExperience.Registry01",
+            "Type": "Registry",
+            "Description": "Masque l'expérience de première exécution de Microsoft Edge.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Edge",
+            "Name": "HideFirstRunExperience",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

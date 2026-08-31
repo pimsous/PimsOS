@@ -1,0 +1,24 @@
+{
+    "Id": "Privacy.DisableSuggestions",
+    "Name": "Désactiver les suggestions Windows",
+    "Description": "Désactive les expériences consommateur Windows utilisées pour proposer certaines recommandations et contenus personnalisés.",
+    "CategoryId": "Privacy",
+    "Group": "Suggestions",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Certaines recommandations et suggestions Windows ne seront plus proposées.",
+    "Actions": [
+        {
+            "Id": "Privacy.DisableSuggestions.Registry01",
+            "Type": "Registry",
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\CloudContent",
+            "Name": "DisableWindowsConsumerFeatures",
+            "Value": 1,
+            "DataType": "DWord"
+        }
+    ]
+}

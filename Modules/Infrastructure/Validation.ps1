@@ -21,9 +21,13 @@ Set-Variable `
         "Feature"
         "Service"
         "Command"
-        "Script"
         "ScheduledTask"
         "File"
+        "Folder"
+        "Environment"
+        "Driver"
+        "Capability"
+        "Shortcut"
     )
 
 Set-Variable `

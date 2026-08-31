@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -234,11 +234,19 @@ Advanced
 Experimental
 ```
 
-Les catégories actuellement définies dans `Config\Categories.json` comprennent notamment :
+Les catégories actuellement définies dans `Config\Categories.json` sont :
 
 ```text
+Applications
+Edge
+Explorer
+Gaming
+OneDrive
+Performance
 Privacy
-Xbox
+Widgets
+Windows
+WindowsUpdate
 ```
 
 ### Profils
@@ -248,7 +256,7 @@ Le système de profils est implémenté.
 Les profils sont sélectionnés depuis :
 
 ```text
-Config\Profiles
+Profiles\
 ```
 
 Le profil sélectionné est conservé dans le `BuildContext`.
@@ -371,7 +379,7 @@ Ils ne font pas partie de la campagne officielle.
 La dernière campagne de référence donne :
 
 ```text
-701 Passed
+971 Passed
 0 Failed
 1 Skipped
 0 Inconclusive

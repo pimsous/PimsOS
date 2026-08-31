@@ -92,6 +92,110 @@ Describe "Wim" {
 
     }
 
+    Context "Select-WimImage" {
+
+        It "Sélectionne automatiquement l'édition configurée" {
+
+            $Context = [pscustomobject]@{
+
+                WIM = [pscustomobject]@{
+
+                    Images = @(
+                        [pscustomobject]@{
+                            Index       = 1
+                            Name        = "Windows 11 Famille"
+                            Description = "Windows 11 Famille"
+                            Size        = 100
+                        }
+                        [pscustomobject]@{
+                            Index       = 6
+                            Name        = "Windows 11 Professionnel"
+                            Description = "Windows 11 Professionnel"
+                            Size        = 200
+                        }
+                    )
+
+                }
+
+                Image = [pscustomobject]@{
+					Name        = "Windows 11 Professionnel"
+					Description = $null
+					Index       = $null
+					Size        = $null
+					SelectedBy  = $null
+					Interactive = $false
+				}
+
+            }
+
+            $Result = Select-WimImage `
+                -Context $Context
+
+            $Result.Image.Name |
+                Should -Be "Windows 11 Professionnel"
+
+            $Result.Image.Index |
+                Should -Be 6
+
+            $Result.Image.SelectedBy |
+                Should -Be "Configuration"
+
+            $Result.Image.Interactive |
+                Should -BeFalse
+
+        }
+
+
+        It "Ne demande pas de sélection interactive lorsqu'une édition est configurée" {
+
+            $Context = [pscustomobject]@{
+
+                WIM = [pscustomobject]@{
+
+                    Images = @(
+                        [pscustomobject]@{
+                            Index       = 1
+                            Name        = "Windows 11 Famille"
+                            Description = "Windows 11 Famille"
+                            Size        = 100
+                        }
+                        [pscustomobject]@{
+                            Index       = 6
+                            Name        = "Windows 11 Professionnel"
+                            Description = "Windows 11 Professionnel"
+                            Size        = 200
+                        }
+                    )
+
+                }
+
+                Image = [pscustomobject]@{
+					Name        = "Windows 11 Professionnel"
+					Description = $null
+					Index       = $null
+					Size        = $null
+					SelectedBy  = $null
+					Interactive = $false
+				}
+
+            }
+
+            Mock -CommandName Read-Host {
+                throw "Read-Host ne doit pas être appelé."
+            }
+
+            {
+
+                Select-WimImage `
+                    -Context $Context
+
+            } |
+                Should -Not -Throw
+
+        }
+
+    }
+
     Context "Set-WimMountedState" {
 
         It "Positionne Mounted à True" {

@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-29
+> Dernière mise à jour : 2026-08-31
 
 ---
 
@@ -638,4 +638,3 @@ concernés et par les tests d'intégration lorsque l'impact le justifie.
 - `Testing.md`
 - `TechnicalDecisions.md`
 - `Documentation\ADR\`
-

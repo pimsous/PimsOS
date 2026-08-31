@@ -1,0 +1,30 @@
+{
+    "Id": "Explorer.ShowFileExtensions",
+    "Name": "Afficher les extensions de fichiers",
+    "Description": "Affiche toujours les extensions des fichiers connus dans l'Explorateur, comme .exe, .txt et .zip.",
+    "Help": "Désactive le masquage automatique des extensions de fichiers connus.",
+    "CategoryId": "Explorer",
+    "Group": "File Explorer",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": true,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Les extensions de fichiers sont visibles dans l'Explorateur.",
+    "Actions": [
+        {
+            "Id": "Explorer.ShowFileExtensions.Registry01",
+            "Type": "Registry",
+            "Description": "Affiche les extensions de fichiers.",
+            "Enabled": true,
+            "Hive": "DEFAULT",
+            "Key": "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+            "Name": "HideFileExt",
+            "Value": 0,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}

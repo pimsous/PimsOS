@@ -1,0 +1,33 @@
+{
+    "Name": "Workstation",
+    "Description": "Profil de poste de travail : ergonomie et réglages courants.",
+    "Tweaks": {
+        "Applications.DisableSuggestedApps": true,
+        "Edge.DisableBackgroundMode": false,
+        "Edge.DisableStartupBoost": false,
+        "Edge.HideFirstRunExperience": false,
+        "Explorer.ShowFileExtensions": true,
+        "Explorer.ShowHiddenFiles": false,
+        "Explorer.ShowProtectedSystemFiles": false,
+        "OneDrive.DisableSync": false,
+        "Privacy.DisableActivityHistory": false,
+        "Privacy.DisableAdvertisingId": false,
+        "Privacy.DisableSuggestions": false,
+        "Privacy.DisableTelemetry": true,
+        "SERVICE_DIAGTRACK_DISABLE": false,
+        "Services.DisableSysMain": false,
+        "Widgets.DisableTaskbarWidgets": false,
+        "Windows.DisableWindowsTips": true,
+        "Windows.EnableNumLock": true,
+        "WindowsUpdate.DisableAutoRestart": true,
+        "Xbox.DisableGameBar": false,
+        "Explorer.ShowSecondsInSystemClock": true,
+        "Search.DisableSearchHighlights": false,
+        "Start.HideRecommendedPersonalizedSites": false,
+        "Start.HideRecommendedSection": false,
+        "Privacy.DisableTailoredExperiences": false,
+        "Privacy.DisableThirdPartySpotlightSuggestions": false,
+        "WindowsAI.DisableRecallSnapshots": false,
+        "WindowsAI.DisableRecall": false
+    }
+}

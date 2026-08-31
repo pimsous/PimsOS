@@ -42,6 +42,7 @@ Set-StrictMode -Version Latest
 
 . "$PSScriptRoot\Configuration\Categories.ps1"
 . "$PSScriptRoot\Configuration\Tweak.ps1"
+. "$PSScriptRoot\Configuration\TweakCatalog.ps1"
 . "$PSScriptRoot\Configuration\Profile.ps1"
 . "$PSScriptRoot\Configuration\Configuration.ps1"
 
@@ -202,13 +203,13 @@ function Initialize-PimsOS {
         $AdkRequired = $false
 
         if (
-            $null -ne $Context.Configuration -and
-            $null -ne $Context.Configuration.Requirements -and
-            $null -ne $Context.Configuration.Requirements.WindowsADK
+            $null -ne $Context.Project.Config -and
+            $null -ne $Context.Project.Config.Requirements -and
+            $null -ne $Context.Project.Config.Requirements.WindowsADK
         ) {
 
             $AdkConfiguration =
-                $Context.Configuration.Requirements.WindowsADK
+                $Context.Project.Config.Requirements.WindowsADK
 
             if (
                 $AdkConfiguration.PSObject.Properties.Name `
@@ -239,7 +240,7 @@ function Initialize-PimsOS {
                 $Context.BuildState.Environment.WindowsADK = $false
 
                 Install-PimsOSWindowsADK `
-					-Configuration $Context.Configuration `
+					-Configuration $Context.Project.Config `
 					-DestinationPath (
 						Join-Path `
 							$Context.Workspace.Temp `

@@ -363,6 +363,36 @@ Describe "Registry" {
 
         }
 
+        It "Retourne Users\Default\NTUSER.DAT pour DEFAULT" {
+
+            Mock Test-Path {
+                return $true
+            }
+
+            $Path = Get-OfflineRegistryPath `
+                -Context $script:Context `
+                -Hive "DEFAULT"
+
+            $Path |
+                Should -Be "C:\Test\Mount\Users\Default\NTUSER.DAT"
+
+        }
+
+        It "N'utilise pas Windows\System32\Config\DEFAULT pour DEFAULT" {
+
+            Mock Test-Path {
+                return $true
+            }
+
+            $Path = Get-OfflineRegistryPath `
+                -Context $script:Context `
+                -Hive "DEFAULT"
+
+            $Path |
+                Should -Not -Be "C:\Test\Mount\Windows\System32\Config\DEFAULT"
+
+        }
+
         It "Refuse une image non montée" {
 
             $script:Context.BuildState.Image.WimMounted = $false
@@ -388,6 +418,21 @@ Describe "Registry" {
                     -Hive "SOFTWARE"
             } |
                 Should -Throw
+
+        }
+
+        It "Refuse le profil Default absent" {
+
+            Mock Test-Path {
+                return $false
+            }
+
+            {
+                Get-OfflineRegistryPath `
+                    -Context $script:Context `
+                    -Hive "DEFAULT"
+            } |
+                Should -Throw "*Users\Default\NTUSER.DAT*"
 
         }
 

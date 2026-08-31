@@ -362,15 +362,29 @@ function Get-OfflineRegistryPath {
 
 	}
 
-    $configPath = Join-Path `
-        $Context.WIM.Mount.Path `
-        "Windows\System32\Config"
+    # DEFAULT représente le profil utilisateur modèle de Windows.
+    # Il ne faut PAS utiliser Windows\System32\Config\DEFAULT ici :
+    # cette ruche système n'est pas la source du profil des nouveaux utilisateurs.
+    if ($Hive.ToUpper() -eq "DEFAULT") {
 
-    $path = Join-Path $configPath $Hive
+        $path = Join-Path `
+            $Context.WIM.Mount.Path `
+            "Users\Default\NTUSER.DAT"
 
-    if (-not (Test-Path $path)) {
+    }
+    else {
 
-        throw "Ruche '$Hive' introuvable."
+        $configPath = Join-Path `
+            $Context.WIM.Mount.Path `
+            "Windows\System32\Config"
+
+        $path = Join-Path $configPath $Hive
+
+    }
+
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+
+        throw "Ruche '$Hive' introuvable : '$path'."
 
     }
 

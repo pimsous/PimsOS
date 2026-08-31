@@ -1,0 +1,30 @@
+{
+    "Id": "Windows.DisableWindowsTips",
+    "Name": "Désactiver les conseils Windows",
+    "Description": "Désactive les conseils et astuces Windows diffusés par la fonctionnalité Windows Tips.",
+    "Help": "Empêche Windows d'afficher certaines recommandations et conseils intégrés.",
+    "CategoryId": "Windows",
+    "Group": "Suggestions",
+    "Level": "Official",
+    "Risk": "Safe",
+    "Default": false,
+    "Recommended": true,
+    "Reversible": true,
+    "RequiresRestart": false,
+    "Impact": "Certains conseils et recommandations Windows ne sont plus affichés.",
+    "Actions": [
+        {
+            "Id": "Windows.DisableWindowsTips.Registry01",
+            "Type": "Registry",
+            "Description": "Désactive les conseils Windows.",
+            "Enabled": true,
+            "Hive": "SOFTWARE",
+            "Key": "Policies\\Microsoft\\Windows\\CloudContent",
+            "Name": "DisableSoftLanding",
+            "Value": 1,
+            "DataType": "DWord",
+            "RequiresRestart": false,
+            "ContinueOnError": false
+        }
+    ]
+}
