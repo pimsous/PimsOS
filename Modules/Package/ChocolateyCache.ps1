@@ -1,7 +1,7 @@
 # ==========================================
 # Module : Package / Chocolatey Cache
 # Projet : PimsOS Builder
-# Version : 1.0.1
+# Version : 1.0.2
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -70,23 +70,21 @@ function Save-ChocolateyPackageToCache {
         New-Item -ItemType Directory -Path $CachePath -Force -ErrorAction Stop | Out-Null
     }
 
+    $CachePath = (Resolve-Path -LiteralPath $CachePath -ErrorAction Stop).Path
+
     $Version = $null
     if ($Package.PSObject.Properties.Name -contains 'Version' -and
         -not [string]::IsNullOrWhiteSpace([string]$Package.Version)) {
         $Version = [string]$Package.Version
     }
 
-    if ($Version) {
-        $Existing = Get-ChildItem -LiteralPath $CachePath `
-            -Filter "$($Package.Id).$Version.nupkg" `
-            -File -ErrorAction SilentlyContinue |
-            Select-Object -First 1
-    }
-    else {
-        $Existing = Get-ChildItem -LiteralPath $CachePath -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -like "$($Package.Id)*.nupkg" } |
-            Select-Object -First 1
-    }
+    # Utiliser le même moteur de détection que le provider Chocolatey.
+    # Cela garantit un contrat unique pour la reconnaissance des .nupkg
+    # versionnés et non versionnés.
+    $Existing = Find-ChocolateyCachedPackage `
+        -CachePath $CachePath `
+        -Name ([string]$Package.Id) `
+        -Version $Version
 
     if ($null -ne $Existing) {
         return [pscustomobject]@{
