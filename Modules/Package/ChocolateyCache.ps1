@@ -1,7 +1,7 @@
 # ==========================================
 # Module : Package / Chocolatey Cache
 # Projet : PimsOS Builder
-# Version : 1.0.0
+# Version : 1.0.1
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -35,6 +35,10 @@ function Get-ChocolateyPackageDefinitions {
     })
 
     foreach ($Package in $Packages) {
+        if (-not ($Package.PSObject.Properties.Name -contains 'Id')) {
+            throw "Une entrée activée du catalogue Chocolatey ne possède pas d'Id."
+        }
+
         if ([string]::IsNullOrWhiteSpace([string]$Package.Id)) {
             throw "Une entrée activée du catalogue Chocolatey ne possède pas d'Id."
         }
@@ -53,6 +57,10 @@ function Save-ChocolateyPackageToCache {
         [Parameter(Mandatory)][string]$CachePath,
         [string]$Source = 'https://community.chocolatey.org/api/v2/package'
     )
+
+    if (-not ($Package.PSObject.Properties.Name -contains 'Id')) {
+        throw "L'Id du package Chocolatey est obligatoire."
+    }
 
     if ([string]::IsNullOrWhiteSpace([string]$Package.Id)) {
         throw "L'Id du package Chocolatey est obligatoire."
@@ -96,7 +104,12 @@ function Save-ChocolateyPackageToCache {
         "$Source/$($Package.Id)"
     }
 
-    $Destination = Join-Path $CachePath "$($Package.Id).nupkg"
+    $Destination = if ($Version) {
+        Join-Path $CachePath "$($Package.Id).$Version.nupkg"
+    }
+    else {
+        Join-Path $CachePath "$($Package.Id).nupkg"
+    }
 
     try {
         Invoke-WebRequest -Uri $Uri -OutFile $Destination -UseBasicParsing -ErrorAction Stop
