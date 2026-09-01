@@ -4,9 +4,12 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
+
+> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+
 
 # Objectif
 
@@ -116,6 +119,32 @@ La présence de tests dans `Tests\Legacy` ne signifie donc pas qu'ils doivent
 
 ---
 
+# Diagnostic sécurisé avant Pester
+
+Depuis le 01/09/2026, `Tests\Tools\Invoke-PimsOSDiagnostics.ps1` constitue le garde-fou recommandé avant une campagne ciblée.
+
+Il analyse statiquement les fichiers de tests et distingue :
+
+| Classe | Signification | Exécution normale |
+|---|---|---|
+| `SAFE` | Aucun appel Build dangereux non neutralisé détecté | Oui |
+| `BUILD-CAPABLE` | Opération de Build/WIM/ISO potentiellement réelle | Non |
+| `UNKNOWN` | Neutralisation impossible à prouver statiquement | Non |
+
+Commandes de référence :
+
+```powershell
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -Unit -InventoryOnly -ExplainFailures
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -Integration -InventoryOnly -ExplainFailures
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -BuildValidation -AllowBuild -InventoryOnly -ExplainFailures
+```
+
+Le mode `-InventoryOnly` n'exécute aucun test. `-BuildValidation` exige explicitement `-AllowBuild` et reste réservé aux validations réelles volontairement autorisées.
+
+L'analyse est volontairement conservatrice : un faux positif `BUILD-CAPABLE` est acceptable ; un faux négatif pouvant lancer un Build réel ne l'est pas.
+
+---
+
 # Campagne de validation officielle
 
 La configuration Pester du projet est définie dans :
@@ -138,19 +167,29 @@ avec les tests correspondant à l'architecture actuelle de PimsOS Builder.
 
 ---
 
-# Résultat de la dernière validation
+# Résultats de référence
 
-La dernière exécution complète de la campagne officielle a produit :
+La dernière campagne complète communiquée avant la reprise du 01/09 était :
 
 ```text
-Tests Passed: 971 (dernier résultat communiqué)
-Tests Failed: 0
-Tests Skipped: 1
-Tests Inconclusive: 0
-Tests NotRun: 0
-
-> Le fichier `Tests\testResults.xml` de l’archive reste historique et correspond à une campagne du 28/08/2026. Il doit être régénéré pour refléter la campagne finale communiquée le 31/08.
+971 Passed (historical — 31/08/2026)
+0 Failed
+1 Skipped
 ```
+
+Elle est historique et ne doit pas être présentée comme le résultat actuel de la branche après les modifications du 01/09.
+
+Le 01/09, une campagne d'intégration ciblée a produit :
+
+```text
+20 Passed
+0 Failed
+0 Skipped
+```
+
+Le diagnostic statique a inventorié 63 fichiers Unit et 4 fichiers Integration. Ces nombres sont des fichiers, pas des cas de test Pester.
+
+Le fichier XML historique doit être régénéré pour fournir une preuve machine-readable de la prochaine campagne complète.
 
 Durée totale :
 
@@ -160,9 +199,7 @@ Durée totale :
 
 ## Interprétation
 
-### Tests réussis
-
-**701 tests** ont été exécutés avec succès.
+Les anciens sous-résultats détaillés conservés plus bas dans ce document sont historiques. Pour la référence actuelle, utiliser la section « Résultats de référence » ci-dessus et les rapports Pester générés par la CI.
 
 ### Tests échoués
 
@@ -429,12 +466,30 @@ automatisée lorsque :
 L'état de référence actuellement validé est :
 
 ```text
-971 Passed
+971 Passed (historical — 31/08/2026)
 0 Failed
 1 Skipped
 0 Inconclusive
 0 NotRun
 ```
+
+---
+
+# Validation du Build réel
+
+Le diagnostic et les tests Pester ne remplacent pas la validation de production de l'image.
+
+Le 01/09/2026, un Build réel complet a été exécuté avec succès :
+
+- Windows 11 Professionnel, index 6 ;
+- 27 Tweaks appliqués ;
+- PostInstall validé ;
+- WIM démonté et synchronisé vers la source ISO avec SHA256 vérifié ;
+- ISO créée avec `oscdimg.exe` détecté via le Windows ADK ;
+- code retour `0` ;
+- aucun montage WIM résiduel.
+
+La validation suivante doit porter sur l'artefact ISO lui-même et sur une installation Hyper-V/FirstBoot.
 
 ---
 
@@ -467,3 +522,71 @@ active simplement pour augmenter le nombre de tests exécutés.
 
 Toute évolution de l'organisation des tests doit également être reflétée
 dans `PesterConfiguration.ps1` et dans cette documentation.
+
+# PimsOS Builder - Stratégie de tests
+
+> Version technique : **3.0.0**
+>
+> Dernière mise à jour : **2026-09-01**
+
+## Campagne officielle
+
+La campagne officielle couvre :
+
+```text
+Tests\Unit
+Tests\Integration
+```
+
+Les tests :
+
+```text
+Tests\Legacy
+```
+
+sont historiques et exclus volontairement.
+
+## Dernier résultat de référence
+
+```text
+Passed      : 797
+Failed      : 0
+Skipped     : 1
+Inconclusive: 0
+NotRun      : 0
+Total       : 798
+```
+
+## Tests ciblés validés
+
+- `Tweak.Tests.ps1` : 13/13
+- `Configuration.Tests.ps1` : 25/25
+- `Wizard.Tests.ps1` : 18/18
+- `Architecture.Tests.ps1` : 3/3
+
+L'architecture confirme également le chargement de **27 Tweaks** avec des
+Actions valides.
+
+## Règles
+
+- Un test Legacy ne doit pas faire échouer la campagne officielle.
+- Les tests unitaires doivent rester isolés lorsque possible.
+- Les tests d'intégration vérifient les contrats entre composants.
+- Toute nouvelle fonctionnalité importante doit avoir ses tests.
+- Les résultats communiqués après une modification doivent être privilégiés
+  par rapport à un ancien XML Pester.
+
+## Prochaine campagne utile
+
+Après reconstruction d'une nouvelle ISO :
+
+1. campagne Pester officielle ;
+2. validation Hyper-V ;
+3. validation FirstBoot/PostInstall ;
+4. validation Tweaks réels ;
+5. validation réseau ;
+6. validation idempotence ;
+7. validation Rufus/physique.
+
+Le fichier `Tests\testResults.xml` doit être régénéré pour devenir la preuve
+machine-readable de la nouvelle campagne.

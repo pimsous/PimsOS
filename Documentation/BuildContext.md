@@ -1,66 +1,207 @@
-# PimsOS Builder - BuildContext
+# PimsOS Builder - Structure du projet
 
 > Version technique : 3.0.0
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
 
-# Présentation
+# Objectif
 
-Le **BuildContext** est le contrat central utilisé par les composants de **PimsOS Builder**.
+Ce document décrit l'organisation réelle du projet **PimsOS Builder**.
 
-Il est créé au démarrage du Builder puis enrichi progressivement tout au long du cycle de Build.
-
-Le BuildContext permet de partager l'état et les données nécessaires entre les différents composants sans utiliser d'état global pour transporter les informations du Build.
-
-Les Engines, Managers et autres composants reçoivent le contexte nécessaire à leur traitement et mettent à jour les informations relevant de leur responsabilité.
-
----
-
-# Objectifs
-
-Le BuildContext permet de :
-
-- centraliser les données du Build ;
-- partager un état commun entre les composants ;
-- réduire les dépendances implicites ;
-- faciliter les tests unitaires ;
-- faciliter le diagnostic et le débogage ;
-- maintenir une architecture modulaire ;
-- conserver un contrat commun entre les différentes couches.
-
----
-
-# Cycle de vie
-
-Le cycle de vie général du BuildContext est :
+Le projet est structuré autour d'un module PowerShell unique :
 
 ```text
-Initialize-PimsOS
+Modules\PimsOS.psm1
+```
+
+Le module centralise le chargement des composants internes et l'exposition de l'API publique du framework.
+
+---
+
+# Structure générale
+
+```text
+PimsOS
+│
+├── Build
+├── Config
+├── Documentation
+├── ISO
+├── Logs
+├── Modules
+├── Output
+├── Packages
+├── Tests
+├── Workspace
+├── version.json
+└── README.md
+```
+
+Le projet est organisé de manière à séparer clairement :
+
+- le code du framework ;
+- la configuration ;
+- les ressources de Build ;
+- les tests ;
+- la documentation ;
+- les artefacts et espaces de travail.
+
+---
+
+# Modules
+
+Le code du framework se trouve dans :
+
+```text
+Modules\
+```
+
+La structure principale est :
+
+```text
+Modules
+│
+├── Actions
+├── Configuration
+├── Core
+├── Image
+├── Infrastructure
+├── Managers
+├── Package
+├── PostInstall
+├── Windows
+├── PimsOS.psd1
+└── PimsOS.psm1
+```
+
+Les composants internes appartiennent au module PowerShell unique **PimsOS**.
+
+Ils ne constituent pas des modules PowerShell indépendants.
+
+---
+
+# PostInstall
+
+Le projet contient désormais un sous-système dédié à l'exécution après l'installation de Windows :
+
+```text
+Modules\PostInstall\
+```
+
+Ce dossier contient le runtime PostInstall embarqué dans l'image Windows.
+
+Les composants actuellement présents comprennent notamment :
+
+```text
+Bootstrap.ps1
+FirstBoot.ps1
+Installer.ps1
+Network.ps1
+PostInstall.ps1
+State.ps1
+UI.ps1
+Unattend.ps1
+```
+
+Le runtime est préparé pendant le Build puis installé dans l'image Windows sous :
+
+```text
+C:\ProgramData\PimsOS\PostInstall\
+```
+
+Le sous-système PostInstall prend notamment en charge :
+
+- l'initialisation du runtime ;
+- la persistance de l'état ;
+- la détection du réseau ;
+- la détection de l'accès Internet ;
+- l'attente de la disponibilité réseau ;
+- l'interface console du premier démarrage ;
+- la préparation FirstBoot ;
+- la génération de `unattend.xml`.
+
+Le PostInstall reste séparé de la logique du Build exécutée hors ligne.
+
+---
+
+# Diagnostic avant tests
+
+Avant une campagne Pester, utiliser `Tests\Tools\Invoke-PimsOSDiagnostics.ps1` pour vérifier que les fichiers sélectionnés ne sont pas susceptibles de lancer un Build réel. Les validations `BUILD-CAPABLE` nécessitent explicitement `-BuildValidation -AllowBuild`.
+
+# Tests
+
+Les tests du framework sont organisés dans :
+
+```text
+Tests\
+```
+
+La structure comprend notamment :
+
+```text
+Tests
+│
+├── Unit
+├── Integration
+├── Acceptance
+└── Legacy
+```
+
+Les tests Legacy sont conservés séparément et ne participent pas à la validation officielle du framework actif.
+
+---
+
+# Tests PostInstall
+
+Les tests dédiés au sous-système PostInstall sont regroupés dans :
+
+```text
+Tests\Unit\Modules\PostInstall\
+```
+
+Ils couvrent notamment :
+
+```text
+Bootstrap.Tests.ps1
+FirstBoot.Tests.ps1
+Installer.Tests.ps1
+Network.Tests.ps1
+PostInstall.Tests.ps1
+State.Tests.ps1
+UI.Tests.ps1
+Unattend.Tests.ps1
+```
+
+Les tests PostInstall vérifient les composants individuellement ainsi que leurs contrats fonctionnels.
+
+L'intégration du PostInstall dans le pipeline est également couverte par les tests d'intégration du BuildPipeline.
+
+---
+
+# Architecture des dépendances
+
+Le framework suit une architecture en couches.
+
+Le flux principal est :
+
+```text
+Infrastructure
         │
         ▼
-New-BuildContext
+Core
         │
         ▼
-Initialize-BuildContext
-        │
-        ▼
-Recovery
-        │
-        ▼
-Environment Checks
+Configuration
         │
         ▼
 Workflow
         │
         ▼
 Pipeline
-        │
-        ▼
-Configuration
         │
         ▼
 ActionEngine
@@ -78,340 +219,273 @@ Manager
 Module technique
         │
         ▼
-Complete-Build
+Windows
 ```
 
-Le même BuildContext est utilisé pendant toute l'exécution.
+Le PostInstall constitue un sous-système runtime distinct du chemin d'exécution principal du Build.
 
----
-
-# Structure générale
+Sa préparation est intégrée au Pipeline :
 
 ```text
-Context
-│
-├── Project
-├── Build
-├── BuildState
-├── Configuration
-├── ConfigurationProfile
-├── ISO
-├── WIM
-├── Image
-├── Workspace
-├── Registry
-├── Packages
-├── Drivers
-├── Tweaks
-├── Services
-├── Features
-├── Report
-├── Logger
-└── Statistics
+MountWim
+    │
+    ▼
+ApplyDrivers
+    │
+    ▼
+PreparePostInstall
+    │
+    ▼
+MountSoftwareHive
 ```
-
----
-
-# Project
-
-Contient toutes les informations relatives au projet.
-
-```text
-Project
-│
-├── Name
-├── Version
-├── Windows
-│   ├── Release
-│   └── Build
-├── Author
-├── Company
-├── Repository
-├── Root
-├── Paths
-├── Config
-├── StartTime
-├── EndTime
-└── Duration
-```
-
-Ces informations proviennent principalement du fichier **version.json**.
-
-Le BuildContext contient également les informations concernant la version de Windows ciblée.
-
-Exemples :
-
-- Release ;
-- Build ;
-- Édition sélectionnée.
-
-Ces informations sont découvertes ou sélectionnées au moment du Build et ne sont pas figées dans le moteur.
 
 ---
 
 # Build
 
-Informations relatives au build courant.
+Le dossier :
 
-Exemples :
+```text
+Build\
+```
 
-- Build ID ;
-- mode interactif ;
-- génération ISO ;
-- génération du rapport ;
-- mode DryRun.
+contient les scripts utilisés pour lancer et orchestrer le processus de Build.
 
----
+Le lanceur principal est :
 
-# BuildState
+```text
+Build\Build-PimsOS.ps1
+```
 
-Le BuildState représente l'état courant du pipeline.
+Le Build prépare notamment :
 
-Il est mis à jour par chaque étape du Build.
-
-Il contient notamment :
-
-- état du Recovery ;
-- état des vérifications ;
-- état du Pipeline ;
-- état des images montées ;
-- état de la configuration ;
-- état global du Build.
+- l'environnement ;
+- les ressources ISO et WIM ;
+- les drivers ;
+- le runtime PostInstall ;
+- FirstBoot ;
+- la configuration ;
+- les personnalisations ;
+- le nettoyage ;
+- la finalisation.
 
 ---
 
 # Configuration
 
-Contient la configuration fusionnée prête à être exécutée.
+La configuration du Builder se trouve dans :
 
-Elle est construite à partir :
+```text
+Config\
+```
 
-- des fichiers JSON ;
-- des catégories ;
-- du profil sélectionné.
+Elle contient notamment :
+
+```text
+Categories.json
+Profiles\
+Tweaks\
+```
+
+Les profils sélectionnent les personnalisations et les Tweaks définissent les Actions à exécuter.
+
+La configuration reste séparée du code PowerShell.
 
 ---
 
-# ConfigurationProfile
+# Documentation
 
-Nom du profil actuellement utilisé.
+La documentation technique se trouve dans :
 
-Exemples :
+```text
+Documentation\
+```
 
-- Default ;
-- Gaming ;
-- Privacy ;
-- Minimal ;
-- Workstation ;
-- Tests\Registry.
+Elle comprend notamment :
+
+```text
+API.md
+Architecture.md
+ArchitectureRules.md
+BuildContext.md
+DeveloperGuide.md
+GettingStarted.md
+Legacy.md
+Lifecycle.md
+Milestones.md
+ModuleGuide.md
+PostInstall.md
+Prerequisites.md
+ProjectStatus.md
+ProjectStructure.md
+ReleaseNotes.md
+Roadmap.md
+Schema.md
+TechnicalDecisions.md
+Testing.md
+```
+
+Les décisions d'architecture sont documentées dans :
+
+```text
+Documentation\ADR\
+```
 
 ---
 
 # ISO
 
-Informations concernant l'image ISO montée.
+Le dossier :
+
+```text
+ISO\
+```
+
+contient les ressources et éléments nécessaires aux opérations liées aux médias Windows et à la génération de l'image.
 
 ---
 
-# WIM
+# Logs
 
-Informations relatives au fichier install.wim.
+Le dossier :
 
-Exemples :
+```text
+Logs\
+```
 
-- nom ;
-- taille ;
-- images disponibles ;
-- chemin ;
-- montage.
+contient les journaux générés pendant les opérations du Builder.
 
 ---
 
-# Image
+# Output
 
-Informations sur l'édition Windows sélectionnée.
+Le dossier :
 
-Exemples :
+```text
+Output\
+```
 
-- Index ;
-- Nom ;
-- Description ;
-- Taille ;
-- État de modification.
-
-Le Builder permet désormais de sélectionner dynamiquement l'édition Windows présente dans le WIM.
-
-Il n'est plus limité à une version spécifique de Windows.
+est destiné aux artefacts produits par le Build.
 
 ---
 
 # Workspace
 
-Répertoires temporaires utilisés pendant le Build.
+Le dossier :
 
-Exemples :
+```text
+Workspace\
+```
 
-- Sources ;
-- Mount ;
-- ISO ;
-- Output ;
-- Temp ;
-- Extract.
+contient les ressources de travail temporaires utilisées pendant les opérations du Builder.
 
----
+Il peut notamment contenir :
 
-# Registry
-
-Informations concernant les ruches Windows actuellement montées.
+- les copies de travail ;
+- les montages WIM ;
+- les fichiers temporaires ;
+- les ressources intermédiaires.
 
 ---
 
 # Packages
 
-Liste des packages à installer.
-
-Les packages sont indépendants du gestionnaire utilisé.
-
-Le choix entre Chocolatey, Winget ou un autre fournisseur est réalisé par les Managers.
-
----
-
-# Drivers
-
-Liste des pilotes à intégrer.
-
----
-
-# Tweaks
-
-Liste des Tweaks sélectionnés après fusion du profil.
-
-Chaque Tweak contient :
-
-- son état ;
-- ses métadonnées ;
-- ses Actions ;
-- son résultat d'exécution ;
-- ses statistiques.
-
----
-
-# Services
-
-Liste des services Windows manipulés pendant le Build.
-
----
-
-# Features
-
-Liste des fonctionnalités Windows à installer ou supprimer.
-
----
-
-# PostInstall
-
-Le BuildContext conserve les informations nécessaires à la préparation du runtime **PostInstall** lorsque celles-ci sont partagées avec les composants du Build.
-
-La préparation du PostInstall intervient dans le pipeline après l'application des drivers et avant les étapes suivantes de préparation de l'image.
-
-Le runtime PostInstall est installé dans l'image Windows sous :
+Le dossier :
 
 ```text
-C:\ProgramData\PimsOS\PostInstall\
+Packages\
 ```
 
-Les composants préparés comprennent notamment :
+contient les ressources liées aux packages ou aux fournisseurs utilisés par le projet.
+
+---
+
+# Classes
+
+Le dossier historique :
 
 ```text
-Bootstrap.ps1
-Network.ps1
-UI.ps1
-PostInstall.ps1
-State.ps1
+Classes\
 ```
 
-La configuration FirstBoot et `unattend.xml` permettent ensuite de déclencher le Bootstrap lors du premier démarrage de Windows.
+n'est plus utilisé comme couche de classes métier du Builder.
 
-Le BuildContext ne contient pas la logique d'exécution du PostInstall. Il transporte uniquement les informations nécessaires aux composants du Build.
-
----
-
-# Report
-
-Contient le rapport d'exécution.
-
-Il est enrichi tout au long du pipeline.
-
-Il regroupe :
-
-- les phases ;
-- les erreurs ;
-- les avertissements ;
-- les informations ;
-- les résultats finaux.
+Les composants actifs suivent désormais l'architecture modulaire du framework.
 
 ---
 
-# Logger
+# Legacy
 
-Informations utilisées par le système de journalisation.
+Les composants historiques peuvent être conservés dans :
 
-Exemples :
+```text
+Tools\
+Tests\Legacy\
+```
 
-- état ;
-- fichier courant ;
-- activation.
+Ils ne sont pas chargés par :
 
----
+```text
+Modules\PimsOS.psm1
+```
 
-# Statistics
+et ne participent pas au fonctionnement normal du Builder.
 
-Le BuildContext centralise également toutes les statistiques du Build.
-
-Exemples :
-
-- ActionsProcessed ;
-- PackagesProcessed ;
-- DriversProcessed ;
-- FeaturesProcessed ;
-- CapabilitiesProcessed ;
-- CommandsProcessed ;
-- FilesProcessed ;
-- FoldersProcessed ;
-- EnvironmentVariablesProcessed ;
-- ScheduledTasksProcessed ;
-- ShortcutsProcessed ;
-- ServicesProcessed ;
-- RegistryActionsProcessed ;
-- TweaksApplied ;
-- Errors ;
-- Warnings.
-
-Ces statistiques sont mises à jour automatiquement par les différents Engines.
+Aucune nouvelle fonctionnalité ne doit être développée dans ces emplacements.
 
 ---
 
-# Principes de conception
+# Point d'entrée
 
-Le BuildContext respecte les principes suivants :
+Le point d'entrée du framework est :
 
-- créé une seule fois ;
-- enrichi progressivement ;
-- jamais remplacé ;
-- jamais cloné ;
-- transmis à tous les composants ;
-- aucune logique métier ;
-- aucune variable globale.
+```text
+Modules\PimsOS.psm1
+```
+
+L'API publique est centralisée dans ce module.
+
+La fonction publique principale actuellement définie est :
+
+```powershell
+Initialize-PimsOS
+```
 
 ---
 
-# Évolutions
+# Principe général
 
-Toute nouvelle fonctionnalité du Builder doit être intégrée au BuildContext uniquement si elle représente un état partagé entre plusieurs composants.
+L'organisation du projet doit préserver la séparation entre :
 
-Le BuildContext constitue le contrat officiel entre tous les modules du framework.
+```text
+Configuration
+    ↓
+Framework
+    ↓
+Build
+    ↓
+Runtime PostInstall
+    ↓
+Windows installé
+```
 
-Toute évolution de sa structure doit être accompagnée :
+Le Build prépare l'image.
 
-- d'une mise à jour de cette documentation ;
-- d'une mise à jour de l'ADR correspondante lorsque nécessaire.
+Le runtime PostInstall s'exécute ensuite dans Windows installé.
+
+Cette séparation permet de maintenir une architecture claire, testable et évolutive.
+
+---
+
+# Références
+
+Consulter également :
+
+- `Architecture.md`
+- `ArchitectureRules.md`
+- `BuildContext.md`
+- `DeveloperGuide.md`
+- `ModuleGuide.md`
+- `PostInstall.md`
+- `Testing.md`
+- `Legacy.md`

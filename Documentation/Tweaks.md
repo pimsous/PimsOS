@@ -173,3 +173,105 @@ Tout nouveau Tweak doit être accompagné de :
 Un Tweak ne doit pas être ajouté uniquement parce qu'une commande trouvée sur
 Internet fonctionne : sa méthode d'application et son comportement Windows
 doivent être suffisamment fiables pour être intégrés au Builder.
+
+# PimsOS Builder — Catalogue des Tweaks
+
+> Version technique : **3.0.0**
+>
+> Etat au 01/09/2026 : **27 Tweaks chargés**
+
+## Contrat
+
+Chaque Tweak est défini par JSON et peut contenir une ou plusieurs Actions.
+Le catalogue fournit notamment :
+
+- identifiant ;
+- nom ;
+- catégorie ;
+- description ;
+- risque ;
+- réversibilité ;
+- redémarrage ;
+- état par défaut ;
+- Actions.
+
+Les JSON vides sont des placeholders et sont ignorés.
+
+## Catalogue fonctionnel actuel
+
+Le catalogue réel doit être considéré comme la source de vérité dans
+`Tweaks\`. La dernière validation d'architecture confirme :
+
+```text
+27 Tweaks chargés
+Actions valides
+0 erreur d'architecture
+```
+
+Les principales familles actuellement présentes sont :
+
+- Applications
+- Edge
+- Explorer
+- Gaming
+- OneDrive
+- Privacy
+- Search
+- Services
+- Start
+- Widgets
+- Windows
+- WindowsAI
+- WindowsUpdate
+
+## Tweaks explicitement validés dans la documentation récente
+
+- `Applications.DisableSuggestedApps`
+- `Edge.DisableBackgroundMode`
+- `Edge.DisableStartupBoost`
+- `Edge.HideFirstRunExperience`
+- `Explorer.ShowFileExtensions`
+- `Explorer.ShowHiddenFiles`
+- `Explorer.ShowProtectedSystemFiles`
+- `Explorer.ShowSecondsInSystemClock`
+- `Xbox.DisableGameBar`
+- `OneDrive.DisableSync`
+- `Privacy.DisableActivityHistory`
+- `Privacy.DisableAdvertisingId`
+- `Privacy.DisableSuggestions`
+- `Privacy.DisableTailoredExperiences`
+- `Privacy.DisableThirdPartySpotlightSuggestions`
+- `Services.DisableSysMain`
+- `Search.DisableSearchHighlights`
+- `Start.HideRecommendedPersonalizedSites`
+- `Start.HideRecommendedSection`
+- `Widgets.DisableTaskbarWidgets`
+- `Windows.EnableNumLock`
+- `Windows.DisableWindowsTips`
+- `WindowsAI.DisableRecall`
+- `WindowsAI.DisableRecallSnapshots`
+- `WindowsUpdate.DisableAutoRestart`
+
+Le nombre total validé est supérieur à cette liste documentée si le catalogue
+contient d'autres définitions ; ne pas inventer leur description ici.
+Le JSON sous `Tweaks\` reste la source de vérité.
+
+## Point important — fichiers cachés
+
+`Explorer.ShowHiddenFiles` affiche les éléments ayant l'attribut Caché.
+
+Il ne signifie pas que les fichiers système protégés deviennent visibles.
+
+`Explorer.ShowProtectedSystemFiles` est distinct et permet d'afficher les
+fichiers protégés par les attributs Système + Caché. Il doit rester séparé
+car il expose des fichiers que Windows masque normalement.
+
+Exemples possibles : `pagefile.sys`, `swapfile.sys` et certains
+`desktop.ini`.
+
+## Prochain travail
+
+- Auditer les 27 définitions une par une.
+- Vérifier leurs Actions réelles.
+- Documenter précisément effet, risque, réversibilité et redémarrage.
+- Enrichir le catalogue uniquement avec des Tweaks utiles et vérifiés.

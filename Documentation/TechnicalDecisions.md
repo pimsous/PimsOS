@@ -1,670 +1,634 @@
-# PimsOS Builder - Décisions techniques
+# PimsOS Builder - Feuille de route
 
-> Version : 3.0.0
+> Version technique : 3.0.0
 >
-> Statut : Référence
+> Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
+
+> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+
 
 # Objectif
 
-Ce document recense les principales décisions techniques prises au cours du développement de **PimsOS Builder**.
+Cette feuille de route présente les grandes orientations du projet **PimsOS Builder**.
 
-Contrairement aux **Architecture Decision Records (ADR)**, ces décisions concernent exclusivement les choix d'implémentation, les conventions de développement et les bonnes pratiques PowerShell.
+Elle décrit les évolutions prévues pour le framework, le moteur de Build et les fonctionnalités permettant de construire des images Windows personnalisées.
 
-Les décisions ayant un impact sur l'architecture générale du projet sont documentées dans le dossier **Documentation/ADR**.
+Elle présente les objectifs à moyen et long terme sans remplacer le backlog technique détaillé.
 
----
-
-# Principes
-
-Les décisions documentées dans ce fichier doivent :
-
-- concerner uniquement l'implémentation ;
-- ne pas modifier l'architecture du projet ;
-- être datées ;
-- expliquer le contexte ;
-- justifier le choix retenu ;
-- préciser les composants concernés.
-
-Toute décision ayant un impact sur l'architecture doit faire l'objet d'une ADR.
+Les évolutions importantes de l'architecture sont documentées dans les **Architecture Decision Records (ADR)**.
 
 ---
 
-# Historique
+# Vision
 
-## 2026-07-21
+PimsOS Builder a pour objectif de devenir un framework capable de construire automatiquement des images Windows personnalisées à partir d'images compatibles.
 
-### Normalisation des collections PowerShell
+Le moteur doit rester indépendant d'une version spécifique de Windows et pouvoir évoluer avec les versions compatibles avec les mécanismes de déploiement utilisés.
 
-#### Contexte
+Le projet repose notamment sur les principes suivants :
 
-Certaines fonctions PowerShell peuvent retourner :
+* modularité ;
+* automatisation ;
+* reproductibilité ;
+* maintenabilité ;
+* testabilité ;
+* séparation claire des responsabilités.
 
-- aucun objet ;
-- un objet ;
-- plusieurs objets.
-
-Lorsqu'un seul objet est retourné, la propriété `.Count` n'est plus disponible.
-
-#### Décision
-
-Toutes les collections manipulées avec `.Count` sont systématiquement encapsulées avec :
-
-```powershell
-@(...)
-```
-
-Cette règle garantit un comportement identique quel que soit le nombre d'éléments retournés.
-
-#### Composants concernés
-
-- Backup
+À terme, la création d'une image PimsOS complète doit pouvoir être réalisée à partir d'un processus de Build automatisé et reproductible.
 
 ---
 
-## 2026-07-21
-
-### Génération des identifiants de session
-
-#### Contexte
-
-Deux sauvegardes créées durant la même seconde pouvaient produire un identifiant identique.
-
-#### Décision
-
-Le format retenu est :
-
-```powershell
-Get-Date -Format "yyyy-MM-dd_HH-mm-ss-fff"
-```
-
-L'ajout des millisecondes garantit l'unicité.
-
-#### Composants concernés
-
-- Backup
-
----
-
-## 2026-07-23
-
-### Tests Pester sur les collections vides
-
-#### Contexte
-
-Une collection correctement initialisée mais vide provoquait des faux positifs avec :
-
-```powershell
-$Collection | Should -Not -BeNull
-```
-
-#### Décision
-
-Les collections sont désormais validées explicitement :
-
-```powershell
-($null -eq $Collection) | Should -BeFalse
-$Collection.Count | Should -Be 0
-```
-
-Cette règle est utilisée dans l'ensemble des nouveaux tests.
-
-#### Composants concernés
-
-- Migration
-
----
-
-## 2026-07-24
-
-### Abandon des classes PowerShell
-
-#### Contexte
-
-Les premières versions utilisaient plusieurs classes PowerShell.
-
-Les tests ont montré qu'elles compliquaient :
-
-- le rechargement des modules ;
-- les tests Pester ;
-- le développement itératif ;
-- le chargement dynamique.
-
-#### Décision
-
-Les classes métier sont remplacées par des `PSCustomObject` créés par des fonctions constructeur (`New-*`).
-
-Cette approche simplifie considérablement le développement et les tests.
-
-#### Composants concernés
-
-- Migration
-
----
-
-## 2026-07-25
-
-### Contrat commun des objets métier
-
-#### Contexte
-
-L'abandon des classes supprimait la possibilité d'utiliser :
-
-```powershell
-Should -BeOfType
-```
-
-#### Décision
-
-Tous les objets métier possèdent désormais une propriété :
-
-```text
-ObjectType
-```
-
-Cette propriété constitue le contrat d'identification commun à tous les objets du projet.
-
-#### Composants concernés
-
-- Ensemble du projet
-
----
-
-## 2026-07-26
-
-### Recovery centralisé
-
-#### Contexte
-
-Le Builder devait être capable de reprendre un build interrompu.
-
-Un simple indicateur de reprise ne permettait pas de distinguer :
-
-- un montage existant ;
-- un montage réellement exploitable.
-
-#### Décision
-
-La préparation de l'environnement est confiée au composant **Recovery**.
-
-La validation d'un montage WIM est centralisée dans :
-
-```powershell
-Test-WimMountState()
-```
-
-Le Pipeline ne prend jamais lui-même la décision de réutiliser un montage.
-
-#### Évolutions
-
-Recovery assure désormais :
-
-- la détection des montages DISM ;
-- la validation des montages ;
-- le démontage des montages invalides ;
-- le nettoyage du Workspace ;
-- la préparation de l'environnement.
-
-#### Composants concernés
-
-- Recovery
-- Pipeline
-- WIM
-- Registry
-
----
-
-## 2026-08-02
-
-### Introduction du BuildState
-
-#### Contexte
-
-Le BuildContext regroupait progressivement :
-
-- les informations du projet ;
-- les paramètres du build ;
-- l'état d'avancement du moteur.
-
-Cette approche mélangeait les données permanentes et l'état d'exécution.
-
-#### Décision
-
-Un objet dédié :
-
-```text
-BuildState
-```
-
-est introduit afin de centraliser exclusivement l'état du moteur.
-
-Le BuildContext conserve les données du projet tandis que BuildState décrit l'exécution du Builder.
-
-Le BuildState regroupe notamment :
-
-- l'initialisation ;
-- le Recovery ;
-- les vérifications de l'environnement ;
-- la progression du Pipeline ;
-- l'état des montages ;
-- le chargement de la configuration ;
-- l'application des personnalisations.
-
-Cette séparation simplifie le développement, les tests et le suivi d'exécution.
-
-#### Composants concernés
-
-- BuildContext
-- Pipeline
-- Recovery
-- Engine
-
----
-
-## 2026-08-02
-
-### Séparation des métadonnées du projet
-
-#### Contexte
-
-Les informations du projet étaient réparties entre plusieurs fichiers.
-
-Certaines étaient codées en dur.
-
-#### Décision
-
-Toutes les métadonnées sont désormais centralisées dans :
-
-```text
-version.json
-```
-
-Le Builder charge automatiquement :
-
-- le nom du projet ;
-- la version ;
-- la version de Windows cible ;
-- le numéro de build ;
-- l'auteur ;
-- la société ;
-- le dépôt Git.
-
-Le code ne contient plus ces informations en dur.
-
-#### Composants concernés
-
-- BuildContext
-- Configuration
-
----
-
-## 2026-08-03
-
-### Support de plusieurs versions de Windows
-
-#### Contexte
-
-Le projet ne doit pas être limité à une unique version de Windows.
-
-À terme, il devra être capable de personnaliser plusieurs versions officielles de Windows.
-
-#### Décision
-
-La version cible de Windows est désormais décrite dans le BuildContext sous la forme :
-
-```text
-Project.Windows.Release
-Project.Windows.Build
-```
-
-Le moteur de build sélectionne automatiquement les personnalisations compatibles selon la version choisie.
-
-Les Tweaks pourront déclarer les versions Windows qu'ils supportent.
-
-Cette architecture prépare le support de plusieurs versions de Windows sans modifier le moteur.
-
-#### Composants concernés
-
-- BuildContext
-- Configuration
-- Profiles
-- Tweaks
-- Engine
-
----
-
-## 2026-08-03
-
-### Configuration pilotée par les profils
-
-#### Contexte
-
-Le moteur devait permettre à un utilisateur de choisir les personnalisations à appliquer sans modifier les fichiers de définition.
-
-#### Décision
-
-Les définitions de Tweaks constituent désormais un catalogue de fonctionnalités.
-
-Les profils déterminent quelles personnalisations sont activées.
-
-Le moteur construit ensuite une configuration finale fusionnée.
-
-Les objets de configuration sont indépendants des définitions originales afin de préserver leur intégrité.
-
-#### Composants concernés
-
-- Profiles
-- Configuration
-- Tweaks
-- Engine
-
----
-
-## 2026-08-16
-
-### Stabilisation des Engines spécialisés
-
-#### Contexte
-
-Les différents types d'Actions nécessitaient des Engines dédiés afin d'éviter de concentrer toute la logique dans l'ActionEngine principal.
-
-#### Décision
-
-Chaque type d'Action important possède désormais un Engine spécialisé.
-
-Les Engines suivent un contrat commun :
-
-```text
-Context + Action
-        ↓
-traitement
-        ↓
-Context
-```
-
-Les Engines assurent la logique métier de leur domaine et délèguent les opérations techniques aux Managers.
-
-#### Composants concernés
-
-- ActionEngine
-- ActionRegistry
-- RegistryEngine
-- ServiceEngine
-- PackageEngine
-- DriverEngine
-- FeatureEngine
-- CapabilityEngine
-- CommandEngine
-- FileEngine
-- FolderEngine
-- EnvironmentEngine
-- ScheduledTaskEngine
-- ShortcutEngine
-
----
-
-## 2026-08-16
-
-### Standardisation du cycle de vie des Actions
-
-#### Contexte
-
-Les Engines spécialisés devaient avoir un comportement homogène concernant l'état d'une Action et l'état du Build.
-
-#### Décision
-
-Les Engines spécialisés suivent désormais un cycle de traitement commun :
-
-```text
-Application
-    │
-    ▼
-Traitement
-    │
-    ▼
-Succès
-```
-
-En cas d'erreur :
-
-```text
-Application
-    │
-    ▼
-Erreur
-    │
-    ▼
-Échec
-```
-
-Lorsque les propriétés correspondantes existent sur l'Action, le traitement met également à jour :
-
-- `Success`
-- `Duration`
-- `Error`
-
-Les statistiques correspondantes sont mises à jour lorsque le compteur existe dans le BuildContext.
-
-#### Composants concernés
-
-- ActionEngine
-- RegistryEngine
-- ServiceEngine
-- PackageEngine
-- DriverEngine
-- FeatureEngine
-- CapabilityEngine
-- CommandEngine
-- FileEngine
-- FolderEngine
-- EnvironmentEngine
-- ScheduledTaskEngine
-- ShortcutEngine
-
----
-
-## 2026-08-16
-
-### Standardisation des providers des Managers
-
-#### Contexte
-
-Les Managers doivent pouvoir sélectionner un fournisseur technique sans intégrer directement toute la logique d'exécution dans leur propre implémentation.
-
-#### Décision
-
-Les Managers utilisent une table de correspondance permettant d'associer :
-
-```text
-Provider
-    │
-    ▼
-Handler
-```
-
-Le traitement d'un provider suit le principe :
-
-1. validation du provider ;
-2. validation des paramètres nécessaires ;
-3. résolution du handler ;
-4. vérification de l'existence du handler ;
-5. exécution du handler ;
-6. retour du BuildContext.
-
-Les Managers qui le prévoient peuvent également enregistrer et réinitialiser leurs providers.
-
-#### Composants concernés
-
-- CapabilityManager
-- CommandManager
-- DriverManager
-- EnvironmentManager
-- FeatureManager
-- FileManager
-- FolderManager
-- PackageManager
-- ScheduledTaskManager
-- ShortcutManager
-
----
-
-## 2026-08-16
-
-### Correction de l'utilisation des dictionnaires ordonnés PowerShell
-
-#### Contexte
-
-Les tests des Managers ont révélé une incompatibilité entre certaines tables de providers définies comme dictionnaires ordonnés et l'utilisation de :
-
-```powershell
-.ContainsKey()
-```
-
-Un `OrderedDictionary` ne fournit pas cette méthode sous la forme utilisée dans l'implémentation initiale.
-
-#### Décision
-
-Les recherches de providers doivent utiliser une méthode compatible avec le type réel de collection utilisé.
-
-Cette règle est protégée par les tests unitaires des Managers concernés.
-
-#### Composants concernés
-
-- CommandManager
-- EnvironmentManager
-- FileManager
-- FolderManager
-- ScheduledTaskManager
-- ShortcutManager
-
----
-
-## 2026-08-16
-
-### API publique minimale
-
-#### Contexte
-
-Le module PimsOS contient de nombreux composants internes qui ne doivent pas automatiquement devenir des éléments de l'API publique.
-
-#### Décision
-
-L'API publique reste volontairement minimale.
-
-La fonction actuellement exportée est :
-
-```powershell
+# État actuel
+
+## Architecture
+
+✅ **Stabilisée**
+
+L'architecture 3.0.0 repose notamment sur :
+
+* un module PowerShell unique ;
+* un BuildContext centralisé ;
+* un BuildState ;
+* un Workflow ;
+* un Pipeline ;
+* un ActionRegistry ;
+* un ActionEngine ;
+* des Engines spécialisés ;
+* des Managers spécialisés ;
+* des composants techniques organisés par domaine ;
+* une configuration pilotée par les données ;
+* une API publique centralisée ;
+* une couverture Pester importante.
+
+Le point d'entrée public principal est :
+
+```text id="v6d0zp"
 Initialize-PimsOS
 ```
 
-Les Engines, Managers, composants Core, Configuration, Infrastructure, Image et Windows restent internes au module :
+---
 
-```text
-PimsOS.psm1
+## Développement
+
+🚧 **En cours**
+
+Les principales fondations du framework sont maintenant en place :
+
+* Recovery ;
+* vérification de l'environnement ;
+* vérification des prérequis ;
+* gestion des ISO ;
+* gestion des WIM ;
+* sélection des images Windows ;
+* gestion des ruches du registre ;
+* chargement des catégories ;
+* chargement des Tweaks ;
+* chargement des profils ;
+* fusion de la configuration ;
+* validation ;
+* routage des Actions ;
+* Engines spécialisés ;
+* Managers spécialisés ;
+* Wizard ;
+* configuration des drivers ;
+* préparation PostInstall ;
+* préparation FirstBoot ;
+* reporting ;
+* nettoyage et finalisation du Build.
+
+Le Build réel de bout en bout est désormais démontré. Le développement se concentre sur la validation de l’artefact ISO, la stabilisation des providers de packages (notamment Chocolatey), la qualité CI et les scénarios réels FirstBoot/PostInstall.
+
+---
+
+# Phases du projet
+
+## Phase 1 — Fondations
+
+### Objectifs
+
+* [x] Définir l'architecture générale.
+* [x] Mettre en place la documentation.
+* [x] Définir les conventions de développement.
+* [x] Mettre en place les ADR.
+* [x] Construire les premiers composants techniques.
+* [x] Définir le BuildContext.
+* [x] Définir le BuildState.
+
+### Statut
+
+✅ **Terminée**
+
+---
+
+## Phase 2 — Module PowerShell unique
+
+### Objectifs
+
+* [x] Créer `PimsOS.psm1`.
+* [x] Créer `PimsOS.psd1`.
+* [x] Centraliser le chargement des composants.
+* [x] Centraliser l'API publique.
+* [x] Introduire `Initialize-PimsOS`.
+* [x] Supprimer le modèle à plusieurs modules indépendants.
+* [x] Valider le module PowerShell unique.
+* [x] Valider l'exposition de l'API publique.
+
+### Statut
+
+✅ **Terminée**
+
+---
+
+## Phase 3 — Framework de Build
+
+### Objectifs
+
+* [x] Finaliser le BuildContext.
+* [x] Développer le BuildState.
+* [x] Développer le Pipeline.
+* [x] Développer le Workflow.
+* [x] Mettre en place Recovery.
+* [x] Vérifier les prérequis de l'environnement.
+* [x] Gérer les images WIM.
+* [x] Gérer les ISO.
+* [x] Détecter les images Windows.
+* [x] Permettre la sélection de l'image à personnaliser.
+* [x] Gérer les ruches du registre.
+* [x] Charger les définitions de Tweaks.
+* [x] Charger les profils.
+* [x] Fusionner profils et Tweaks.
+* [x] Valider la configuration.
+* [x] Mettre en place ActionRegistry.
+* [x] Mettre en place ActionEngine.
+* [x] Développer les Engines spécialisés.
+* [x] Développer les Managers spécialisés.
+* [x] Intégrer le Wizard.
+* [x] Intégrer la configuration des drivers.
+* [x] Intégrer la préparation PostInstall au pipeline.
+
+### Statut
+
+✅ **Stabilisée**
+
+Le moteur d'orchestration est suffisamment structuré et testé pour poursuivre la finalisation de la production d'image.
+
+---
+
+## Phase 4 — Génération d'images Windows
+
+### Objectifs
+
+* [x] Préparer les images ISO.
+* [x] Manipuler les images WIM.
+* [x] Effectuer les opérations DISM nécessaires.
+* [x] Préparer les drivers dans le pipeline.
+* [x] Préparer le runtime PostInstall dans le WIM.
+* [x] Générer `unattend.xml`.
+* [ ] Finaliser la génération automatique de l'ISO.
+* [ ] Valider automatiquement l'ISO générée.
+* [ ] Valider un Build complet de bout en bout.
+* [ ] Améliorer la gestion des erreurs de production.
+* [ ] Optimiser les performances.
+* [ ] Valider l'artefact ISO final.
+
+### Statut
+
+🟡 **En cours**
+
+---
+
+## Phase 5 — Personnalisation
+
+### Objectifs
+
+* [x] Profils.
+* [x] Tweaks.
+* [x] Catégories.
+* [x] RegistryEngine.
+* [x] ServiceEngine.
+* [x] FeatureEngine.
+* [x] CapabilityEngine.
+* [x] PackageEngine.
+* [x] DriverEngine.
+* [x] FileEngine.
+* [x] FolderEngine.
+* [x] EnvironmentEngine.
+* [x] ScheduledTaskEngine.
+* [x] ShortcutEngine.
+* [x] PackageManager.
+* [x] DriverManager.
+* [x] Managers spécialisés.
+* [ ] Implémenter le provider Chocolatey.
+* [ ] Implémenter le provider Winget.
+* [ ] Intégrer Microsoft Store.
+* [ ] Compléter les fonctionnalités de personnalisation restantes.
+
+### Statut
+
+🟡 **En cours**
+
+---
+
+## Phase 6 — PostInstall / FirstBoot
+
+### Objectifs
+
+* [x] Implémenter State.
+* [x] Implémenter Network.
+* [x] Implémenter le moteur PostInstall.
+* [x] Implémenter Bootstrap.
+* [x] Implémenter FirstBoot.
+* [x] Implémenter Unattend.
+* [x] Implémenter Installer.
+* [x] Implémenter UI PostInstall.
+* [x] Intégrer `PreparePostInstall` au BuildPipeline.
+* [x] Valider l'injection du runtime dans un WIM temporaire.
+* [x] Valider la génération de `unattend.xml`.
+* [x] Valider le namespace `urn:schemas-microsoft-com:unattend`.
+* [x] Valider `wcm:action="add"`.
+* [x] Valider la commande vers `Bootstrap.ps1`.
+* [x] Ajouter l'affichage réseau du premier démarrage.
+* [x] Ajouter l'attente réseau avec interface console.
+* [ ] Valider l'exécution réelle de `FirstLogonCommands`.
+* [ ] Valider le premier démarrage réel de Windows.
+* [ ] Valider la reprise réseau réelle.
+* [ ] Intégrer Chocolatey.
+* [ ] Intégrer Winget.
+* [ ] Intégrer Microsoft Store.
+
+### Statut
+
+🟡 **Implémenté et testé — validation réelle FirstBoot restante**
+
+Le sous-système PostInstall est fonctionnel au niveau de la préparation et de l'intégration au Build.
+
+La validation du comportement réel lors de la première connexion Windows reste à effectuer.
+
+---
+
+## Phase 7 — Stabilisation et qualité
+
+### Objectifs
+
+* [x] Mettre en place Pester 5.x.
+* [x] Mettre en place une couverture importante des composants.
+* [x] Tester les Engines spécialisés.
+* [x] Tester les Managers.
+* [x] Tester Configuration.
+* [x] Tester Registry.
+* [x] Tester Workflow et composants Core.
+* [x] Tester Wizard.
+* [x] Tester les drivers.
+* [x] Tester PostInstall.
+* [x] Tester FirstBoot.
+* [x] Tester Network.
+* [x] Tester l'intégration du BuildPipeline.
+* [x] Séparer les tests officiels des tests Legacy.
+* [ ] Compléter les tests Recovery.
+* [ ] Compléter les tests Security.
+* [ ] Étendre les tests d'intégration.
+* [ ] Valider les Builds complets.
+* [ ] Finaliser la documentation technique.
+
+### Résultat actuel
+
+La dernière campagne officielle de tests donne :
+
+```text id="fny8oe"
+971 Passed (historical — 31/08/2026)
+0 Failed
+1 Skipped
+0 Inconclusive
+0 NotRun
 ```
 
-Cette séparation permet de faire évoluer l'implémentation interne sans créer de contrat public pour chaque fonction interne.
+Le seul test ignoré est conditionnel et concerne le cas d'une catégorie sans groupes alors que toutes les catégories actuellement définies possèdent des groupes.
 
-#### Composants concernés
+Les tests historiques présents dans :
 
-- PimsOS.psd1
-- PimsOS.psm1
-- API publique
-- Core
-- Configuration
-- Engines
-- Managers
-
----
-
-## 2026-08-16
-
-### Couverture de tests des Engines et Managers
-
-#### Contexte
-
-La stabilisation des Engines et Managers nécessitait une validation homogène de leurs contrats et de leurs comportements.
-
-#### Décision
-
-Les composants importants doivent disposer de tests unitaires couvrant notamment :
-
-- le fonctionnement nominal ;
-- les paramètres obligatoires ;
-- les erreurs attendues ;
-- les changements d'état ;
-- les statistiques lorsqu'elles sont concernées ;
-- la propagation des erreurs ;
-- la transmission du contexte et de l'Action.
-
-Les dépendances techniques peuvent être simulées lorsque l'exécution réelle n'est pas nécessaire au test du contrat.
-
-#### Composants concernés
-
-- Engines spécialisés
-- Managers
-- Configuration
-- Registry
-- Core
-
----
-
-# Références
-
-- `Architecture.md`
-- `ArchitectureRules.md`
-- `BuildContext.md`
-- `CodingStandards.md`
-- `Lifecycle.md`
-- `Documentation/ADR/`
-
----
-
-# Conclusion
-
-Ce document constitue la mémoire des principaux choix d'implémentation réalisés au cours du développement de **PimsOS Builder**.
-
-Il complète les ADR en documentant les décisions techniques qui influencent le développement quotidien du projet, sans modifier son architecture.
-
----
-
-## PostInstall
-
-Le sous-système PostInstall constitue une phase d'exécution distincte du Build.
-
-Le Build prépare les composants nécessaires dans l'image Windows, tandis que le runtime PostInstall exécute les opérations après l'installation du système.
-
-Le runtime utilise notamment :
-
-```text
-C:\ProgramData\PimsOS\PostInstall\
+```text id="pydg7a"
+Tests\Legacy
 ```
 
-Les composants du runtime comprennent notamment :
+sont conservés séparément et ne font pas partie de la campagne officielle.
 
-```text
+### Statut
+
+🟡 **En cours**
+
+---
+
+## Phase 8 — Première version stable
+
+### Objectifs
+
+* [ ] Pipeline validé de bout en bout.
+* [ ] Génération ISO stable.
+* [ ] Composants nécessaires finalisés.
+* [ ] PostInstall validé sur un environnement Windows réel.
+* [ ] FirstBoot validé.
+* [ ] Tests validés.
+* [ ] Documentation synchronisée.
+* [ ] API publique stabilisée.
+* [ ] Build reproductible.
+* [ ] Absence d'anomalie bloquante.
+* [ ] Artefact ISO final validé.
+* [ ] Publication d'une première version stable.
+
+### Statut
+
+⏳ **À venir**
+
+---
+
+# Composants restant à développer ou compléter
+
+Les principaux éléments identifiés sont :
+
+* finalisation de la génération ISO ;
+* validation complète du Build de bout en bout ;
+* validation réelle FirstBoot ;
+* validation de la reprise réseau réelle ;
+* `Converters.ps1` ;
+* provider Chocolatey ;
+* provider Winget ;
+* intégration Microsoft Store ;
+* couverture complémentaire de `Recovery.ps1` ;
+* couverture complémentaire de `Security.ps1` ;
+* enrichissement du Reporting ;
+* validation de l'artefact ISO final.
+
+---
+
+# Tests
+
+Les objectifs actuels sont :
+
+* maintenir la couverture des composants existants ;
+* compléter les tests des composants encore partiellement couverts ;
+* étendre les tests d'intégration ;
+* ajouter des tests de régression ;
+* automatiser progressivement l'exécution des tests ;
+* conserver une séparation stricte entre les tests actifs et les tests historiques.
+
+Les tests Pester constituent la base de validation du framework.
+
+## Campagne officielle
+
+La campagne officielle utilise :
+
+```text id="7kyx7n"
+Tests\Unit
+Tests\Integration
+```
+
+Les tests historiques sont conservés dans :
+
+```text id="j31c2d"
+Tests\Legacy
+```
+
+Ils ne sont pas inclus dans la campagne officielle.
+
+---
+
+# Documentation
+
+Les objectifs actuels sont :
+
+* maintenir la documentation synchronisée avec le code ;
+* documenter l'API publique ;
+* documenter l'architecture ;
+* maintenir les règles d'architecture ;
+* maintenir le statut du projet ;
+* maintenir le backlog et les jalons ;
+* maintenir la feuille de route ;
+* documenter les décisions architecturales dans les ADR ;
+* documenter le fonctionnement du PostInstall et de FirstBoot.
+
+---
+
+# Priorités actuelles
+
+## Priorité 1 — Génération ISO
+
+Finaliser la chaîne permettant de produire une ISO PimsOS complète.
+
+---
+
+## Priorité 2 — Validation de bout en bout
+
+Réaliser et valider un Build complet depuis l'ISO source jusqu'à
+l'artefact final.
+
+Cette validation doit notamment vérifier :
+
+* la préparation du WIM ;
+* l'application des Tweaks ;
+* l'application des drivers ;
+* la préparation PostInstall ;
+* la reconstruction de l'ISO ;
+* la génération de l'artefact final ;
+* la cohérence du résultat.
+
+---
+
+## Priorité 3 — Validation FirstBoot
+
+Valider le comportement réel de :
+
+```text id="cprqdr"
+unattend.xml
+    ↓
+FirstLogonCommands
+    ↓
 Bootstrap.ps1
-Network.ps1
-PostInstall.ps1
-State.ps1
-UI.ps1
+    ↓
+PostInstall
 ```
 
-`UI.ps1` fournit l'interface console du premier démarrage pour afficher l'état du réseau, fournir une aide à l'utilisateur et attendre la disponibilité réseau.
+Cette validation doit être effectuée sur un environnement Windows réel.
 
-Les états fonctionnels du runtime sont notamment :
+---
 
-```text
-Pending
-Running
-WaitingForNetwork
-Completed
-Failed
-```
+## Priorité 4 — Providers packages
 
-La vérification réseau distingue l'état de l'adaptateur, la connexion réseau et l'accès Internet.
+Implémenter les providers :
 
-La validation automatisée du sous-système PostInstall couvre également l'interface UI et l'attente réseau avec des tests Pester dédiés.
+* Chocolatey ;
+* Winget ;
+* Microsoft Store.
+
+---
+
+## Priorité 5 — Couverture et stabilité
+
+Compléter :
+
+* Recovery ;
+* Security ;
+* Reporting ;
+* tests d'intégration ;
+* tests de régression ;
+* validation des Builds complets.
+
+---
+
+## Priorité 6 — Documentation et release
+
+Maintenir la documentation synchronisée et préparer les conditions nécessaires à une première release stable.
+
+---
+
+# Prochain objectif technique
+
+Le prochain objectif technique majeur est la **finalisation de la chaîne de production de l'image PimsOS**.
+
+Les travaux prioritaires sont :
+
+1. finaliser le traitement du WIM ;
+2. finaliser la reconstruction de l'ISO ;
+3. valider le Build complet ;
+4. vérifier les artefacts générés ;
+5. valider le cycle FirstBoot réel ;
+6. compléter les rapports ;
+7. vérifier le nettoyage final ;
+8. documenter le processus de production.
+
+---
+
+# Hors périmètre actuel
+
+À ce stade, les éléments suivants ne constituent pas une priorité du développement :
+
+* interface graphique complète ;
+* support d'autres systèmes d'exploitation ;
+* déploiement distribué ;
+* versions de Windows incompatibles avec les mécanismes techniques utilisés par le Builder.
+
+Ces éléments pourront être réévalués ultérieurement.
+
+---
+
+# Suivi
+
+La feuille de route est revue à chaque jalon majeur.
+
+Les fonctionnalités terminées sont reportées dans :
+
+* `ReleaseNotes.md` ;
+* `Milestones.md` ;
+* `ProjectStatus.md`.
+
+Les évolutions architecturales importantes sont documentées dans les ADR.
+
+---
+
+# Documents associés
+
+* `Architecture.md`
+* `ArchitectureRules.md`
+* `ProjectStatus.md`
+* `ProjectStructure.md`
+* `Lifecycle.md`
+* `Milestones.md`
+* `ReleaseNotes.md`
+* `Testing.md`
+* `PostInstall.md`
+* `Prerequisites.md`
+* `Documentation\ADR\`
+
+# PimsOS Builder - Feuille de route
+
+> Version technique : **3.0.0**
+>
+> Dernière mise à jour : **2026-09-01**
+
+## Phase 1 — Fondations
+
+**Statut : ✅ Terminée**
+
+- Module PowerShell unique
+- BuildContext / BuildState
+- Workflow / Pipeline
+- ActionRegistry / ActionEngine
+- Configuration JSON
+- Profils
+- Tweaks
+- Engines / Managers
+- Tests Pester
+
+## Phase 2 — Chaîne de personnalisation
+
+**Statut : 🟢 Fonctionnelle**
+
+- Catalogue Tweaks
+- Wizard
+- Profils
+- Configuration Custom
+- Actions Registry et autres Engines
+- Drivers
+- PostInstall / FirstBoot
+
+## Phase 3 — Validation produit
+
+**Statut : 🟡 En cours**
+
+- Nouvelle ISO depuis le commit 3bbaf73
+- Hyper-V FirstBoot/PostInstall
+- application réelle des Tweaks
+- réseau / reprise
+- idempotence
+- validation Rufus / physique
+
+## Phase 4 — Providers
+
+**Statut : ⬜ A venir**
+
+Ordre recommandé :
+
+1. Chocolatey
+2. Winget
+3. Microsoft Store
+
+Les trois providers doivent respecter le contrat du PackageManager et rester
+séparés du moteur générique des Tweaks.
+
+## Phase 5 — Qualité et exploitation
+
+- Recovery
+- Security
+- Reporting
+- Converters
+- PSScriptAnalyzer
+- CI
+- rapports Pester
+
+## Phase 6 — Enrichissement
+
+- nouveaux Tweaks
+- nouveaux profils
+- documentation des effets et risques
+- nouveaux scénarios d'intégration
+
+`Tests\Legacy` reste une archive historique et ne revient pas dans la campagne
+officielle.
+
+
+
+---
+
+## Gate de validation
+
+Avant toute campagne de tests, le diagnostic sécurisé classe les tests. Une validation réelle du Build constitue une étape distincte et doit être explicitement autorisée.
+
+
+---
+
+## 2026-09-01 — Diagnostic sécurisé avant Pester
+
+Le dépôt utilise désormais un scanner statique avant les campagnes ciblées. Les tests `BUILD-CAPABLE` et `UNKNOWN` restent exclus des modes normaux. Une validation réelle exige `-BuildValidation -AllowBuild`. La décision complète est conservée dans `Documentation/ADR/ADR-0013-SafeDiagnostics.md`.

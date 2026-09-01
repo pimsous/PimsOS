@@ -90,13 +90,24 @@ Cette séparation permet de construire un framework :
 | Image ISO / WIM | ✅ Implémentée |
 | Tests Pester | ✅ Forte couverture / extension en cours |
 | Reporting | 🟡 À enrichir |
-| Génération ISO | ✅ ISO 3.0.0 générée le 31/08 ; validation de l’artefact restante |
-| Providers Chocolatey / Winget | 🟡 À finaliser |
+| Génération ISO | ✅ ISO 3.0.0 générée le 01/09 ; validation de l’artefact restante |
+| Providers Chocolatey / Winget | 🟡 Chocolatey/cache en cours ; Winget à venir |
 | Converters | ⬜ À implémenter |
 
 La version technique 3.0.0 ne constitue pas encore une release finale stable du produit.
 
 ---
+
+
+## Diagnostic sécurisé
+
+Avant une campagne Pester, PimsOS recommande l'outil :
+
+```powershell
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -Unit -InventoryOnly -ExplainFailures
+```
+
+Les tests susceptibles de lancer un Build réel sont séparés des tests `SAFE`. Une validation de Build réel nécessite explicitement `-BuildValidation -AllowBuild`.
 
 # Fonctionnalités actuelles
 
@@ -124,7 +135,7 @@ Les principales étapes du Build sont actuellement implémentées :
 - ✔ Nettoyage
 - ✔ Finalisation du Build
 
-Un Build réel de bout en bout a été exécuté avec succès le 31/08/2026 et une ISO PimsOS 3.0.0 a été générée. La validation fonctionnelle de cette nouvelle ISO reste à effectuer.
+Un Build réel de bout en bout a été exécuté avec succès le 01/09/2026 et une ISO PimsOS 3.0.0 a été générée. La validation fonctionnelle de cette nouvelle ISO reste à effectuer.
 
 ---
 
@@ -651,3 +662,88 @@ Pour le suivi de l'état du projet :
 ```text
 Documentation/ProjectStatus.md
 ```
+
+# PimsOS Builder
+
+Framework PowerShell de construction et personnalisation d'images Windows.
+
+## Etat
+
+**Version technique : 3.0.0**
+
+**Statut :** développement actif / architecture stabilisée.
+
+Base de référence actuelle :
+
+```text
+Commit : 3bbaf73
+Tests  : 797 Passed / 0 Failed / 1 Skipped
+Tweaks : 27 chargés avec Actions valides
+```
+
+## Architecture
+
+PimsOS utilise un **module PowerShell unique** :
+
+```text
+Modules\PimsOS.psd1
+Modules\PimsOS.psm1
+```
+
+Les sous-répertoires de `Modules` sont des composants internes chargés par le
+module principal.
+
+API publique :
+
+```text
+Initialize-PimsOS
+```
+
+## Composants principaux
+
+- BuildContext / BuildState
+- Workflow / Pipeline
+- Configuration / Profils / Tweaks
+- ActionRegistry / ActionEngine
+- Engines spécialisés
+- Managers
+- Image ISO / WIM / DISM
+- Registry
+- Drivers
+- PostInstall / FirstBoot
+- Wizard
+- Reporting
+
+## Tests
+
+Campagne officielle :
+
+```text
+Tests\Unit
+Tests\Integration
+```
+
+`Tests\Legacy` est historique et exclu.
+
+Dernière campagne :
+
+```text
+797 Passed
+0 Failed
+1 Skipped
+798 Total
+```
+
+## Prochaines étapes
+
+1. Validation réelle de l'ISO reconstruite depuis `3bbaf73`.
+2. Hyper-V / FirstBoot / PostInstall.
+3. Validation réelle des Tweaks.
+4. Chocolatey.
+5. Winget.
+6. Microsoft Store.
+7. Enrichissement du catalogue.
+8. CI / qualité / Reporting.
+
+Le fichier `PimsOS_Reprise_2026-09-01.txt` constitue le point de reprise
+détaillé pour les prochaines sessions.

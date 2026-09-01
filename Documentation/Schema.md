@@ -8,6 +8,9 @@
 
 ---
 
+> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+
+
 # Objectif
 
 Cette feuille de route présente les grandes orientations du projet **PimsOS Builder**.
@@ -293,7 +296,7 @@ La validation du comportement réel lors de la première connexion Windows reste
 La dernière campagne officielle de tests donne :
 
 ```text id="fny8oe"
-971 Passed
+971 Passed (historical — 31/08/2026)
 0 Failed
 1 Skipped
 0 Inconclusive

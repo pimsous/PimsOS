@@ -126,11 +126,13 @@ function Write-Console {
 
     )
 
-    if ($script:Quiet) {
+    if (
+		$script:Quiet -eq $true
+	) {
 
-        return
+		return
 
-    }
+	}
 
     $Color = $script:Colors[$Level]
 

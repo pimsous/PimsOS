@@ -1,4 +1,4 @@
-# Mise à jour du backlog — 31/08/2026
+# Mise à jour du backlog — 01/09/2026
 
 ## Priorité immédiate — Wizard / Tweaks
 
@@ -32,7 +32,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
 
@@ -61,7 +61,7 @@ Les éléments sont réévalués régulièrement en fonction des priorités du p
 
 ## Providers de packages
 
-- [ ] Implémenter le provider Chocolatey.
+- [~] Stabiliser le provider/cache Chocolatey et son catalogue.
 - [ ] Implémenter le provider Winget.
 - [ ] Ajouter les tests des providers.
 - [ ] Valider leur intégration avec `PackageManager`.
@@ -75,9 +75,9 @@ Les éléments sont réévalués régulièrement en fonction des priorités du p
 - [ ] Ajouter ou compléter les tests d'intégration.
 - [ ] Ajouter des scénarios de régression supplémentaires.
 - [ ] Ajouter une couverture de code exploitable dans la CI.
-- [ ] Intégrer PSScriptAnalyzer dans la CI.
-- [ ] Vérifier automatiquement le chargement du module PimsOS dans la CI.
-- [ ] Publier les résultats Pester dans GitHub Actions.
+- [x] Intégrer PSScriptAnalyzer dans la CI.
+- [x] Vérifier automatiquement le chargement du module PimsOS dans la CI.
+- [x] Publier les résultats Pester comme artefacts GitHub Actions.
 
 ---
 
@@ -86,6 +86,7 @@ Les éléments sont réévalués régulièrement en fonction des priorités du p
 ## Recovery et diagnostic
 
 - [ ] Améliorer `Test-WimMountState()`.
+- [x] Ajouter un diagnostic statique sécurisé des tests.
 - [ ] Ajouter un diagnostic détaillé de l'état des ressources.
 - [ ] Améliorer la détection des ressources laissées par un Build précédent.
 - [ ] Renforcer les scénarios de récupération.
@@ -269,3 +270,62 @@ Le Backlog permet de conserver une vision à moyen et long terme du projet sans 
 Les éléments les plus importants doivent être déplacés vers la Roadmap ou un jalon avant leur réalisation.
 
 Toute tâche terminée doit être retirée du Backlog actif et reflétée dans la documentation de statut du projet.
+
+# PimsOS Builder - Backlog
+
+> Version technique : **3.0.0**
+>
+> Dernière mise à jour : **2026-09-01**
+
+## Priorité immédiate
+
+### Validation ISO
+
+- [ ] Reconstruire l'ISO depuis le commit 3bbaf73.
+- [ ] Valider FirstBoot/PostInstall dans Hyper-V.
+- [ ] Vérifier Bootstrap / Logger.
+- [ ] Vérifier `state.json`.
+- [ ] Vérifier l'idempotence.
+- [ ] Tester la reprise après disponibilité réseau.
+- [ ] Vérifier l'application réelle des Tweaks.
+- [ ] Valider l'installation via Rufus.
+
+### Packages
+
+- [ ] Finaliser Chocolatey.
+- [ ] Finaliser Winget.
+- [ ] Définir le contrat des Providers.
+- [ ] Tester les installations réelles en PostInstall.
+
+### Microsoft Store
+
+- [ ] Définir la stratégie Store.
+- [ ] Implémenter son provider.
+- [ ] Intégrer le provider au PackageManager.
+- [ ] Ajouter les tests unitaires.
+- [ ] Ajouter les tests d'intégration.
+
+## Tweaks
+
+- [ ] Enrichir le catalogue au-delà des 27 Tweaks actuels.
+- [ ] Auditer les Tweaks existants.
+- [ ] Compléter les placeholders réellement utiles.
+- [ ] Harmoniser `Config/Categories.json`.
+- [ ] Maintenir `Documentation/Tweaks.md`.
+
+## Qualité
+
+- [ ] Régénérer `Tests\testResults.xml`.
+- [ ] Compléter Recovery.
+- [ ] Compléter Security.
+- [ ] Ajouter PSScriptAnalyzer.
+- [ ] Renforcer la CI.
+- [ ] Enrichir Reporting.
+- [ ] Implémenter Converters.
+
+## Règles
+
+- `Tests\Legacy` reste hors campagne officielle.
+- Les ADR historiques ne sont pas réécrits pour un simple changement d'état.
+- Les nouveaux providers ne doivent pas être mélangés au moteur générique des
+  Tweaks/Registry.

@@ -1,10 +1,10 @@
-# État de validation au 31/08/2026
+# État de validation au 01/09/2026
 
 Une validation réelle du cycle FirstBoot/PostInstall a déjà été réalisée dans Hyper-V avec une ISO PimsOS. L’installation a fonctionné, RunOnce a été présent puis consommé, et `C:\ProgramData\PimsOS\PostInstall\state.json` a été créé avec un état `Completed`.
 
 `CompletedTasks` contenait une seule entrée `Local`. Une protection contre une seconde exécution lorsque l’état est déjà `Completed` a été ajoutée.
 
-Une correction concernant la disponibilité de `Write-Log` dans l’environnement PostInstall installé a ensuite été apportée au source. **Cette correction doit encore être validée dans l’ISO générée le 31/08/2026.**
+Une correction concernant la disponibilité de `Write-Log` dans l’environnement PostInstall installé a ensuite été apportée au source. **Cette correction est intégrée au source et le déploiement PostInstall du Build réel du 01/09 a été validé. La validation réelle FirstBoot/PostInstall dans une installation Windows reste à effectuer.**
 
 La prochaine validation réelle doit donc reconstruire une ISO depuis le code actuel, installer cette ISO dans Hyper-V, puis vérifier Bootstrap, `Write-Log`, `state.json`, RunOnce et l’absence de double exécution.
 

@@ -4,9 +4,12 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
+
+> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+
 
 # Informations générales
 
@@ -40,6 +43,34 @@ L'objectif final est de produire automatiquement une image Windows personnalisé
 
 ---
 
+## Référence actuelle — 01/09/2026
+
+Le Build réel complet est **validé techniquement** :
+
+- Edition : Windows 11 Professionnel, index 6 ;
+- 27 Tweaks appliqués ;
+- PostInstall préparé et validé ;
+- WIM sauvegardé et démonté ;
+- synchronisation WIM → source ISO validée par SHA256 ;
+- ISO `Output\PimsOS_3.0.0_20260901_180342.iso` créée ;
+- taille annoncée : 7,9 Go ;
+- code retour : 0 ;
+- état final : `Completed` ;
+- aucun montage WIM résiduel.
+
+Le pipeline de production ne doit donc pas être modifié sur la base du faux problème observé après éjection manuelle de l'ISO : le Build réel monte d'abord l'ISO, copie son contenu, puis travaille sur la source préparée.
+
+Le diagnostic sécurisé est maintenant disponible dans `Tests\Tools`.
+
+- 63 fichiers Unit inventoriés ;
+- 4 fichiers Integration inventoriés ;
+- 3 fichiers classés Build-capable ;
+- 0 Unknown après correction de `Complete-Build.Tests.ps1`.
+
+Une campagne d'intégration ciblée a validé **20/20 tests**.
+
+La campagne complète `971/0/1` du 31/08 reste historique jusqu'à la prochaine exécution complète.
+
 # État global
 
 | Domaine               | État                                                            |
@@ -72,12 +103,12 @@ L'objectif final est de produire automatiquement une image Windows personnalisé
 | Reporting             | 🟡 Implémenté, à enrichir                                       |
 | Security              | 🟡 Implémenté, couverture à compléter                           |
 | Converters            | ⬜ Non implémenté                                                |
-| Chocolatey            | ⬜ Non implémenté                                                |
+| Chocolatey            | 🟡 Provider/cache en cours de stabilisation (01/09)              |
 | Winget                | ⬜ Non implémenté                                                |
 | Microsoft Store       | ⬜ Non intégré                                                   |
-| Génération ISO         | ✅ Build réel réussi ; validation de l’artefact restante       |
-| Tests Pester          | 🟡 971 Passed / 0 Failed / 1 Skipped (dernier résultat communiqué) |
-| Documentation         | 🟢 Synchronisée au 31/08/2026                                 |
+| Génération ISO         | ✅ Build réel réussi le 01/09 ; validation de l’artefact restante |
+| Tests Pester          | 🟡 Dernière campagne complète communiquée : 971/0/1 (historique) |
+| Documentation         | 🟢 Synchronisée au 01/09/2026                                 |
 
 ---
 
@@ -102,7 +133,7 @@ sont conservés séparément et ne font pas partie de la campagne officielle.
 Les derniers résultats communiqués pendant la session sont :
 
 ```text
-971 Passed
+971 Passed (historical — 31/08/2026)
 0 Failed
 1 Skipped
 ```
@@ -429,7 +460,7 @@ Les composants Image prennent en charge :
 * la gestion du cycle de vie de l'image ;
 * la génération de l'ISO.
 
-Un Build réel a généré une ISO PimsOS 3.0.0 le 31/08/2026. La validation fonctionnelle de cet artefact reste à effectuer.
+Un Build réel a généré une ISO PimsOS 3.0.0 le 01/09/2026. La validation fonctionnelle de cet artefact reste à effectuer.
 
 ---
 
@@ -476,7 +507,7 @@ Winget
 Microsoft Store
 ```
 
-La génération de l’ISO est démontrée par le Build réel du 31/08 ; la validation Hyper-V de l’artefact reste à effectuer.
+La génération de l’ISO est démontrée par le Build réel du 01/09 ; la validation Hyper-V de l’artefact reste à effectuer.
 
 ---
 
@@ -487,7 +518,7 @@ La suite officielle Pester est exécutée avec Pester 5.8.0.
 Résultat de référence actuel :
 
 ```text
-971 Passed
+971 Passed (historical — 31/08/2026)
 0 Failed
 1 Skipped
 0 Inconclusive
@@ -528,7 +559,7 @@ La documentation couvre notamment :
 * le cycle de vie ;
 * les composants Legacy.
 
-La documentation active a été synchronisée avec l’implémentation et l’état du Build au 31/08/2026.
+La documentation active a été resynchronisée avec l’implémentation et l’état du Build au 01/09/2026. Les références au 31/08 restent historiques.
 
 ---
 
@@ -536,7 +567,7 @@ La documentation active a été synchronisée avec l’implémentation et l’é
 
 Les prochaines étapes prioritaires sont :
 
-1. valider l’ISO générée le 31/08/2026 ;
+1. valider l’ISO générée le 01/09/2026 ;
 2. compléter la validation réelle du cycle FirstBoot ;
 3. valider la reprise réelle du PostInstall après perte puis disponibilité du réseau ;
 4. compléter la couverture Recovery et Security ;
@@ -544,3 +575,108 @@ Les prochaines étapes prioritaires sont :
 6. enrichir le reporting ;
 7. maintenir la documentation synchronisée avec l'implémentation ;
 8. préparer une première release fonctionnelle du framework.
+
+# PimsOS Builder - État du projet
+
+> Version technique : **3.0.0**
+>
+> Statut : **Développement actif / architecture stabilisée**
+>
+> Dernière mise à jour : **2026-09-01**
+
+## Etat global
+
+| Domaine | Etat |
+|---|---|
+| Architecture | ✅ Stabilisée |
+| Module PimsOS unique | ✅ Implémenté |
+| API publique `Initialize-PimsOS` | ✅ Validée |
+| BuildContext / BuildState | ✅ Implémentés |
+| Workflow / Pipeline | ✅ Implémentés et testés |
+| Configuration | ✅ Implémentée et testée |
+| Profils | ✅ Implémentés et testés |
+| Tweaks | ✅ Implémentés et testés |
+| Catalogue Tweaks | ✅ 27 Tweaks chargés avec Actions valides |
+| Wizard | ✅ Implémenté et testé |
+| ActionRegistry / ActionEngine | ✅ Implémentés et testés |
+| Engines spécialisés | ✅ Implémentés et testés |
+| Managers | ✅ Implémentés et testés |
+| Registry | ✅ Implémenté et testé |
+| ISO / WIM / DISM | ✅ Implémentés |
+| Drivers | ✅ Implémentés et testés |
+| PostInstall / FirstBoot | 🟡 Implémentés ; nouvelle validation ISO réelle requise |
+| Reporting | 🟡 A enrichir |
+| Recovery | 🟡 A compléter |
+| Security | 🟡 A compléter |
+| Converters | ⬜ A implémenter |
+| Chocolatey | ⬜ A finaliser |
+| Winget | ⬜ A finaliser |
+| Microsoft Store | ⬜ A intégrer |
+| CI / qualité | 🟡 A renforcer |
+
+## Tests
+
+Campagne officielle :
+
+```text
+Tests\Unit
+Tests\Integration
+```
+
+`Tests\Legacy` est exclu.
+
+Dernier résultat de référence :
+
+```text
+797 Passed
+0 Failed
+1 Skipped
+798 Total
+```
+
+Le chiffre 971 présent dans d'anciens documents est obsolète.
+
+## Git
+
+```text
+Commit : 3bbaf73
+Message : feat: finalize tweak configuration and test architecture
+Branche : main
+Remote : origin/main
+Etat : propre et synchronisé
+```
+
+## Prochaine validation
+
+Avant d'ajouter de nouveaux providers, reconstruire une ISO depuis ce commit
+et effectuer une validation Hyper-V complète du flux réel :
+
+```text
+ISO
+ ↓
+Installation Windows
+ ↓
+FirstBoot
+ ↓
+Bootstrap
+ ↓
+réseau
+ ↓
+PostInstall
+ ↓
+Tweaks
+ ↓
+state.json / idempotence
+```
+
+Une validation physique/Rufus doit ensuite compléter cette validation.
+
+## Prochains chantiers
+
+1. Validation ISO réelle.
+2. Chocolatey.
+3. Winget.
+4. Microsoft Store.
+5. Enrichissement et documentation des Tweaks.
+6. Recovery / Security / Reporting.
+7. CI et qualité.

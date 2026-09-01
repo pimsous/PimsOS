@@ -4,9 +4,12 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
+
+> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+
 
 # Objectif
 
@@ -97,7 +100,7 @@ Les principales fondations du framework sont maintenant en place :
 * reporting ;
 * nettoyage et finalisation du Build.
 
-Le développement se concentre désormais sur la finalisation de la chaîne de production et sur la validation complète du Build de bout en bout.
+Le Build réel de bout en bout est désormais démontré. Le développement se concentre sur la validation de l’artefact ISO, la stabilisation des providers de packages (notamment Chocolatey), la qualité CI et les scénarios réels FirstBoot/PostInstall.
 
 ---
 
@@ -296,7 +299,7 @@ La validation du comportement réel lors de la première connexion Windows reste
 La dernière campagne officielle de tests donne :
 
 ```text id="fny8oe"
-971 Passed
+971 Passed (historical — 31/08/2026)
 0 Failed
 1 Skipped
 0 Inconclusive
@@ -538,3 +541,79 @@ Les évolutions architecturales importantes sont documentées dans les ADR.
 * `PostInstall.md`
 * `Prerequisites.md`
 * `Documentation\ADR\`
+
+# PimsOS Builder - Feuille de route
+
+> Version technique : **3.0.0**
+>
+> Dernière mise à jour : **2026-09-01**
+
+## Phase 1 — Fondations
+
+**Statut : ✅ Terminée**
+
+- Module PowerShell unique
+- BuildContext / BuildState
+- Workflow / Pipeline
+- ActionRegistry / ActionEngine
+- Configuration JSON
+- Profils
+- Tweaks
+- Engines / Managers
+- Tests Pester
+
+## Phase 2 — Chaîne de personnalisation
+
+**Statut : 🟢 Fonctionnelle**
+
+- Catalogue Tweaks
+- Wizard
+- Profils
+- Configuration Custom
+- Actions Registry et autres Engines
+- Drivers
+- PostInstall / FirstBoot
+
+## Phase 3 — Validation produit
+
+**Statut : 🟡 En cours**
+
+- Nouvelle ISO depuis le commit 3bbaf73
+- Hyper-V FirstBoot/PostInstall
+- application réelle des Tweaks
+- réseau / reprise
+- idempotence
+- validation Rufus / physique
+
+## Phase 4 — Providers
+
+**Statut : ⬜ A venir**
+
+Ordre recommandé :
+
+1. Chocolatey
+2. Winget
+3. Microsoft Store
+
+Les trois providers doivent respecter le contrat du PackageManager et rester
+séparés du moteur générique des Tweaks.
+
+## Phase 5 — Qualité et exploitation
+
+- Recovery
+- Security
+- Reporting
+- Converters
+- PSScriptAnalyzer
+- CI
+- rapports Pester
+
+## Phase 6 — Enrichissement
+
+- nouveaux Tweaks
+- nouveaux profils
+- documentation des effets et risques
+- nouveaux scénarios d'intégration
+
+`Tests\Legacy` reste une archive historique et ne revient pas dans la campagne
+officielle.

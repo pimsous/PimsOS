@@ -6,6 +6,34 @@ Le format s'inspire de **Keep a Changelog** et respecte le versionnement sémant
 
 ---
 
+## 2026-09-01 — Stabilisation Build / diagnostic / CI
+
+### Added
+
+- Outil `Tests\Tools\Invoke-PimsOSDiagnostics.ps1` pour classifier les tests `SAFE`, `BUILD-CAPABLE` et `UNKNOWN`.
+- ADR-0013 sur le diagnostic sécurisé avant exécution.
+- Notes de synchronisation documentaire du 01/09/2026.
+
+### Changed
+
+- Validation du pipeline réel complet jusqu'à la génération de l'ISO.
+- Synchronisation WIM → source ISO vérifiée par SHA256.
+- Documentation de continuité renforcée pour les reprises de séance avec ChatGPT/GitHub.
+- Workflow PimsOS CI protégé par `concurrency` et filtres de chemins.
+
+### Fixed
+
+- Classification du test `Complete-Build.Tests.ps1` : le faux positif `UNKNOWN` a été supprimé après correction du test.
+- Détection `oscdimg.exe` confirmée via le Windows ADK sans modification du pipeline de production.
+
+### Validation
+
+- Build réel : `Completed`, code retour `0`.
+- Integration ciblée : `20 Passed / 0 Failed / 0 Skipped`.
+- Diagnostic : `63 Unit / 4 Integration / 3 Build-capable / 0 Unknown` fichiers inventoriés.
+
+---
+
 # [Unreleased]
 
 ## Added

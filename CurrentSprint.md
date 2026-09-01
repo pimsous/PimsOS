@@ -1,3 +1,29 @@
+# Point de reprise — 01/09/2026
+
+## État confirmé
+
+- [x] Build réel complet 3.0.0 exécuté avec succès.
+- [x] Synchronisation WIM → source ISO validée par SHA256.
+- [x] Création ISO PimsOS avec oscdimg validée.
+- [x] Diagnostic sécurisé des tests opérationnel.
+- [x] `Complete-Build.Tests.ps1` classé SAFE par le diagnostic.
+- [x] Campagne d'intégration ciblée : 20/20.
+- [x] CI GitHub protégée contre l'accumulation de runs par `concurrency`.
+
+## Priorité immédiate
+
+1. Valider l'ISO produite en tant qu'artefact.
+2. Régénérer une campagne Pester complète et son XML.
+3. Synchroniser l'outil de diagnostic et les documents avec GitHub.
+4. Poursuivre la stabilisation Chocolatey/cache.
+5. Valider FirstBoot/PostInstall dans Hyper-V.
+
+## Règle de reprise
+
+Avant toute nouvelle action : lire la note `DocumentationSync-*` la plus récente, `ProjectStatus.md`, ce fichier et les ADR concernés, puis exécuter l'inventaire sécurisé approprié.
+
+---
+
 # État de clôture du sprint — 31/08/2026
 
 Le sprint a franchi un jalon important : le pipeline PimsOS a produit une ISO réelle avec succès et le Wizard de personnalisation des Tweaks est maintenant validé par ses tests.
@@ -480,3 +506,74 @@ La prochaine étape n'est plus la construction de l'architecture fondamentale, m
 - [ ] intégrer Chocolatey
 - [ ] intégrer Winget
 - [ ] intégrer Microsoft Store
+
+# PimsOS Builder — Sprint courant
+
+> Version technique : **3.0.0**
+>
+> Dernière mise à jour : **2026-09-01**
+>
+> Base : commit **3bbaf73**
+
+## Sprint — Validation de la chaîne réelle puis Providers
+
+### Terminé
+
+- [x] Architecture du module PowerShell unique
+- [x] BuildContext / BuildState
+- [x] Pipeline
+- [x] Configuration
+- [x] Profils
+- [x] Wizard
+- [x] TweakCatalog
+- [x] 27 Tweaks chargés avec Actions valides
+- [x] Tests Tweak
+- [x] Tests Configuration
+- [x] Tests Wizard
+- [x] Tests Architecture
+- [x] Campagne officielle : 797 Passed / 0 Failed / 1 Skipped
+- [x] Tests Legacy exclus
+- [x] Commit Git 3bbaf73
+- [x] Push GitHub
+
+### Priorité 1 — Validation réelle
+
+- [ ] Reconstruire une ISO depuis 3bbaf73
+- [ ] Tester FirstBoot dans Hyper-V
+- [ ] Vérifier Bootstrap et Logger
+- [ ] Vérifier state.json
+- [ ] Vérifier l'idempotence
+- [ ] Vérifier la reprise réseau
+- [ ] Vérifier l'application réelle des Tweaks
+- [ ] Valider l'installation physique/Rufus
+
+### Priorité 2 — Providers
+
+- [ ] Finaliser Chocolatey
+- [ ] Finaliser Winget
+- [ ] Définir les contrats Provider / Manager
+- [ ] Ajouter les tests associés
+
+### Priorité 3 — Microsoft Store
+
+- [ ] Définir la stratégie
+- [ ] Définir le provider
+- [ ] Intégrer au PackageManager
+- [ ] Ajouter les tests
+- [ ] Valider en PostInstall
+
+### Priorité 4 — Catalogue
+
+- [ ] Enrichir les Tweaks
+- [ ] Compléter les placeholders utiles
+- [ ] Harmoniser les catégories
+- [ ] Maintenir Documentation/Tweaks.md
+
+### Qualité
+
+- [ ] Régénérer `Tests\testResults.xml`
+- [ ] Recovery / Security coverage
+- [ ] PSScriptAnalyzer
+- [ ] CI Pester
+- [ ] Reporting
+- [ ] Converters

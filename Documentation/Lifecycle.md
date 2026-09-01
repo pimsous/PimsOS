@@ -1,302 +1,627 @@
-# PimsOS Builder - Cycle de vie
+# PimsOS Builder - Feuille de route
 
 > Version technique : 3.0.0
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
+
+> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+
 
 # Objectif
 
-Ce document décrit le cycle de vie d'une évolution au sein de **PimsOS Builder**.
+Cette feuille de route présente les grandes orientations du projet **PimsOS Builder**.
 
-Il couvre les principales étapes, depuis l'identification d'un besoin jusqu'à son intégration dans le projet.
+Elle décrit les évolutions prévues pour le framework, le moteur de Build et les fonctionnalités permettant de construire des images Windows personnalisées.
 
-Ce cycle garantit :
+Elle présente les objectifs à moyen et long terme sans remplacer le backlog technique détaillé.
 
-- la cohérence de l'architecture ;
-- la qualité du code ;
-- la stabilité du Builder ;
-- la traçabilité des évolutions ;
-- la reproductibilité des validations.
+Les évolutions importantes de l'architecture sont documentées dans les **Architecture Decision Records (ADR)**.
 
 ---
 
-# Vue d'ensemble
+# Vision
 
-```text
-Besoin
-    │
-    ▼
-Analyse
-    │
-    ▼
-Conception
-    │
-    ▼
-Développement
-    │
-    ▼
-Tests
-    │
-    ▼
-Validation
-    │
-    ▼
-Documentation
-    │
-    ▼
-Revue
-    │
-    ▼
-Commit Git
-    │
-    ▼
-Jalon / Publication
+PimsOS Builder a pour objectif de devenir un framework capable de construire automatiquement des images Windows personnalisées à partir d'images compatibles.
+
+Le moteur doit rester indépendant d'une version spécifique de Windows et pouvoir évoluer avec les versions compatibles avec les mécanismes de déploiement utilisés.
+
+Le projet repose notamment sur les principes suivants :
+
+* modularité ;
+* automatisation ;
+* reproductibilité ;
+* maintenabilité ;
+* testabilité ;
+* séparation claire des responsabilités.
+
+À terme, la création d'une image PimsOS complète doit pouvoir être réalisée à partir d'un processus de Build automatisé et reproductible.
+
+---
+
+# État actuel
+
+## Architecture
+
+✅ **Stabilisée**
+
+L'architecture 3.0.0 repose notamment sur :
+
+* un module PowerShell unique ;
+* un BuildContext centralisé ;
+* un BuildState ;
+* un Workflow ;
+* un Pipeline ;
+* un ActionRegistry ;
+* un ActionEngine ;
+* des Engines spécialisés ;
+* des Managers spécialisés ;
+* des composants techniques organisés par domaine ;
+* une configuration pilotée par les données ;
+* une API publique centralisée ;
+* une couverture Pester importante.
+
+Le point d'entrée public principal est :
+
+```text id="v6d0zp"
+Initialize-PimsOS
 ```
 
 ---
 
-# 1. Identification du besoin
+## Développement
 
-Toute évolution débute par un besoin clairement identifié.
+🚧 **En cours**
 
-Il peut s'agir :
+Les principales fondations du framework sont maintenant en place :
 
-- d'une nouvelle fonctionnalité ;
-- d'une correction de bug ;
-- d'une optimisation ;
-- d'une évolution de l'architecture ;
-- d'une amélioration du pipeline ;
-- de l'ajout d'un nouveau type d'action.
+* Recovery ;
+* vérification de l'environnement ;
+* vérification des prérequis ;
+* gestion des ISO ;
+* gestion des WIM ;
+* sélection des images Windows ;
+* gestion des ruches du registre ;
+* chargement des catégories ;
+* chargement des Tweaks ;
+* chargement des profils ;
+* fusion de la configuration ;
+* validation ;
+* routage des Actions ;
+* Engines spécialisés ;
+* Managers spécialisés ;
+* Wizard ;
+* configuration des drivers ;
+* préparation PostInstall ;
+* préparation FirstBoot ;
+* reporting ;
+* nettoyage et finalisation du Build.
 
-Le besoin doit être compris avant toute modification du code.
-
----
-
-# 2. Analyse
-
-Cette étape consiste à déterminer :
-
-- les composants concernés ;
-- les impacts sur le BuildContext ;
-- les dépendances ;
-- les risques de régression ;
-- les besoins en documentation.
-
-Les évolutions majeures peuvent nécessiter la création d'une ADR.
-
----
-
-# 3. Conception
-
-Avant toute implémentation :
-
-- identifier les modules concernés ;
-- vérifier qu'aucun composant existant ne répond déjà au besoin ;
-- définir les nouvelles structures de données si nécessaire ;
-- préserver la séparation des responsabilités.
-
-Les nouvelles fonctionnalités doivent respecter les Architecture Rules.
+Le Build réel de bout en bout est désormais démontré. Le développement se concentre sur la validation de l’artefact ISO, la stabilisation des providers de packages (notamment Chocolatey), la qualité CI et les scénarios réels FirstBoot/PostInstall.
 
 ---
 
-# 4. Développement
+# Phases du projet
 
-Le développement est réalisé en respectant :
+## Phase 1 — Fondations
 
-- CodingStandards.md ;
-- DeveloperGuide.md ;
-- ModuleGuide.md ;
-- Architecture.md.
+### Objectifs
 
-Les composants doivent respecter l'architecture en couches.
+* [x] Définir l'architecture générale.
+* [x] Mettre en place la documentation.
+* [x] Définir les conventions de développement.
+* [x] Mettre en place les ADR.
+* [x] Construire les premiers composants techniques.
+* [x] Définir le BuildContext.
+* [x] Définir le BuildState.
 
-Toute nouvelle logique métier doit passer par le BuildContext.
+### Statut
 
----
-
-# 5. Validation
-
-Avant d'être exécutée, toute évolution est validée.
-
-La validation vérifie notamment :
-
-- la structure des fichiers JSON ;
-- les propriétés obligatoires ;
-- les identifiants ;
-- les catégories ;
-- les niveaux ;
-- les tags ;
-- les groupes ;
-- les actions ;
-- les versions supportées ;
-- les scores.
-
-Aucune configuration invalide ne doit atteindre le Pipeline.
+✅ **Terminée**
 
 ---
 
-# 6. Tests
+## Phase 2 — Module PowerShell unique
 
-Les tests permettent de vérifier :
+### Objectifs
 
-- le fonctionnement nominal ;
-- les erreurs ;
-- les cas limites ;
-- les régressions.
+* [x] Créer `PimsOS.psm1`.
+* [x] Créer `PimsOS.psd1`.
+* [x] Centraliser le chargement des composants.
+* [x] Centraliser l'API publique.
+* [x] Introduire `Initialize-PimsOS`.
+* [x] Supprimer le modèle à plusieurs modules indépendants.
+* [x] Valider le module PowerShell unique.
+* [x] Valider l'exposition de l'API publique.
 
-Les nouveaux composants doivent disposer de tests adaptés.
+### Statut
 
-Les tests Legacy ne participent pas à cette validation.
-
----
-
-# 7. Documentation
-
-Toute évolution importante doit être documentée.
-
-Les documents concernés peuvent être :
-
-- API.md
-- Architecture.md
-- ArchitectureRules.md
-- BuildContext.md
-- DeveloperGuide.md
-- ModuleGuide.md
-- ReleaseNotes.md
-
-La documentation évolue en même temps que le code.
+✅ **Terminée**
 
 ---
 
-# 8. Gestion du code source
+## Phase 3 — Framework de Build
 
-Une fois la fonctionnalité validée :
+### Objectifs
 
-- vérifier le formatage ;
-- exécuter les tests ;
-- mettre à jour la documentation ;
-- effectuer un commit Git.
+* [x] Finaliser le BuildContext.
+* [x] Développer le BuildState.
+* [x] Développer le Pipeline.
+* [x] Développer le Workflow.
+* [x] Mettre en place Recovery.
+* [x] Vérifier les prérequis de l'environnement.
+* [x] Gérer les images WIM.
+* [x] Gérer les ISO.
+* [x] Détecter les images Windows.
+* [x] Permettre la sélection de l'image à personnaliser.
+* [x] Gérer les ruches du registre.
+* [x] Charger les définitions de Tweaks.
+* [x] Charger les profils.
+* [x] Fusionner profils et Tweaks.
+* [x] Valider la configuration.
+* [x] Mettre en place ActionRegistry.
+* [x] Mettre en place ActionEngine.
+* [x] Développer les Engines spécialisés.
+* [x] Développer les Managers spécialisés.
+* [x] Intégrer le Wizard.
+* [x] Intégrer la configuration des drivers.
+* [x] Intégrer la préparation PostInstall au pipeline.
 
-Chaque commit doit représenter une évolution cohérente et fonctionnelle.
+### Statut
+
+✅ **Stabilisée**
+
+Le moteur d'orchestration est suffisamment structuré et testé pour poursuivre la finalisation de la production d'image.
 
 ---
 
-# 9. Publication
+## Phase 4 — Génération d'images Windows
 
-Une nouvelle version peut être publiée lorsque :
+### Objectifs
 
-- le pipeline est valide ;
-- les tests sont réussis ;
-- la documentation est à jour ;
-- les évolutions prévues sont terminées.
+* [x] Préparer les images ISO.
+* [x] Manipuler les images WIM.
+* [x] Effectuer les opérations DISM nécessaires.
+* [x] Préparer les drivers dans le pipeline.
+* [x] Préparer le runtime PostInstall dans le WIM.
+* [x] Générer `unattend.xml`.
+* [ ] Finaliser la génération automatique de l'ISO.
+* [ ] Valider automatiquement l'ISO générée.
+* [ ] Valider un Build complet de bout en bout.
+* [ ] Améliorer la gestion des erreurs de production.
+* [ ] Optimiser les performances.
+* [ ] Valider l'artefact ISO final.
 
-Les informations de version sont centralisées dans :
+### Statut
 
-```text
-version.json
+🟡 **En cours**
+
+---
+
+## Phase 5 — Personnalisation
+
+### Objectifs
+
+* [x] Profils.
+* [x] Tweaks.
+* [x] Catégories.
+* [x] RegistryEngine.
+* [x] ServiceEngine.
+* [x] FeatureEngine.
+* [x] CapabilityEngine.
+* [x] PackageEngine.
+* [x] DriverEngine.
+* [x] FileEngine.
+* [x] FolderEngine.
+* [x] EnvironmentEngine.
+* [x] ScheduledTaskEngine.
+* [x] ShortcutEngine.
+* [x] PackageManager.
+* [x] DriverManager.
+* [x] Managers spécialisés.
+* [ ] Implémenter le provider Chocolatey.
+* [ ] Implémenter le provider Winget.
+* [ ] Intégrer Microsoft Store.
+* [ ] Compléter les fonctionnalités de personnalisation restantes.
+
+### Statut
+
+🟡 **En cours**
+
+---
+
+## Phase 6 — PostInstall / FirstBoot
+
+### Objectifs
+
+* [x] Implémenter State.
+* [x] Implémenter Network.
+* [x] Implémenter le moteur PostInstall.
+* [x] Implémenter Bootstrap.
+* [x] Implémenter FirstBoot.
+* [x] Implémenter Unattend.
+* [x] Implémenter Installer.
+* [x] Implémenter UI PostInstall.
+* [x] Intégrer `PreparePostInstall` au BuildPipeline.
+* [x] Valider l'injection du runtime dans un WIM temporaire.
+* [x] Valider la génération de `unattend.xml`.
+* [x] Valider le namespace `urn:schemas-microsoft-com:unattend`.
+* [x] Valider `wcm:action="add"`.
+* [x] Valider la commande vers `Bootstrap.ps1`.
+* [x] Ajouter l'affichage réseau du premier démarrage.
+* [x] Ajouter l'attente réseau avec interface console.
+* [ ] Valider l'exécution réelle de `FirstLogonCommands`.
+* [ ] Valider le premier démarrage réel de Windows.
+* [ ] Valider la reprise réseau réelle.
+* [ ] Intégrer Chocolatey.
+* [ ] Intégrer Winget.
+* [ ] Intégrer Microsoft Store.
+
+### Statut
+
+🟡 **Implémenté et testé — validation réelle FirstBoot restante**
+
+Le sous-système PostInstall est fonctionnel au niveau de la préparation et de l'intégration au Build.
+
+La validation du comportement réel lors de la première connexion Windows reste à effectuer.
+
+---
+
+## Phase 7 — Stabilisation et qualité
+
+### Objectifs
+
+* [x] Mettre en place Pester 5.x.
+* [x] Mettre en place une couverture importante des composants.
+* [x] Tester les Engines spécialisés.
+* [x] Tester les Managers.
+* [x] Tester Configuration.
+* [x] Tester Registry.
+* [x] Tester Workflow et composants Core.
+* [x] Tester Wizard.
+* [x] Tester les drivers.
+* [x] Tester PostInstall.
+* [x] Tester FirstBoot.
+* [x] Tester Network.
+* [x] Tester l'intégration du BuildPipeline.
+* [x] Séparer les tests officiels des tests Legacy.
+* [ ] Compléter les tests Recovery.
+* [ ] Compléter les tests Security.
+* [ ] Étendre les tests d'intégration.
+* [ ] Valider les Builds complets.
+* [ ] Finaliser la documentation technique.
+
+### Résultat actuel
+
+La dernière campagne officielle de tests donne :
+
+```text id="fny8oe"
+971 Passed (historical — 31/08/2026)
+0 Failed
+1 Skipped
+0 Inconclusive
+0 NotRun
 ```
 
-Le numéro de version est automatiquement utilisé par le Builder.
+Le seul test ignoré est conditionnel et concerne le cas d'une catégorie sans groupes alors que toutes les catégories actuellement définies possèdent des groupes.
 
----
+Les tests historiques présents dans :
 
-# Correction d'un bug
-
-Une correction suit le même cycle de vie qu'une nouvelle fonctionnalité.
-
-Le processus recommandé est :
-
-1. reproduire le problème ;
-2. identifier le composant concerné ;
-3. écrire ou adapter un test ;
-4. corriger le code ;
-5. exécuter le pipeline ;
-6. mettre à jour la documentation ;
-7. réaliser un commit Git.
-
-Cette méthode limite les régressions.
-
----
-
-# Évolutions d'architecture
-
-Toute évolution importante de l'architecture doit :
-
-- respecter les Architecture Rules ;
-- préserver la compatibilité du BuildContext ;
-- documenter les changements ;
-- être accompagnée de tests.
-
-Si nécessaire, une nouvelle ADR est créée.
-
----
-
-# Amélioration continue
-
-Le cycle de développement de PimsOS Builder évolue avec le projet.
-
-Toute amélioration doit viser à :
-
-- simplifier le code ;
-- renforcer la modularité ;
-- améliorer les performances ;
-- réduire les duplications ;
-- améliorer la qualité des tests ;
-- faciliter la maintenance.
-
----
-
-# Résumé
-
-Chaque évolution suit le processus suivant :
-
-```text
-Besoin
-    ↓
-Analyse
-    ↓
-Conception
-    ↓
-Développement
-    ↓
-Validation
-    ↓
-Tests
-    ↓
-Documentation
-    ↓
-Commit Git
-    ↓
-Publication
+```text id="pydg7a"
+Tests\Legacy
 ```
 
-Aucune fonctionnalité ne doit être intégrée sans avoir suivi ce cycle.
-## PostInstall
+sont conservés séparément et ne font pas partie de la campagne officielle.
 
-Après préparation du WIM :
+### Statut
 
-MountWim
+🟡 **En cours**
+
+---
+
+## Phase 8 — Première version stable
+
+### Objectifs
+
+* [ ] Pipeline validé de bout en bout.
+* [ ] Génération ISO stable.
+* [ ] Composants nécessaires finalisés.
+* [ ] PostInstall validé sur un environnement Windows réel.
+* [ ] FirstBoot validé.
+* [ ] Tests validés.
+* [ ] Documentation synchronisée.
+* [ ] API publique stabilisée.
+* [ ] Build reproductible.
+* [ ] Absence d'anomalie bloquante.
+* [ ] Artefact ISO final validé.
+* [ ] Publication d'une première version stable.
+
+### Statut
+
+⏳ **À venir**
+
+---
+
+# Composants restant à développer ou compléter
+
+Les principaux éléments identifiés sont :
+
+* finalisation de la génération ISO ;
+* validation complète du Build de bout en bout ;
+* validation réelle FirstBoot ;
+* validation de la reprise réseau réelle ;
+* `Converters.ps1` ;
+* provider Chocolatey ;
+* provider Winget ;
+* intégration Microsoft Store ;
+* couverture complémentaire de `Recovery.ps1` ;
+* couverture complémentaire de `Security.ps1` ;
+* enrichissement du Reporting ;
+* validation de l'artefact ISO final.
+
+---
+
+# Tests
+
+Les objectifs actuels sont :
+
+* maintenir la couverture des composants existants ;
+* compléter les tests des composants encore partiellement couverts ;
+* étendre les tests d'intégration ;
+* ajouter des tests de régression ;
+* automatiser progressivement l'exécution des tests ;
+* conserver une séparation stricte entre les tests actifs et les tests historiques.
+
+Les tests Pester constituent la base de validation du framework.
+
+## Campagne officielle
+
+La campagne officielle utilise :
+
+```text id="7kyx7n"
+Tests\Unit
+Tests\Integration
+```
+
+Les tests historiques sont conservés dans :
+
+```text id="j31c2d"
+Tests\Legacy
+```
+
+Ils ne sont pas inclus dans la campagne officielle.
+
+---
+
+# Documentation
+
+Les objectifs actuels sont :
+
+* maintenir la documentation synchronisée avec le code ;
+* documenter l'API publique ;
+* documenter l'architecture ;
+* maintenir les règles d'architecture ;
+* maintenir le statut du projet ;
+* maintenir le backlog et les jalons ;
+* maintenir la feuille de route ;
+* documenter les décisions architecturales dans les ADR ;
+* documenter le fonctionnement du PostInstall et de FirstBoot.
+
+---
+
+# Priorités actuelles
+
+## Priorité 1 — Génération ISO
+
+Finaliser la chaîne permettant de produire une ISO PimsOS complète.
+
+---
+
+## Priorité 2 — Validation de bout en bout
+
+Réaliser et valider un Build complet depuis l'ISO source jusqu'à
+l'artefact final.
+
+Cette validation doit notamment vérifier :
+
+* la préparation du WIM ;
+* l'application des Tweaks ;
+* l'application des drivers ;
+* la préparation PostInstall ;
+* la reconstruction de l'ISO ;
+* la génération de l'artefact final ;
+* la cohérence du résultat.
+
+---
+
+## Priorité 3 — Validation FirstBoot
+
+Valider le comportement réel de :
+
+```text id="cprqdr"
+unattend.xml
     ↓
-ApplyDrivers
+FirstLogonCommands
     ↓
-PreparePostInstall
+Bootstrap.ps1
     ↓
-MountSoftwareHive
+PostInstall
+```
 
-`PreparePostInstall` installe le runtime dans :
+Cette validation doit être effectuée sur un environnement Windows réel.
 
-C:\ProgramData\PimsOS\PostInstall
+---
 
-et génère :
+## Priorité 4 — Providers packages
 
-C:\Windows\Panther\unattend.xml
+Implémenter les providers :
 
-Le premier démarrage Windows doit ensuite lancer le Bootstrap
-via `FirstLogonCommands`.
+* Chocolatey ;
+* Winget ;
+* Microsoft Store.
 
-Cette dernière étape reste à valider dans un environnement Windows
-réel.
+---
+
+## Priorité 5 — Couverture et stabilité
+
+Compléter :
+
+* Recovery ;
+* Security ;
+* Reporting ;
+* tests d'intégration ;
+* tests de régression ;
+* validation des Builds complets.
+
+---
+
+## Priorité 6 — Documentation et release
+
+Maintenir la documentation synchronisée et préparer les conditions nécessaires à une première release stable.
+
+---
+
+# Prochain objectif technique
+
+Le prochain objectif technique majeur est la **finalisation de la chaîne de production de l'image PimsOS**.
+
+Les travaux prioritaires sont :
+
+1. finaliser le traitement du WIM ;
+2. finaliser la reconstruction de l'ISO ;
+3. valider le Build complet ;
+4. vérifier les artefacts générés ;
+5. valider le cycle FirstBoot réel ;
+6. compléter les rapports ;
+7. vérifier le nettoyage final ;
+8. documenter le processus de production.
+
+---
+
+# Hors périmètre actuel
+
+À ce stade, les éléments suivants ne constituent pas une priorité du développement :
+
+* interface graphique complète ;
+* support d'autres systèmes d'exploitation ;
+* déploiement distribué ;
+* versions de Windows incompatibles avec les mécanismes techniques utilisés par le Builder.
+
+Ces éléments pourront être réévalués ultérieurement.
+
+---
+
+# Suivi
+
+La feuille de route est revue à chaque jalon majeur.
+
+Les fonctionnalités terminées sont reportées dans :
+
+* `ReleaseNotes.md` ;
+* `Milestones.md` ;
+* `ProjectStatus.md`.
+
+Les évolutions architecturales importantes sont documentées dans les ADR.
+
+---
+
+# Documents associés
+
+* `Architecture.md`
+* `ArchitectureRules.md`
+* `ProjectStatus.md`
+* `ProjectStructure.md`
+* `Lifecycle.md`
+* `Milestones.md`
+* `ReleaseNotes.md`
+* `Testing.md`
+* `PostInstall.md`
+* `Prerequisites.md`
+* `Documentation\ADR\`
+
+# PimsOS Builder - Feuille de route
+
+> Version technique : **3.0.0**
+>
+> Dernière mise à jour : **2026-09-01**
+
+## Phase 1 — Fondations
+
+**Statut : ✅ Terminée**
+
+- Module PowerShell unique
+- BuildContext / BuildState
+- Workflow / Pipeline
+- ActionRegistry / ActionEngine
+- Configuration JSON
+- Profils
+- Tweaks
+- Engines / Managers
+- Tests Pester
+
+## Phase 2 — Chaîne de personnalisation
+
+**Statut : 🟢 Fonctionnelle**
+
+- Catalogue Tweaks
+- Wizard
+- Profils
+- Configuration Custom
+- Actions Registry et autres Engines
+- Drivers
+- PostInstall / FirstBoot
+
+## Phase 3 — Validation produit
+
+**Statut : 🟡 En cours**
+
+- Nouvelle ISO depuis le commit 3bbaf73
+- Hyper-V FirstBoot/PostInstall
+- application réelle des Tweaks
+- réseau / reprise
+- idempotence
+- validation Rufus / physique
+
+## Phase 4 — Providers
+
+**Statut : ⬜ A venir**
+
+Ordre recommandé :
+
+1. Chocolatey
+2. Winget
+3. Microsoft Store
+
+Les trois providers doivent respecter le contrat du PackageManager et rester
+séparés du moteur générique des Tweaks.
+
+## Phase 5 — Qualité et exploitation
+
+- Recovery
+- Security
+- Reporting
+- Converters
+- PSScriptAnalyzer
+- CI
+- rapports Pester
+
+## Phase 6 — Enrichissement
+
+- nouveaux Tweaks
+- nouveaux profils
+- documentation des effets et risques
+- nouveaux scénarios d'intégration
+
+`Tests\Legacy` reste une archive historique et ne revient pas dans la campagne
+officielle.
+
+
+
+---
+
+## Gate de validation
+
+Avant toute campagne de tests, le diagnostic sécurisé classe les tests. Une validation réelle du Build constitue une étape distincte et doit être explicitement autorisée.

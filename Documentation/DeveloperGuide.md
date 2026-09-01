@@ -1,106 +1,69 @@
-# PimsOS Builder - Guide du développeur
+# PimsOS Builder - Structure du projet
 
 > Version technique : 3.0.0
 >
-> Statut : Référence
+> Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-01
 
 ---
 
 # Objectif
 
-Ce document décrit les bonnes pratiques à suivre pour contribuer au projet **PimsOS Builder**.
+Ce document décrit l'organisation réelle du projet **PimsOS Builder**.
 
-Il s'adresse à toute personne souhaitant :
-
-- corriger un bug ;
-- développer une nouvelle fonctionnalité ;
-- ajouter un nouveau type d'Action ;
-- améliorer l'architecture ;
-- participer à la maintenance du framework.
-
----
-
-# Avant de commencer
-
-Avant toute modification, lire les documents suivants :
-
-- `Architecture.md`
-- `ArchitectureRules.md`
-- `BuildContext.md`
-- `CodingStandards.md`
-- `ModuleGuide.md`
-- `ProjectStructure.md`
-- `Testing.md`
-
-Ces documents constituent les références officielles du projet.
-
----
-
-# Comprendre l'architecture
-
-PimsOS repose sur un module PowerShell unique et une architecture en couches.
-
-Chaque composant possède une responsabilité clairement définie.
-
-Le flux logique principal est :
+Le projet est structuré autour d'un module PowerShell unique :
 
 ```text
-Infrastructure / Core / Configuration
-                │
-                ▼
-            Workflow
-                │
-                ▼
-            Pipeline
-                │
-                ▼
-          ActionEngine
-                │
-                ▼
-          ActionRegistry
-                │
-                ▼
-        Engine spécialisé
-                │
-                ▼
-             Manager
-                │
-                ▼
-        Module technique
-                │
-                ▼
-             Windows
+Modules\PimsOS.psm1
 ```
 
-Avant d'ajouter du code, toujours identifier la couche et le composant responsables du besoin.
+Le module centralise le chargement des composants internes et l'exposition de l'API publique du framework.
 
 ---
 
-# Cycle de développement
-
-Toute nouvelle fonctionnalité suit le cycle suivant :
-
-1. Identifier le besoin.
-2. Vérifier qu'un composant similaire n'existe pas déjà.
-3. Déterminer la couche et le composant concernés.
-4. Concevoir la solution.
-5. Développer.
-6. Écrire ou adapter les tests.
-7. Mettre à jour la documentation.
-8. Valider le fonctionnement.
-9. Mettre à jour les ADR si nécessaire.
-10. Effectuer le commit.
-
----
-
-# Organisation des composants
-
-Les composants internes sont répartis dans :
+# Structure générale
 
 ```text
-Modules/
+PimsOS
+│
+├── Build
+├── Config
+├── Documentation
+├── ISO
+├── Logs
+├── Modules
+├── Output
+├── Packages
+├── Tests
+├── Workspace
+├── version.json
+└── README.md
+```
+
+Le projet est organisé de manière à séparer clairement :
+
+- le code du framework ;
+- la configuration ;
+- les ressources de Build ;
+- les tests ;
+- la documentation ;
+- les artefacts et espaces de travail.
+
+---
+
+# Modules
+
+Le code du framework se trouve dans :
+
+```text
+Modules\
+```
+
+La structure principale est :
+
+```text
+Modules
 │
 ├── Actions
 ├── Configuration
@@ -109,463 +72,420 @@ Modules/
 ├── Infrastructure
 ├── Managers
 ├── Package
+├── PostInstall
 ├── Windows
 ├── PimsOS.psd1
 └── PimsOS.psm1
 ```
 
-Chaque dossier possède une responsabilité clairement définie.
+Les composants internes appartiennent au module PowerShell unique **PimsOS**.
 
-Les composants internes ne sont pas des modules PowerShell indépendants.
-
----
-
-# Ajouter un nouvel Engine
-
-Les Engines sont placés dans :
-
-```text
-Modules\Actions
-```
-
-Chaque Engine :
-
-- traite un domaine d'Action défini ;
-- contient la logique métier de ce domaine ;
-- ne réalise pas directement les appels aux API Windows ;
-- reçoit le BuildContext et l'Action ;
-- met à jour l'état relevant de sa responsabilité ;
-- utilise le Logger officiel ;
-- propage correctement les erreurs.
-
-Le traitement technique est délégué au Manager approprié.
-
-Exemples :
-
-```text
-RegistryEngine
-FeatureEngine
-PackageEngine
-DriverEngine
-```
-
----
-
-# Ajouter un nouveau Manager
-
-Les Managers sont placés dans :
-
-```text
-Modules\Managers
-```
-
-Ils encapsulent les opérations techniques de leur domaine.
-
-Ils peuvent notamment interagir avec :
-
-- DISM ;
-- le registre Windows ;
-- le système de fichiers ;
-- les fournisseurs de packages ;
-- les fonctionnalités Windows ;
-- les autres composants techniques nécessaires à leur domaine.
-
-Les Managers ne prennent pas les décisions métier relatives aux profils ou aux Tweaks.
-
----
-
-# Ajouter un nouveau type d'Action
-
-Pour ajouter un nouveau type d'Action :
-
-1. identifier son domaine fonctionnel ;
-2. créer l'Engine spécialisé ;
-3. créer ou adapter le Manager correspondant si nécessaire ;
-4. enregistrer le type dans `ActionRegistry.ps1` ;
-5. ajouter les validations nécessaires ;
-6. ajouter les tests Pester ;
-7. mettre à jour le BuildContext ou les statistiques si nécessaire ;
-8. mettre à jour la documentation.
-
-Le traitement doit suivre :
-
-```text
-Action
-    │
-    ▼
-ActionEngine
-    │
-    ▼
-ActionRegistry
-    │
-    ▼
-Engine spécialisé
-    │
-    ▼
-Manager
-    │
-    ▼
-Module technique
-```
-
-Aucun composant ne doit appeler directement un Engine spécialisé en contournant le routage normal.
-
----
-
-# Ajouter un Tweak
-
-Les Tweaks sont des définitions de configuration.
-
-Ils doivent rester séparés de la logique PowerShell.
-
-Un Tweak peut notamment contenir :
-
-- un identifiant ;
-- une catégorie ;
-- une description ;
-- des Actions ;
-- des métadonnées ;
-- des contraintes de compatibilité.
-
-Les Tweaks ne doivent pas contenir de logique PowerShell exécutable.
-
----
-
-# Profils
-
-Les profils déterminent les personnalisations sélectionnées pour un Build.
-
-Ils peuvent activer ou désactiver des Tweaks selon le scénario choisi.
-
-Le profil ne doit pas contenir de logique d'exécution.
-
-Le moteur de configuration construit une configuration finale avant l'exécution des Actions.
-
----
-
-# BuildContext
-
-Le BuildContext est le contrat central entre les composants.
-
-Il ne doit jamais être remplacé par un nouvel objet au cours du Build.
-
-Chaque composant enrichit ou met à jour uniquement les informations relevant de sa responsabilité.
-
-Toute nouvelle donnée doit être ajoutée au BuildContext uniquement lorsqu'elle représente un état ou une information réellement partagée entre plusieurs composants.
-
-Les composants ne doivent pas utiliser un état global pour transporter les données du Build.
-
----
-
-# BuildState
-
-Le BuildState représente l'état courant de l'exécution.
-
-Il doit être utilisé pour les informations de progression et d'état du Build.
-
-Les nouveaux composants doivent mettre à jour le BuildState lorsque leur contrat l'exige.
+Ils ne constituent pas des modules PowerShell indépendants.
 
 ---
 
 # PostInstall
 
-Le PostInstall est le runtime exécuté après l'installation de Windows.
+Le projet contient désormais un sous-système dédié à l'exécution après l'installation de Windows :
 
-Il est préparé pendant le Build puis embarqué dans l'image Windows. Le runtime installé doit être autonome et ne doit pas dépendre du chemin du dépôt PimsOS utilisé sur la machine de Build.
+```text
+Modules\PostInstall\
+```
 
-Le runtime est installé dans :
+Ce dossier contient le runtime PostInstall embarqué dans l'image Windows.
+
+Les composants actuellement présents comprennent notamment :
+
+```text
+Bootstrap.ps1
+FirstBoot.ps1
+Installer.ps1
+Network.ps1
+PostInstall.ps1
+State.ps1
+UI.ps1
+Unattend.ps1
+```
+
+Le runtime est préparé pendant le Build puis installé dans l'image Windows sous :
 
 ```text
 C:\ProgramData\PimsOS\PostInstall\
 ```
 
-Les composants principaux sont :
+Le sous-système PostInstall prend notamment en charge :
 
-```text
-State.ps1
-Network.ps1
-UI.ps1
-PostInstall.ps1
-Bootstrap.ps1
-FirstBoot.ps1
-Unattend.ps1
-Installer.ps1
-```
+- l'initialisation du runtime ;
+- la persistance de l'état ;
+- la détection du réseau ;
+- la détection de l'accès Internet ;
+- l'attente de la disponibilité réseau ;
+- l'interface console du premier démarrage ;
+- la préparation FirstBoot ;
+- la génération de `unattend.xml`.
 
-Le flux d'exécution est :
-
-```text
-Build
-    │
-    ▼
-Runtime PostInstall
-    │
-    ▼
-unattend.xml
-    │
-    ▼
-FirstLogonCommands
-    │
-    ▼
-Bootstrap.ps1
-    │
-    ▼
-PostInstall
-```
-
-## Bootstrap
-
-`Bootstrap.ps1` constitue le point d'entrée du runtime.
-
-Il localise le runtime installé, vérifie les composants nécessaires, charge les scripts requis puis démarre le PostInstall.
-
-Le Bootstrap ne doit pas dépendre du chemin du dépôt utilisé pour construire l'image.
-
-## État
-
-`State.ps1` fournit la gestion de l'état persistant du PostInstall.
-
-L'état permet notamment de suivre :
-
-- l'état courant ;
-- la phase d'exécution ;
-- les tâches terminées ;
-- la disponibilité du réseau ;
-- les erreurs ;
-- le statut final.
-
-## Réseau
-
-`Network.ps1` fournit les vérifications réseau.
-
-Le runtime distingue :
-
-- la présence d'un adaptateur ;
-- la disponibilité du réseau local ;
-- l'accès à Internet.
-
-Un adaptateur actif ne signifie donc pas nécessairement qu'Internet est disponible.
-
-Lorsque l'accès réseau est requis et indisponible, le PostInstall peut passer par l'état `WaitingForNetwork` puis reprendre automatiquement lorsque les conditions sont réunies.
-
-## Interface utilisateur
-
-`UI.ps1` fournit l'affichage console du premier démarrage.
-
-Les fonctions principales sont :
-
-```powershell
-Show-PostInstallNetworkStatus
-Show-PostInstallNetworkHelp
-Wait-PostInstallNetworkUI
-```
-
-La couche UI présente l'état du réseau et les instructions nécessaires à l'utilisateur. Elle ne doit pas absorber la logique métier du PostInstall.
-
-## Installer
-
-`Installer.ps1` prépare le runtime dans l'image Windows et installe la configuration FirstBoot.
-
-Il vérifie la présence des fichiers requis avant leur copie et installe `unattend.xml` dans :
-
-```text
-C:\Windows\Panther\unattend.xml
-```
-
-## Tests PostInstall
-
-Les composants PostInstall doivent disposer de tests Pester adaptés.
-
-Les tests doivent couvrir, lorsque cela est pertinent :
-
-- l'initialisation de l'état ;
-- les vérifications réseau ;
-- la disponibilité d'Internet ;
-- l'attente et la reprise réseau ;
-- les erreurs ;
-- le Bootstrap ;
-- l'installation du runtime ;
-- la génération de `unattend.xml` ;
-- l'intégration au Pipeline.
+Le PostInstall reste séparé de la logique du Build exécutée hors ligne.
 
 ---
 
-# Compatibilité Windows
+# Diagnostic avant tests
 
-Le Builder n'est pas conçu pour une seule version de Windows.
-
-Les informations relatives à la cible doivent provenir :
-
-- de l'image Windows ;
-- du BuildContext ;
-- de la configuration ;
-- des contraintes déclarées par les Tweaks.
-
-Les composants ne doivent pas coder en dur une version telle que `24H2` ou `25H2` lorsqu'il s'agit d'une information de configuration ou de compatibilité.
-
----
-
-# Journalisation
-
-Toute opération importante doit être journalisée via :
-
-```powershell
-Write-Log
-```
-
-Les appels à :
-
-```powershell
-Write-Host
-```
-
-sont interdits dans la logique métier.
-
-`Write-Verbose` et `Write-Debug` peuvent être utilisés pour les informations de diagnostic appropriées.
-
-L'interface console du runtime PostInstall constitue une exception fonctionnelle : `UI.ps1` utilise volontairement `Write-Host` pour afficher les informations destinées à l'utilisateur lors du premier démarrage. Cette utilisation doit rester limitée à la couche UI.
-
----
-
-# Gestion des erreurs
-
-Les erreurs doivent :
-
-- être détectées ;
-- être traitées au niveau approprié ;
-- être journalisées lorsque nécessaire ;
-- être propagées lorsqu'elles ne peuvent pas être traitées localement.
-
-Ne jamais masquer une exception sans justification.
-
-Dans un module, ne pas utiliser :
-
-```powershell
-exit
-```
-
-pour interrompre arbitrairement le processus appelant.
-
----
+Avant une campagne Pester, utiliser `Tests\Tools\Invoke-PimsOSDiagnostics.ps1` pour vérifier que les fichiers sélectionnés ne sont pas susceptibles de lancer un Build réel. Les validations `BUILD-CAPABLE` nécessitent explicitement `-BuildValidation -AllowBuild`.
 
 # Tests
 
-Toute nouvelle fonctionnalité importante doit être accompagnée de tests Pester adaptés.
+Les tests du framework sont organisés dans :
 
-Les tests doivent couvrir, lorsque cela est pertinent :
+```text
+Tests\
+```
 
-- le fonctionnement nominal ;
-- les paramètres invalides ;
-- les cas d'erreur ;
-- les cas limites ;
-- les changements d'état ;
-- les statistiques ;
-- les régressions.
+La structure comprend notamment :
 
-Pour une correction de bug, ajouter ou adapter un test de régression lorsque cela est pertinent.
+```text
+Tests
+│
+├── Unit
+├── Integration
+├── Acceptance
+└── Legacy
+```
+
+Les tests Legacy sont conservés séparément et ne participent pas à la validation officielle du framework actif.
+
+---
+
+# Tests PostInstall
+
+Les tests dédiés au sous-système PostInstall sont regroupés dans :
+
+```text
+Tests\Unit\Modules\PostInstall\
+```
+
+Ils couvrent notamment :
+
+```text
+Bootstrap.Tests.ps1
+FirstBoot.Tests.ps1
+Installer.Tests.ps1
+Network.Tests.ps1
+PostInstall.Tests.ps1
+State.Tests.ps1
+UI.Tests.ps1
+Unattend.Tests.ps1
+```
+
+Les tests PostInstall vérifient les composants individuellement ainsi que leurs contrats fonctionnels.
+
+L'intégration du PostInstall dans le pipeline est également couverte par les tests d'intégration du BuildPipeline.
+
+---
+
+# Architecture des dépendances
+
+Le framework suit une architecture en couches.
+
+Le flux principal est :
+
+```text
+Infrastructure
+        │
+        ▼
+Core
+        │
+        ▼
+Configuration
+        │
+        ▼
+Workflow
+        │
+        ▼
+Pipeline
+        │
+        ▼
+ActionEngine
+        │
+        ▼
+ActionRegistry
+        │
+        ▼
+Engine spécialisé
+        │
+        ▼
+Manager
+        │
+        ▼
+Module technique
+        │
+        ▼
+Windows
+```
+
+Le PostInstall constitue un sous-système runtime distinct du chemin d'exécution principal du Build.
+
+Sa préparation est intégrée au Pipeline :
+
+```text
+MountWim
+    │
+    ▼
+ApplyDrivers
+    │
+    ▼
+PreparePostInstall
+    │
+    ▼
+MountSoftwareHive
+```
+
+---
+
+# Build
+
+Le dossier :
+
+```text
+Build\
+```
+
+contient les scripts utilisés pour lancer et orchestrer le processus de Build.
+
+Le lanceur principal est :
+
+```text
+Build\Build-PimsOS.ps1
+```
+
+Le Build prépare notamment :
+
+- l'environnement ;
+- les ressources ISO et WIM ;
+- les drivers ;
+- le runtime PostInstall ;
+- FirstBoot ;
+- la configuration ;
+- les personnalisations ;
+- le nettoyage ;
+- la finalisation.
+
+---
+
+# Configuration
+
+La configuration du Builder se trouve dans :
+
+```text
+Config\
+```
+
+Elle contient notamment :
+
+```text
+Categories.json
+Profiles\
+Tweaks\
+```
+
+Les profils sélectionnent les personnalisations et les Tweaks définissent les Actions à exécuter.
+
+La configuration reste séparée du code PowerShell.
 
 ---
 
 # Documentation
 
-Toute évolution importante doit mettre à jour les documents concernés.
+La documentation technique se trouve dans :
 
-Selon le changement, cela peut inclure :
+```text
+Documentation\
+```
 
-- `API.md`
-- `Architecture.md`
-- `ArchitectureRules.md`
-- `BuildContext.md`
-- `CodingStandards.md`
-- `ModuleGuide.md`
-- `ProjectStatus.md`
-- `ProjectStructure.md`
-- `Roadmap.md`
-- `Milestones.md`
-- `ReleaseNotes.md`
-- `Testing.md`
+Elle comprend notamment :
 
-Si l'architecture évolue, une nouvelle ADR doit être créée lorsque la décision le justifie.
+```text
+API.md
+Architecture.md
+ArchitectureRules.md
+BuildContext.md
+DeveloperGuide.md
+GettingStarted.md
+Legacy.md
+Lifecycle.md
+Milestones.md
+ModuleGuide.md
+PostInstall.md
+Prerequisites.md
+ProjectStatus.md
+ProjectStructure.md
+ReleaseNotes.md
+Roadmap.md
+Schema.md
+TechnicalDecisions.md
+Testing.md
+```
 
----
+Les décisions d'architecture sont documentées dans :
 
-# Revue de code
-
-Avant un commit important, vérifier :
-
-- le code est syntaxiquement valide ;
-- le module se charge correctement ;
-- les tests concernés passent ;
-- aucune erreur critique n'est introduite ;
-- le BuildContext respecte son contrat ;
-- les nouveaux composants respectent les Architecture Rules ;
-- la documentation est à jour ;
-- les ADR sont mises à jour si nécessaire.
-
-PowerShell n'étant pas compilé comme un langage classique, la validation doit notamment porter sur le parsing, le chargement du module et l'exécution des tests.
-
----
-
-# Workflow Git
-
-Chaque évolution importante suit le processus suivant :
-
-1. Développement.
-2. Validation locale.
-3. Exécution des tests.
-4. Mise à jour de la documentation.
-5. Vérification des ADR si nécessaire.
-6. Vérification de `git status`.
-7. Commit Git.
-8. Push vers le dépôt distant lorsque l'évolution est prête.
-
-Un commit doit représenter une évolution cohérente.
+```text
+Documentation\ADR\
+```
 
 ---
 
-# Ajout d'un composant
+# ISO
 
-Avant de créer un nouveau composant :
+Le dossier :
 
-- vérifier qu'un composant existant ne répond pas déjà au besoin ;
-- définir clairement sa responsabilité ;
-- choisir la couche appropriée ;
-- identifier ses dépendances ;
-- prévoir ses tests ;
-- documenter l'évolution lorsque nécessaire.
+```text
+ISO\
+```
 
-Un composant ne doit pas cumuler plusieurs responsabilités indépendantes.
+contient les ressources et éléments nécessaires aux opérations liées aux médias Windows et à la génération de l'image.
 
 ---
 
-# Philosophie
+# Logs
 
-Le développement de PimsOS Builder repose sur les principes suivants :
+Le dossier :
 
-- simplicité ;
-- lisibilité ;
-- modularité ;
-- réutilisabilité ;
-- testabilité ;
-- maintenabilité ;
-- extensibilité.
+```text
+Logs\
+```
 
-Le respect de l'architecture est prioritaire sur la rapidité de développement.
+contient les journaux générés pendant les opérations du Builder.
 
-Une nouvelle fonctionnalité doit, lorsque l'architecture le permet, avoir un impact limité sur les composants existants.
+---
 
-Les duplications doivent être évitées lorsqu'une solution réutilisable existe.
+# Output
+
+Le dossier :
+
+```text
+Output\
+```
+
+est destiné aux artefacts produits par le Build.
+
+---
+
+# Workspace
+
+Le dossier :
+
+```text
+Workspace\
+```
+
+contient les ressources de travail temporaires utilisées pendant les opérations du Builder.
+
+Il peut notamment contenir :
+
+- les copies de travail ;
+- les montages WIM ;
+- les fichiers temporaires ;
+- les ressources intermédiaires.
+
+---
+
+# Packages
+
+Le dossier :
+
+```text
+Packages\
+```
+
+contient les ressources liées aux packages ou aux fournisseurs utilisés par le projet.
+
+---
+
+# Classes
+
+Le dossier historique :
+
+```text
+Classes\
+```
+
+n'est plus utilisé comme couche de classes métier du Builder.
+
+Les composants actifs suivent désormais l'architecture modulaire du framework.
+
+---
+
+# Legacy
+
+Les composants historiques peuvent être conservés dans :
+
+```text
+Tools\
+Tests\Legacy\
+```
+
+Ils ne sont pas chargés par :
+
+```text
+Modules\PimsOS.psm1
+```
+
+et ne participent pas au fonctionnement normal du Builder.
+
+Aucune nouvelle fonctionnalité ne doit être développée dans ces emplacements.
+
+---
+
+# Point d'entrée
+
+Le point d'entrée du framework est :
+
+```text
+Modules\PimsOS.psm1
+```
+
+L'API publique est centralisée dans ce module.
+
+La fonction publique principale actuellement définie est :
+
+```powershell
+Initialize-PimsOS
+```
+
+---
+
+# Principe général
+
+L'organisation du projet doit préserver la séparation entre :
+
+```text
+Configuration
+    ↓
+Framework
+    ↓
+Build
+    ↓
+Runtime PostInstall
+    ↓
+Windows installé
+```
+
+Le Build prépare l'image.
+
+Le runtime PostInstall s'exécute ensuite dans Windows installé.
+
+Cette séparation permet de maintenir une architecture claire, testable et évolutive.
 
 ---
 
 # Références
 
+Consulter également :
+
 - `Architecture.md`
 - `ArchitectureRules.md`
 - `BuildContext.md`
-- `CodingStandards.md`
+- `DeveloperGuide.md`
 - `ModuleGuide.md`
-- `ProjectStructure.md`
+- `PostInstall.md`
 - `Testing.md`
-- `TechnicalDecisions.md`
-- `Documentation\ADR\`
+- `Legacy.md`

@@ -8,6 +8,9 @@
 
 ---
 
+> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+
+
 # Objectif
 
 Ce document présente les principaux jalons du projet **PimsOS Builder**.
@@ -379,7 +382,7 @@ Ils ne font pas partie de la campagne officielle.
 La dernière campagne de référence donne :
 
 ```text
-971 Passed
+971 Passed (historical — 31/08/2026)
 0 Failed
 1 Skipped
 0 Inconclusive

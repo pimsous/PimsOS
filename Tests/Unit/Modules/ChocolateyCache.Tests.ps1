@@ -52,15 +52,15 @@ Describe "Chocolatey cache" {
     It "Détecte un package déjà présent et ne le télécharge pas" {
         $Cache = Join-Path $TestDrive "Chocolatey"
         New-Item -ItemType Directory -Path $Cache -Force | Out-Null
-        $Existing = Join-Path $Cache "firefox.1.0.0.nupkg"
+        $Existing = Join-Path $Cache "cached-firefox.1.0.0.nupkg"
         New-Item -ItemType File -Path $Existing -Force | Out-Null
 
         Mock Invoke-WebRequest { throw 'Le téléchargement ne doit pas être appelé.' }
 
         $Package = [pscustomobject]@{
-            Id = 'firefox'
-            Enabled = $true
-            Version = '1.0.0'
+            Id = 'cached-firefox'
+			Enabled = $true
+			Version = '1.0.0'
         }
 
         $Result = Save-ChocolateyPackageToCache `
@@ -73,12 +73,13 @@ Describe "Chocolatey cache" {
         Should -Invoke Invoke-WebRequest -Times 0 -Exactly
     }
 
+
     It "Télécharge un package absent dans le cache" {
         $Cache = Join-Path $TestDrive "Chocolatey"
         $Package = [pscustomobject]@{
-            Id = 'firefox'
-            Enabled = $true
-            Version = '1.0.0'
+            Id = 'download-firefox'
+			Enabled = $true
+			Version = '1.0.0'
         }
 
         Mock Invoke-WebRequest {
@@ -95,7 +96,7 @@ Describe "Chocolatey cache" {
         Test-Path $Result.Path | Should -BeTrue
 
         Should -Invoke Invoke-WebRequest -Times 1 -Exactly -ParameterFilter {
-            $Uri -eq 'https://example.test/api/v2/package/firefox/1.0.0'
+            $Uri -eq 'https://example.test/api/v2/package/download-firefox/1.0.0'
         }
     }
 
@@ -105,8 +106,8 @@ Describe "Chocolatey cache" {
 
         @{
             Packages = @(
-                @{ Id = 'firefox'; Enabled = $true; Version = '1.0.0' }
-                @{ Id = 'vlc'; Enabled = $true; Version = '2.0.0' }
+                @{ Id = 'cache-firefox'; Enabled = $true; Version = '1.0.0' }
+				@{ Id = 'cache-vlc';     Enabled = $true; Version = '2.0.0' }
             )
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Catalog -Encoding utf8
 
@@ -136,7 +137,7 @@ Describe "Chocolatey cache" {
 
         @{
             Packages = @(
-                @{ Id = 'firefox'; Enabled = $true; Version = '1.0.0' }
+                @{ Id = 'cache-second-firefox'; Enabled = $true; Version = '1.0.0' }
             )
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Catalog -Encoding utf8
 
