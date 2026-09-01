@@ -11,10 +11,11 @@ BeforeAll {
     # Chargement explicite des dépendances
     # --------------------------------------------------
 
+    . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
     . "$ProjectRoot\Modules\PostInstall\State.ps1"
-	. "$ProjectRoot\Modules\PostInstall\Network.ps1"
-	. "$ProjectRoot\Modules\PostInstall\DriverCheck.ps1"
-	. "$ProjectRoot\Modules\PostInstall\PostInstall.ps1"
+    . "$ProjectRoot\Modules\PostInstall\Network.ps1"
+    . "$ProjectRoot\Modules\PostInstall\DriverCheck.ps1"
+    . "$ProjectRoot\Modules\PostInstall\PostInstall.ps1"
 
 }
 
@@ -29,6 +30,10 @@ Describe "PostInstall" {
         $script:StatePath = Join-Path `
             $TestDrive `
             "PostInstall\state.json"
+
+        Start-Logger `
+            -Path (Join-Path $TestDrive "PostInstall\test.log") `
+            -Quiet
 
         $script:State = New-PostInstallState `
             -StatePath $script:StatePath
