@@ -5,11 +5,42 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - 'Build/**'
+      - 'Config/**'
+      - 'Modules/**'
+      - 'Profiles/**'
+      - 'Tests/**'
+      - 'Tools/**'
+      - 'Tweaks/**'
+      - 'PesterConfiguration.ps1'
+      - 'version.json'
+      - '.github/workflows/pester.yml'
+      - '.github/workflows/codeql.yml'
 
   pull_request:
     branches:
       - main
       - develop
+    paths:
+      - 'Build/**'
+      - 'Config/**'
+      - 'Modules/**'
+      - 'Profiles/**'
+      - 'Tests/**'
+      - 'Tools/**'
+      - 'Tweaks/**'
+      - 'PesterConfiguration.ps1'
+      - 'version.json'
+      - '.github/workflows/pester.yml'
+      - '.github/workflows/codeql.yml'
+
+# ChatGPT/GitHub connector updates can produce several commits in quick
+# succession. Keep only the newest run for a branch/ref so queued runs do not
+# accumulate while the project is being synchronized.
+concurrency:
+  group: pimsos-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
