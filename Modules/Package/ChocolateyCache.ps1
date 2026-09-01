@@ -1,7 +1,7 @@
 # ==========================================
 # Module : Package / Chocolatey Cache
 # Projet : PimsOS Builder
-# Version : 1.0.2
+# Version : 1.0.3
 # Compatible : PowerShell 7+
 # ==========================================
 
@@ -48,6 +48,37 @@ function Get-ChocolateyPackageDefinitions {
 }
 
 # --------------------------------------------------
+# Recherche un package déjà présent dans le cache
+# --------------------------------------------------
+function Find-ChocolateyCachedPackage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CachePath,
+        [Parameter(Mandatory)][string]$Name,
+        [string]$Version
+    )
+
+    if (-not (Test-Path -LiteralPath $CachePath -PathType Container)) {
+        return $null
+    }
+
+    $Pattern = if ([string]::IsNullOrWhiteSpace($Version)) {
+        "$Name*.nupkg"
+    }
+    else {
+        "$Name.$Version.nupkg"
+    }
+
+    return Get-ChildItem -LiteralPath $CachePath -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -like $Pattern -and
+            $_.Extension -ieq '.nupkg'
+        } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+}
+
+# --------------------------------------------------
 # Télécharge un package .nupkg dans le cache
 # --------------------------------------------------
 function Save-ChocolateyPackageToCache {
@@ -78,9 +109,6 @@ function Save-ChocolateyPackageToCache {
         $Version = [string]$Package.Version
     }
 
-    # Utiliser le même moteur de détection que le provider Chocolatey.
-    # Cela garantit un contrat unique pour la reconnaissance des .nupkg
-    # versionnés et non versionnés.
     $Existing = Find-ChocolateyCachedPackage `
         -CachePath $CachePath `
         -Name ([string]$Package.Id) `
@@ -88,9 +116,9 @@ function Save-ChocolateyPackageToCache {
 
     if ($null -ne $Existing) {
         return [pscustomobject]@{
-            Id = [string]$Package.Id
-            Status = 'Cached'
-            Path = $Existing.FullName
+            Id         = [string]$Package.Id
+            Status     = 'Cached'
+            Path       = $Existing.FullName
             Downloaded = $false
         }
     }
@@ -122,9 +150,9 @@ function Save-ChocolateyPackageToCache {
     }
 
     return [pscustomobject]@{
-        Id = [string]$Package.Id
-        Status = 'Downloaded'
-        Path = $Destination
+        Id         = [string]$Package.Id
+        Status     = 'Downloaded'
+        Path       = $Destination
         Downloaded = $true
     }
 }
@@ -150,10 +178,10 @@ function Initialize-ChocolateyCache {
     }
 
     return [pscustomobject]@{
-        CachePath = $CachePath
-        Total = $Packages.Count
-        Results = @($Results)
-        Downloaded = @($Results | Where-Object Downloaded).Count
+        CachePath     = $CachePath
+        Total         = $Packages.Count
+        Results       = @($Results)
+        Downloaded    = @($Results | Where-Object Downloaded).Count
         AlreadyCached = @($Results | Where-Object { $_.Status -eq 'Cached' }).Count
     }
 }
