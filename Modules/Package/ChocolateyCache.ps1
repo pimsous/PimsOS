@@ -11,12 +11,8 @@ Set-StrictMode -Version Latest
 # Charge les définitions de packages Chocolatey
 # --------------------------------------------------
 function Get-ChocolateyPackageDefinitions {
-
     [CmdletBinding()]
-    param(
-        [Parameter(Mandatory)]
-        [string]$Path
-    )
+    param([Parameter(Mandatory)][string]$Path)
 
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         throw "Le catalogue Chocolatey est introuvable : $Path"
@@ -51,15 +47,10 @@ function Get-ChocolateyPackageDefinitions {
 # Télécharge un package .nupkg dans le cache
 # --------------------------------------------------
 function Save-ChocolateyPackageToCache {
-
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [psobject]$Package,
-
-        [Parameter(Mandatory)]
-        [string]$CachePath,
-
+        [Parameter(Mandatory)][psobject]$Package,
+        [Parameter(Mandatory)][string]$CachePath,
         [string]$Source = 'https://community.chocolatey.org/api/v2/package'
     )
 
@@ -77,11 +68,16 @@ function Save-ChocolateyPackageToCache {
         $Version = [string]$Package.Version
     }
 
-    $Existing = if ($Version) {
-        Get-ChildItem -LiteralPath $CachePath -Filter "$($Package.Id).$Version.nupkg" -File -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($Version) {
+        $Existing = Get-ChildItem -LiteralPath $CachePath `
+            -Filter "$($Package.Id).$Version.nupkg" `
+            -File -ErrorAction SilentlyContinue |
+            Select-Object -First 1
     }
     else {
-        Get-ChildItem -LiteralPath $CachePath -Filter "$($Package.Id).*\.nupkg" -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        $Existing = Get-ChildItem -LiteralPath $CachePath -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -like "$($Package.Id)*.nupkg" } |
+            Select-Object -First 1
     }
 
     if ($null -ne $Existing) {
@@ -126,14 +122,10 @@ function Save-ChocolateyPackageToCache {
 # Prépare le cache persistant des packages activés
 # --------------------------------------------------
 function Initialize-ChocolateyCache {
-
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory)]
-        [psobject]$Context,
-
-        [Parameter(Mandatory)]
-        [string]$CatalogPath
+        [Parameter(Mandatory)][psobject]$Context,
+        [Parameter(Mandatory)][string]$CatalogPath
     )
 
     $CachePath = Get-ChocolateyCachePath -Context $Context
