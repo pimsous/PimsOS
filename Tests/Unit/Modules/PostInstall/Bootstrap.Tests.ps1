@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Tests : PostInstall Bootstrap
 # Projet : PimsOS Builder
 # ==========================================
@@ -47,9 +47,21 @@ Describe "PostInstall Bootstrap" {
             $script:RuntimePath `
             "UI.ps1"
 
+        $script:DriverCheckPath = Join-Path `
+            $script:RuntimePath `
+            "DriverCheck.ps1"
+
+        $script:ChocolateyPath = Join-Path `
+            $script:RuntimePath `
+            "Chocolatey.ps1"
+
         $script:PostInstallPath = Join-Path `
             $script:RuntimePath `
             "PostInstall.ps1"
+
+        $script:FinalizePath = Join-Path `
+            $script:RuntimePath `
+            "Finalize.ps1"
 
         # --------------------------------------------------
         # Logger de test
@@ -92,7 +104,22 @@ function Write-Log {
 
         Set-Content `
             -Path $script:StatePath `
-            -Value 'function New-BootstrapState {}' `
+            -Value @'
+function New-BootstrapState {
+    return [pscustomobject]@{ StatePath = $null }
+}
+
+function Save-PostInstallState {
+    param(
+        [Parameter(Mandatory)]
+        [psobject]$State,
+
+        [string]$StatePath
+    )
+
+    return $State
+}
+'@ `
             -Encoding UTF8
 
         # --------------------------------------------------
@@ -114,12 +141,37 @@ function Write-Log {
             -Encoding UTF8
 
         # --------------------------------------------------
+        # DriverCheck
+        # --------------------------------------------------
+
+        Set-Content `
+            -Path $script:DriverCheckPath `
+            -Value 'function Test-PostInstallDrivers { return [pscustomobject]@{ Available = $true; Problems = @() } }' `
+            -Encoding UTF8
+
+        # --------------------------------------------------
+        # Chocolatey
+        # --------------------------------------------------
+
+        Set-Content `
+            -Path $script:ChocolateyPath `
+            -Value 'function Invoke-ChocolateyCatalog { return $true }' `
+            -Encoding UTF8
+
+        # --------------------------------------------------
         # PostInstall
         # --------------------------------------------------
 
         Set-Content `
             -Path $script:PostInstallPath `
-            -Value 'function Invoke-PostInstall { return "OK" }' `
+            -Value 'function Invoke-PostInstall { return [pscustomobject]@{ StatePath = "state.json" } }' `
+            -Encoding UTF8
+
+$script:FinalizeCalled = $false
+
+        Set-Content `
+            -Path $script:FinalizePath `
+            -Value 'function Complete-PimsOSPostInstall { param($State,$RuntimePath) $script:FinalizeCalled = $true; return [pscustomobject]@{ State = $State; Cleanup = [pscustomobject]@{ Scheduled = $true; DelaySeconds = 10 } } }' `
             -Encoding UTF8
 
         # --------------------------------------------------
@@ -213,8 +265,8 @@ function Write-Log {
                 Start-PimsOSPostInstall `
                     -RuntimePath $script:RuntimePath
 
-            $Result |
-                Should -Be "OK"
+            $Result.StatePath |
+                Should -Be "state.json"
 
         }
 
@@ -267,11 +319,30 @@ function Write-Log {
         }
 
 
+
+        It "Effectue la vérification finale après le PostInstall" {
+
+            $BootstrapContent = Get-Content `
+                -LiteralPath $script:BootstrapPath `
+                -Raw `
+                -Encoding UTF8
+
+            $BootstrapContent = $BootstrapContent -replace `
+                '(?ms)\r?\n# --------------------------------------------------\r?\n# Point d''entrée\r?\n# --------------------------------------------------\r?\n\r?\nStart-PimsOSPostInstall\s*$', ''
+
+            . ([scriptblock]::Create($BootstrapContent))
+
+            $null = Start-PimsOSPostInstall -RuntimePath $script:RuntimePath
+
+            $script:FinalizeCalled | Should -BeTrue
+
+        }
+
         It "Transmet WaitForNetwork" {
 
             Set-Content `
                 -Path $script:PostInstallPath `
-                -Value 'function Invoke-PostInstall { param([switch]$WaitForNetwork,[int]$NetworkTimeoutMinutes) if (-not $WaitForNetwork) { throw "WaitForNetwork absent" } return $true }' `
+                -Value 'function Invoke-PostInstall { param([switch]$WaitForNetwork,[int]$NetworkTimeoutMinutes) if (-not $WaitForNetwork) { throw "WaitForNetwork absent" } return [pscustomobject]@{ StatePath = "state.json" } }' `
                 -Encoding UTF8
 
             $BootstrapContent = Get-Content `
@@ -289,8 +360,8 @@ function Write-Log {
                     -RuntimePath $script:RuntimePath `
                     -WaitForNetwork
 
-            $Result |
-                Should -BeTrue
+            $Result.StatePath |
+                Should -Be "state.json"
 
         }
 
@@ -299,7 +370,7 @@ function Write-Log {
 
             Set-Content `
                 -Path $script:PostInstallPath `
-                -Value 'function Invoke-PostInstall { param([switch]$WaitForNetwork,[int]$NetworkTimeoutMinutes) if ($NetworkTimeoutMinutes -ne 15) { throw "Timeout incorrect" } return $true }' `
+                -Value 'function Invoke-PostInstall { param([switch]$WaitForNetwork,[int]$NetworkTimeoutMinutes) if ($NetworkTimeoutMinutes -ne 15) { throw "Timeout incorrect" } return [pscustomobject]@{ StatePath = "state.json" } }' `
                 -Encoding UTF8
 
             $BootstrapContent = Get-Content `
@@ -318,8 +389,8 @@ function Write-Log {
                     -WaitForNetwork `
                     -NetworkTimeoutMinutes 15
 
-            $Result |
-                Should -BeTrue
+            $Result.StatePath |
+                Should -Be "state.json"
 
         }
 

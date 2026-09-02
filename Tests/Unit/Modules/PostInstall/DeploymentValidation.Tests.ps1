@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Tests : PostInstall DeploymentValidation
 # Projet : PimsOS Builder
 # ==========================================
@@ -26,13 +26,22 @@ Describe "PostInstall DeploymentValidation" {
 			"Network.ps1"
 			"UI.ps1"
 			"DriverCheck.ps1"
+			"Chocolatey.ps1"
 			"PostInstall.ps1"
 			"State.ps1"
+            "Finalize.ps1"
 		) | ForEach-Object {
 
-            New-Item -ItemType File -Path (Join-Path $script:PostInstallPath $_) -Force | Out-Null
+            Set-Content -LiteralPath (Join-Path $script:PostInstallPath $_) -Value "# Test runtime" -Encoding UTF8
 
         }
+
+        Set-Content -LiteralPath (Join-Path $script:PostInstallPath "Bootstrap.ps1") -Value @'
+# Test bootstrap
+. "$PSScriptRoot\DriverCheck.ps1"
+. "$PSScriptRoot\Chocolatey.ps1"
+. "$PSScriptRoot\Finalize.ps1"
+'@ -Encoding UTF8
 
     }
 
@@ -51,6 +60,9 @@ Describe "PostInstall DeploymentValidation" {
         $Result.FirstLogonCommands | Should -BeTrue
         $Result.BootstrapReferenced | Should -BeTrue
         $Result.RunOnceReferenced | Should -BeFalse
+        $Result.BootstrapLoadsDriverCheck | Should -BeTrue
+        $Result.BootstrapLoadsChocolatey | Should -BeTrue
+        $Result.BootstrapLoadsFinalize | Should -BeTrue
 
     }
 

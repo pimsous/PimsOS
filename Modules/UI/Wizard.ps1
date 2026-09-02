@@ -72,8 +72,9 @@ function Show-PimsOSBuildWizard {
         Write-Host "[2] Configurer les Tweaks"
         Write-Host "[3] Options du Build"
         Write-Host "[4] Configuration des drivers"
-        Write-Host "[5] Afficher le résumé"
-        Write-Host "[6] Valider et continuer" -ForegroundColor Green
+        Write-Host "[5] Gérer les packages Chocolatey"
+        Write-Host "[6] Afficher le résumé"
+        Write-Host "[7] Valider et continuer" -ForegroundColor Green
         Write-Host "[0] Annuler" -ForegroundColor Red
         Write-Host ""
 
@@ -107,11 +108,17 @@ function Show-PimsOSBuildWizard {
 
             "5" {
 
-                Show-PimsOSBuildSummary `
+                Show-PimsOSChocolateyPackageMenu `
                     -Context $Context
             }
 
             "6" {
+
+                Show-PimsOSBuildSummary `
+                    -Context $Context
+            }
+
+            "7" {
 
                 Write-Log `
                     "Configuration du Build validée." `
@@ -1037,6 +1044,95 @@ function Show-PimsOSDriverMenu {
     $null = Read-Host "Appuyez sur Entrée"
 }
 
+
+
+function Show-PimsOSChocolateyPackageMenu {
+
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][psobject]$Context)
+
+    while ($true) {
+        Clear-PimsOSScreen
+        $Catalog = Read-ChocolateyCatalog -Context $Context
+        $Packages = @($Catalog.Packages | Sort-Object Id)
+
+        Write-Host ""
+        Write-Host "==================================================" -ForegroundColor Cyan
+        Write-Host "             Packages Chocolatey" -ForegroundColor Cyan
+        Write-Host "==================================================" -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host ("Packages : {0}" -f $Packages.Count) -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host "[1] Afficher la liste"
+        Write-Host "[2] Ajouter un package"
+        Write-Host "[3] Supprimer un package"
+        Write-Host "[0] Retour"
+        Write-Host ""
+
+        $Choice = Read-Host "Votre choix"
+        switch ($Choice) {
+            "1" {
+                Clear-PimsOSScreen
+                Write-Host ""
+                Write-Host "Catalogue Chocolatey" -ForegroundColor Cyan
+                Write-Host "-------------------"
+                foreach ($Package in $Packages) {
+                    $Version = if ([string]::IsNullOrWhiteSpace([string]$Package.Version)) { "auto" } else { [string]$Package.Version }
+                    $State = if ([bool]$Package.Enabled) { "ON" } else { "OFF" }
+                    Write-Host ("{0,-30} {1,-8} {2,-8} {3}" -f $Package.Id, $Package.Mode, $State, $Version)
+                }
+                Write-Host ""
+                $null = Read-Host "Appuyez sur Entrée"
+            }
+            "2" {
+                Clear-PimsOSScreen
+                Write-Host ""
+                Write-Host "Ajouter un package Chocolatey" -ForegroundColor Cyan
+                Write-Host ""
+                $Id = Read-Host "ID Chocolatey"
+                if ([string]::IsNullOrWhiteSpace($Id)) { continue }
+                $Version = Read-Host "Version (Entrée = automatique)"
+                $Category = Read-Host "Catégorie (Entrée = Other)"
+                $Mode = Read-Host "Mode [Online/Offline] (Entrée = Online)"
+                if ([string]::IsNullOrWhiteSpace($Mode)) { $Mode = 'Online' }
+                if ($Mode -notin @('Online','Offline')) {
+                    Write-Host "Mode invalide : utilisez Online ou Offline." -ForegroundColor Red
+                    $null = Read-Host "Appuyez sur Entrée"
+                    continue
+                }
+                try {
+                    Add-ChocolateyCatalogPackage -Context $Context -Id $Id -Version $Version -Mode $Mode -Category $Category | Out-Null
+                    Write-Host "Package ajouté. Le Build préparera son cache uniquement s'il est Offline." -ForegroundColor Green
+                }
+                catch {
+                    Write-Host $_.Exception.Message -ForegroundColor Red
+                }
+                $null = Read-Host "Appuyez sur Entrée"
+            }
+            "3" {
+                Clear-PimsOSScreen
+                Write-Host ""
+                Write-Host "Supprimer un package Chocolatey" -ForegroundColor Cyan
+                Write-Host ""
+                $Id = Read-Host "ID Chocolatey à supprimer"
+                if ([string]::IsNullOrWhiteSpace($Id)) { continue }
+                try {
+                    Remove-ChocolateyCatalogPackage -Context $Context -Id $Id | Out-Null
+                    Write-Host "Package supprimé du catalogue." -ForegroundColor Green
+                }
+                catch {
+                    Write-Host $_.Exception.Message -ForegroundColor Red
+                }
+                $null = Read-Host "Appuyez sur Entrée"
+            }
+            "0" { return }
+            default {
+                Write-Host "Choix invalide." -ForegroundColor Red
+                $null = Read-Host "Appuyez sur Entrée"
+            }
+        }
+    }
+}
 
 function Show-PimsOSBuildSummary {
 

@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Tests : PostInstall Installer
 # Projet : PimsOS Builder
 # ==========================================
@@ -36,6 +36,7 @@ Describe "PostInstall Installer" {
 			"UI.ps1"
 			"DriverCheck.ps1"
 			"PostInstall.ps1"
+            "Finalize.ps1"
 			"State.ps1"
         )) {
 
@@ -49,6 +50,19 @@ Describe "PostInstall Installer" {
                 -Encoding UTF8
 
         }
+
+        # --------------------------------------------------
+        # Provider Chocolatey simulé
+        # --------------------------------------------------
+
+        $script:ChocolateyProviderPath = Join-Path `
+            $TestDrive `
+            "Chocolatey.ps1"
+
+        Set-Content `
+            -LiteralPath $script:ChocolateyProviderPath `
+            -Value "# Test Chocolatey provider" `
+            -Encoding UTF8
 
         # --------------------------------------------------
         # Image montée simulée
@@ -77,7 +91,8 @@ Describe "PostInstall Installer" {
             $Result =
                 Install-PimsOSPostInstallRuntime `
                     -MountPath $script:MountPath `
-                    -SourcePath $script:SourcePath
+                    -SourcePath $script:SourcePath `
+                    -ChocolateyProviderPath $script:ChocolateyProviderPath
 
             $Destination = Join-Path `
                 $script:MountPath `
@@ -94,12 +109,13 @@ Describe "PostInstall Installer" {
         }
 
 
-        It "Copie les sept fichiers du runtime" {
+        It "Copie les neuf fichiers du runtime" {
 
             $null =
                 Install-PimsOSPostInstallRuntime `
                     -MountPath $script:MountPath `
-                    -SourcePath $script:SourcePath
+                    -SourcePath $script:SourcePath `
+                    -ChocolateyProviderPath $script:ChocolateyProviderPath
 
             $Destination = Join-Path `
                 $script:MountPath `
@@ -111,7 +127,9 @@ Describe "PostInstall Installer" {
 				"Network.ps1"
 				"UI.ps1"
 				"DriverCheck.ps1"
-				"PostInstall.ps1"
+                "Chocolatey.ps1"
+                "PostInstall.ps1"
+                "Finalize.ps1"
 				"State.ps1"
             )) {
 
@@ -134,7 +152,8 @@ Describe "PostInstall Installer" {
             $null =
                 Install-PimsOSPostInstallRuntime `
                     -MountPath $script:MountPath `
-                    -SourcePath $script:SourcePath
+                    -SourcePath $script:SourcePath `
+                    -ChocolateyProviderPath $script:ChocolateyProviderPath
 
             $LoggerPath = Join-Path `
                 $script:MountPath `
@@ -153,7 +172,8 @@ Describe "PostInstall Installer" {
             $Result =
                 Install-PimsOSPostInstallRuntime `
                     -MountPath $script:MountPath `
-                    -SourcePath $script:SourcePath
+                    -SourcePath $script:SourcePath `
+                    -ChocolateyProviderPath $script:ChocolateyProviderPath
 
             $Expected = Join-Path `
                 $script:MountPath `

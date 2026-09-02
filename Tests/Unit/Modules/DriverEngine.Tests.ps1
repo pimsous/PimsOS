@@ -134,6 +134,67 @@ Describe "DriverEngine" {
         }
 
 
+        It "Ajoute les propriétés de résultat à une action dynamique" {
+
+            $DynamicAction = [pscustomobject]@{
+
+                Id = "Driver.Dynamic"
+
+                Name = "DynamicDriver"
+
+            }
+
+            $null = Invoke-DriverAction `
+                -Context $script:Context `
+                -Action $DynamicAction
+
+            $DynamicAction.PSObject.Properties.Name |
+                Should -Contain "Success"
+
+            $DynamicAction.PSObject.Properties.Name |
+                Should -Contain "Duration"
+
+            $DynamicAction.PSObject.Properties.Name |
+                Should -Contain "Error"
+
+            $DynamicAction.Success |
+                Should -BeTrue
+
+        }
+
+
+        It "Gère une erreur avec une action dynamique" {
+
+			Mock Invoke-Driver {
+				throw "Erreur dynamique"
+			}
+
+			$DynamicAction = [pscustomobject]@{
+
+				Id = "Driver.DynamicError"
+
+				Name = "DynamicDriver"
+
+			}
+
+			{
+
+				Invoke-DriverAction `
+					-Context $script:Context `
+					-Action $DynamicAction
+
+			} |
+				Should -Throw
+
+			$DynamicAction.Success |
+				Should -BeFalse
+
+			$DynamicAction.Error |
+				Should -Be "Erreur dynamique"
+
+		}
+
+
         It "Réinitialise Error après une réussite" {
 
             $script:Action.Error = "Ancienne erreur"

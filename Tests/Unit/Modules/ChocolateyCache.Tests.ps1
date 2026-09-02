@@ -106,8 +106,8 @@ Describe "Chocolatey cache" {
 
         @{
             Packages = @(
-                @{ Id = 'cache-firefox'; Enabled = $true; Version = '1.0.0' }
-				@{ Id = 'cache-vlc';     Enabled = $true; Version = '2.0.0' }
+                @{ Id = 'cache-firefox'; Enabled = $true; Mode = 'Offline'; Version = '1.0.0' }
+				@{ Id = 'cache-vlc';     Enabled = $true; Mode = 'Offline'; Version = '2.0.0' }
             )
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Catalog -Encoding utf8
 
@@ -137,7 +137,7 @@ Describe "Chocolatey cache" {
 
         @{
             Packages = @(
-                @{ Id = 'cache-second-firefox'; Enabled = $true; Version = '1.0.0' }
+                @{ Id = 'cache-second-firefox'; Enabled = $true; Mode = 'Offline'; Version = '1.0.0' }
             )
         } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Catalog -Encoding utf8
 
@@ -159,4 +159,78 @@ Describe "Chocolatey cache" {
         $Second.AlreadyCached | Should -Be 1
         Should -Invoke Invoke-WebRequest -Times 1 -Exactly
     }
+    It "Exige le bootstrap Chocolatey dans le cache Build" {
+        $Cache = Join-Path $TestDrive "Chocolatey"
+        New-Item -ItemType Directory -Path $Cache -Force | Out-Null
+
+        { Test-ChocolateyBootstrapPackage -CachePath $Cache } |
+            Should -Throw "*bootstrap Chocolatey est absent*"
+    }
+
+    It "Valide un bootstrap Chocolatey contenant chocolateyInstall.ps1" {
+        $Cache = Join-Path $TestDrive "Chocolatey"
+        New-Item -ItemType Directory -Path $Cache -Force | Out-Null
+        $Nupkg = Join-Path $Cache "chocolatey.nupkg"
+
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $Archive = [System.IO.Compression.ZipFile]::Open($Nupkg, [System.IO.Compression.ZipArchiveMode]::Create)
+        try {
+            $Entry = $Archive.CreateEntry('tools/chocolateyInstall.ps1')
+            $Writer = [System.IO.StreamWriter]::new($Entry.Open())
+            try { $Writer.Write('Write-Host test') } finally { $Writer.Dispose() }
+        }
+        finally { $Archive.Dispose() }
+
+        $Result = Test-ChocolateyBootstrapPackage -CachePath $Cache
+
+        $Result.Present | Should -BeTrue
+        $Result.Name | Should -Be 'chocolatey.nupkg'
+        $Result.Path | Should -Be $Nupkg
+    }
+
+    It "Ne télécharge que les packages en Mode Offline" {
+        $Catalog = Join-Path $TestDrive "Chocolatey.json"
+        $Cache = Join-Path $TestDrive "Chocolatey"
+
+        @{
+            Packages = @(
+                @{ Id = 'offline-pkg'; Enabled = $true; Mode = 'Offline'; Version = '1.0.0' }
+                @{ Id = 'online-pkg'; Enabled = $true; Mode = 'Online'; Version = '2.0.0' }
+            )
+        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Catalog -Encoding utf8
+
+        $Context = [pscustomobject]@{ Workspace = [pscustomobject]@{ PackagesChocolatey = $Cache } }
+        Mock Invoke-WebRequest { New-Item -ItemType File -Path $OutFile -Force | Out-Null }
+
+        $Result = Initialize-ChocolateyCache -Context $Context -CatalogPath $Catalog
+
+        $Result.Total | Should -Be 1
+        $Result.Results[0].Id | Should -Be 'offline-pkg'
+        Should -Invoke Invoke-WebRequest -Times 1 -Exactly
+    }
+
+    It "Utilise Stop comme FailurePolicy par défaut" {
+        $Catalog = Join-Path $TestDrive "Chocolatey.json"
+        @{
+            Packages = @(
+                @{ Id = 'default-policy'; Enabled = $true; Mode = 'Online' }
+            )
+        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Catalog -Encoding utf8
+
+        $Result = @(Get-ChocolateyPackageDefinitions -Path $Catalog)
+        $Result[0].Id | Should -Be 'default-policy'
+    }
+
+    It "Refuse une FailurePolicy invalide" {
+        $Catalog = Join-Path $TestDrive "Chocolatey.json"
+        @{
+            Packages = @(
+                @{ Id = 'bad-policy'; Enabled = $true; Mode = 'Online'; FailurePolicy = 'Ignore' }
+            )
+        } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $Catalog -Encoding utf8
+
+        { Get-ChocolateyPackageDefinitions -Path $Catalog } |
+            Should -Throw "*FailurePolicy invalide*"
+    }
+
 }

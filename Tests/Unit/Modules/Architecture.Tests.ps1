@@ -22,8 +22,21 @@ BeforeAll {
 Describe "Architecture PimsOS" {
 
     It "Expose uniquement le point d'entrée public" {
-        (Get-Module PimsOS).ExportedFunctions.Keys |
-            Should -Be "Initialize-PimsOS"
+        # Le test doit charger explicitement le module : l'ordre d'exécution
+        # des fichiers Pester ne doit pas être une dépendance implicite.
+        Remove-Module PimsOS -ErrorAction SilentlyContinue
+        Import-Module "$ProjectRoot\Modules\PimsOS.psd1" -Force
+
+        $Module = Get-Module PimsOS
+        $Exports = @($Module.ExportedFunctions.Keys)
+
+        $Exports | Should -HaveCount 1
+        $Exports | Should -Contain "Initialize-PimsOS"
+
+        # Les fonctions internes (ex. catalogue Chocolatey) ne sont pas
+        # exposées par le contrat public du module.
+        $Exports | Should -Not -Contain "Get-ChocolateyCatalog"
+        $Exports | Should -Not -Contain "Get-ChocolateyCatalogEntries"
     }
 
     It "Charge toutes les définitions de tweaks avec des actions valides" {

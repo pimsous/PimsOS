@@ -1,8 +1,8 @@
-# ==========================================
+﻿# ==========================================
 # Module : PostInstall Bootstrap
 # Projet : PimsOS Builder
-# Version : 1.1.0
-# Compatible : PowerShell 7+
+# Version : 1.2.0
+# Compatible : PowerShell 5.1+
 # ==========================================
 
 Set-StrictMode -Version Latest
@@ -58,16 +58,31 @@ function Start-PimsOSPostInstall {
         -Path $RuntimePath `
         -ChildPath "UI.ps1"
 
+    $DriverCheckPath = Join-Path `
+        -Path $RuntimePath `
+        -ChildPath "DriverCheck.ps1"
+
     $PostInstallPath = Join-Path `
         -Path $RuntimePath `
         -ChildPath "PostInstall.ps1"
+
+    $FinalizePath = Join-Path `
+        -Path $RuntimePath `
+        -ChildPath "Finalize.ps1"
+
+    $ChocolateyPath = Join-Path `
+        -Path $RuntimePath `
+        -ChildPath "Chocolatey.ps1"
 
     foreach ($Path in @(
         $LoggerPath,
         $StatePath,
         $NetworkPath,
         $UIPath,
-        $PostInstallPath
+        $DriverCheckPath,
+        $ChocolateyPath,
+        $PostInstallPath,
+        $FinalizePath
     )) {
 
         if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
@@ -97,13 +112,48 @@ function Start-PimsOSPostInstall {
     . $StatePath
     . $NetworkPath
     . $UIPath
+    . $DriverCheckPath
+    . $ChocolateyPath
     . $PostInstallPath
+    . $FinalizePath
 
     try {
 
-        return Invoke-PostInstall `
+        $State = Invoke-PostInstall `
             -WaitForNetwork:$WaitForNetwork `
             -NetworkTimeoutMinutes $NetworkTimeoutMinutes
+
+        Write-Log `
+            "Vérification finale du PostInstall." `
+            INFO
+
+        $Finalization = Complete-PimsOSPostInstall `
+            -State $State `
+            -RuntimePath $RuntimePath
+
+        $State = Save-PostInstallState `
+            -State $Finalization.State
+
+        Write-Log `
+            "Vérification finale du PostInstall réussie." `
+            SUCCESS
+
+        if ($Finalization.Cleanup.Scheduled) {
+
+            Write-Log `
+                ("Nettoyage Bootstrap programmé dans {0} seconde(s)." -f $Finalization.Cleanup.DelaySeconds) `
+                SUCCESS
+
+        }
+        else {
+
+            Write-Log `
+                "Le nettoyage Bootstrap n'a pas pu être programmé. L'état, le journal et le cache Chocolatey sont conservés." `
+                WARNING
+
+        }
+
+        return $State
 
     }
     catch {

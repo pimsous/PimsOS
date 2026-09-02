@@ -42,6 +42,31 @@ function Get-ChocolateyPackageDefinitions {
         if ([string]::IsNullOrWhiteSpace([string]$Package.Id)) {
             throw "Une entrée activée du catalogue Chocolatey ne possède pas d'Id."
         }
+
+        $Mode = if ($Package.PSObject.Properties.Name -contains 'Mode' -and
+            -not [string]::IsNullOrWhiteSpace([string]$Package.Mode)) {
+            [string]$Package.Mode
+        } else {
+            'Online'
+        }
+
+        if ($Mode -notin @('Offline','Online','Disabled')) {
+            throw "Le package '$($Package.Id)' possède un Mode invalide '$Mode'. Valeurs attendues : Offline, Online, Disabled."
+        }
+
+        $FailurePolicy = if (
+            $Package.PSObject.Properties.Name -contains 'FailurePolicy' -and
+            -not [string]::IsNullOrWhiteSpace([string]$Package.FailurePolicy)
+        ) {
+            [string]$Package.FailurePolicy
+        }
+        else {
+            'Stop'
+        }
+
+        if ($FailurePolicy -notin @('Stop','Continue')) {
+            throw "Le package '$($Package.Id)' possède une FailurePolicy invalide '$FailurePolicy'. Valeurs attendues : Stop, Continue."
+        }
     }
 
     return $Packages
@@ -50,7 +75,7 @@ function Get-ChocolateyPackageDefinitions {
 # --------------------------------------------------
 # Recherche un package déjà présent dans le cache
 # --------------------------------------------------
-function Find-ChocolateyCachedPackage {
+function Find-ChocolateyCachePackage {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)][string]$CachePath,
@@ -109,7 +134,7 @@ function Save-ChocolateyPackageToCache {
         $Version = [string]$Package.Version
     }
 
-    $Existing = Find-ChocolateyCachedPackage `
+    $Existing = Find-ChocolateyCachePackage `
         -CachePath $CachePath `
         -Name ([string]$Package.Id) `
         -Version $Version
@@ -158,6 +183,58 @@ function Save-ChocolateyPackageToCache {
 }
 
 # --------------------------------------------------
+# Vérifie que le package bootstrap Chocolatey est bien
+# présent et exploitable dans le cache de Build.
+# --------------------------------------------------
+function Test-ChocolateyBootstrapPackage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)][string]$CachePath
+    )
+
+    if (-not (Test-Path -LiteralPath $CachePath -PathType Container)) {
+        throw "Le cache Chocolatey est introuvable : $CachePath"
+    }
+
+    $Package = Get-ChildItem -LiteralPath $CachePath -File -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -eq 'chocolatey.nupkg' -or $_.Name -like 'chocolatey.*.nupkg'
+        } |
+        Sort-Object @{Expression={ if ($_.Name -eq 'chocolatey.nupkg') { 0 } else { 1 } }}, Name |
+        Select-Object -First 1
+
+    if ($null -eq $Package) {
+        throw "Le package bootstrap Chocolatey est absent du cache Build : $CachePath"
+    }
+
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction Stop
+        $Archive = [System.IO.Compression.ZipFile]::OpenRead($Package.FullName)
+        try {
+            $InstallScript = $Archive.Entries |
+                Where-Object { $_.FullName -ieq 'tools/chocolateyInstall.ps1' -or $_.FullName -ieq 'tools\\chocolateyInstall.ps1' } |
+                Select-Object -First 1
+
+            if ($null -eq $InstallScript) {
+                throw "Le package bootstrap Chocolatey '$($Package.Name)' ne contient pas tools\\chocolateyInstall.ps1."
+            }
+        }
+        finally {
+            $Archive.Dispose()
+        }
+    }
+    catch {
+        throw "Le package bootstrap Chocolatey '$($Package.Name)' n'est pas un .nupkg exploitable : $($_.Exception.Message)"
+    }
+
+    return [pscustomobject]@{
+        Present = $true
+        Path    = $Package.FullName
+        Name    = $Package.Name
+    }
+}
+
+# --------------------------------------------------
 # Prépare le cache persistant des packages activés
 # --------------------------------------------------
 function Initialize-ChocolateyCache {
@@ -168,7 +245,11 @@ function Initialize-ChocolateyCache {
     )
 
     $CachePath = Get-ChocolateyCachePath -Context $Context
-    $Packages = @(Get-ChocolateyPackageDefinitions -Path $CatalogPath)
+    $Packages = @(Get-ChocolateyPackageDefinitions -Path $CatalogPath | Where-Object {
+        $Mode = if ($_.PSObject.Properties.Name -contains 'Mode' -and -not [string]::IsNullOrWhiteSpace([string]$_.Mode)) { [string]$_.Mode } else { 'Online' }
+        $Mode -eq 'Offline'
+    })
+
     $Results = [System.Collections.Generic.List[object]]::new()
 
     foreach ($Package in $Packages) {

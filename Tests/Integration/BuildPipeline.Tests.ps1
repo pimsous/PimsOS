@@ -88,6 +88,13 @@ Describe "BuildPipeline" {
 
             }
 
+            Workspace = [pscustomobject]@{
+
+                Cache = Join-Path $TestDrive "Cache"
+                PackagesChocolatey = Join-Path $TestDrive "Cache\Chocolatey"
+
+            }
+
             Drivers = [System.Collections.Generic.List[object]]::new()
 
             Configuration = @()

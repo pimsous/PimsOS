@@ -2,7 +2,7 @@
 # Module : PostInstall
 # Projet : PimsOS Builder
 # Version : 1.2.0
-# Compatible : PowerShell 7+
+# Compatible : PowerShell 5.1+
 # ==========================================
 
 Set-StrictMode -Version Latest
@@ -464,9 +464,47 @@ function Invoke-PostInstall {
                 INFO
 
             # --------------------------------------------------
-            # L'installation de Chocolatey et l'utilisation
-            # du cache local seront ajoutées ici.
+            # Bootstrap Chocolatey depuis le cache embarqué
             # --------------------------------------------------
+
+            $RuntimeRoot = Split-Path -Parent $State.StatePath
+            $ChocolateyRoot = Join-Path $RuntimeRoot "Chocolatey"
+            $ChocolateyCatalogPath = Join-Path $ChocolateyRoot "Chocolatey.json"
+            $ChocolateyCachePath = Join-Path $ChocolateyRoot "Cache"
+            $ChocolateyBootstrapPackage = Get-ChildItem -LiteralPath $ChocolateyCachePath -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq 'chocolatey.nupkg' -or $_.Name -like 'chocolatey.*.nupkg' } |
+                Sort-Object @{Expression={ if ($_.Name -eq 'chocolatey.nupkg') { 0 } else { 1 } }}, Name |
+                Select-Object -First 1
+
+            if ($null -eq $ChocolateyBootstrapPackage) {
+                throw "Le package bootstrap Chocolatey est absent du cache runtime : $ChocolateyCachePath"
+            }
+
+            Install-ChocolateyBootstrap -BootstrapPackagePath $ChocolateyBootstrapPackage.FullName | Out-Null
+
+            if (-not (Test-Path -LiteralPath $ChocolateyCatalogPath -PathType Leaf)) {
+                throw "Le catalogue Chocolatey runtime est introuvable : $ChocolateyCatalogPath"
+            }
+
+            # Les packages Offline utilisent exclusivement le cache embarqué.
+            # Les packages Online utilisent Community et ne sont donc téléchargés
+            # qu'à ce stade, après le contrôle des pilotes.
+            $CatalogContext = [pscustomobject]@{
+                Workspace = [pscustomobject]@{ PackagesChocolatey = $ChocolateyCachePath }
+            }
+
+            $ChocolateyResults = @(Invoke-ChocolateyCatalog `
+                -Context $CatalogContext `
+                -CatalogPath $ChocolateyCatalogPath `
+                -RuntimeCachePath $ChocolateyCachePath)
+
+            $State | Add-Member -MemberType NoteProperty -Name ChocolateyResults -Value $ChocolateyResults -Force
+
+            $ChocolateyFailures = @($ChocolateyResults | Where-Object {
+                $_.Status -eq 'Failed'
+            })
+
+            $State | Add-Member -MemberType NoteProperty -Name ChocolateyFailures -Value $ChocolateyFailures -Force
 
             $State = Complete-PostInstallTask `
                 -State $State `
@@ -475,9 +513,17 @@ function Invoke-PostInstall {
             $State = Save-PostInstallState `
                 -State $State
 
-            Write-Log `
-                "Phase Chocolatey terminée." `
-                SUCCESS
+            if ($ChocolateyFailures.Count -gt 0) {
+                Write-Log (
+                    "Phase Chocolatey terminée avec {0} échec(s) non bloquant(s)." -f
+                    $ChocolateyFailures.Count
+                ) WARNING
+            }
+            else {
+                Write-Log `
+                    "Phase Chocolatey terminée." `
+                    SUCCESS
+            }
 
         }
         else {

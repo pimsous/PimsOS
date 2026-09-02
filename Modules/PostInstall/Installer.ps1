@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Module : PostInstall Installer
 # Projet : PimsOS Builder
 # Version : 1.0.0
@@ -21,7 +21,16 @@ function Install-PimsOSPostInstallRuntime {
         [string]$MountPath,
 
         [Parameter(Mandatory)]
-        [string]$SourcePath
+        [string]$SourcePath,
+
+        [Parameter()]
+        [string]$ChocolateyProviderPath,
+
+        [Parameter()]
+        [string]$ChocolateyCatalogPath,
+
+        [Parameter()]
+        [string]$ChocolateyCachePath
 
     )
 
@@ -69,7 +78,9 @@ function Install-PimsOSPostInstallRuntime {
 		"Network.ps1"
 		"UI.ps1"
 		"DriverCheck.ps1"
+		"Chocolatey.ps1"
 		"PostInstall.ps1"
+        "Finalize.ps1"
 		"State.ps1"
 	)
 
@@ -78,6 +89,14 @@ function Install-PimsOSPostInstallRuntime {
         if ($FileName -eq "Logger.ps1") {
 
             $SourceFile = $LoggerSourcePath
+
+        }
+        elseif ($FileName -eq "Chocolatey.ps1") {
+
+            if ([string]::IsNullOrWhiteSpace($ChocolateyProviderPath)) {
+                throw "Le chemin du provider Chocolatey est requis pour le runtime PostInstall."
+            }
+            $SourceFile = $ChocolateyProviderPath
 
         }
         else {
@@ -129,6 +148,14 @@ function Install-PimsOSPostInstallRuntime {
             $SourceFile = $LoggerSourcePath
 
         }
+        elseif ($FileName -eq "Chocolatey.ps1") {
+
+            if ([string]::IsNullOrWhiteSpace($ChocolateyProviderPath)) {
+                throw "Le chemin du provider Chocolatey est requis pour le runtime PostInstall."
+            }
+            $SourceFile = $ChocolateyProviderPath
+
+        }
         else {
 
             $SourceFile = Join-Path `
@@ -170,6 +197,32 @@ function Install-PimsOSPostInstallRuntime {
 
     }
 
+    # --------------------------------------------------
+    # Catalogue Chocolatey + cache offline
+    # --------------------------------------------------
+
+    $RuntimeChocolateyPath = Join-Path $DestinationPath "Chocolatey"
+    if (-not (Test-Path -LiteralPath $RuntimeChocolateyPath -PathType Container)) {
+        New-Item -ItemType Directory -Path $RuntimeChocolateyPath -Force -ErrorAction Stop | Out-Null
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($ChocolateyCatalogPath)) {
+        if (-not (Test-Path -LiteralPath $ChocolateyCatalogPath -PathType Leaf)) {
+            throw "Le catalogue Chocolatey est introuvable : $ChocolateyCatalogPath"
+        }
+        Copy-Item -LiteralPath $ChocolateyCatalogPath -Destination (Join-Path $RuntimeChocolateyPath "Chocolatey.json") -Force -ErrorAction Stop
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($ChocolateyCachePath)) {
+        if (-not (Test-Path -LiteralPath $ChocolateyCachePath -PathType Container)) {
+            throw "Le cache Chocolatey est introuvable : $ChocolateyCachePath"
+        }
+        $RuntimeCachePath = Join-Path $RuntimeChocolateyPath "Cache"
+        New-Item -ItemType Directory -Path $RuntimeCachePath -Force -ErrorAction Stop | Out-Null
+        Get-ChildItem -LiteralPath $ChocolateyCachePath -Filter '*.nupkg' -File -ErrorAction Stop |
+            Copy-Item -Destination $RuntimeCachePath -Force -ErrorAction Stop
+    }
+
     return [PSCustomObject]@{
 
         ObjectType = "PimsOSPostInstallRuntime"
@@ -183,6 +236,10 @@ function Install-PimsOSPostInstallRuntime {
         DestinationPath = $DestinationPath
 
         Files = $RequiredFiles
+
+        ChocolateyCatalogPath = if ([string]::IsNullOrWhiteSpace($ChocolateyCatalogPath)) { $null } else { Join-Path $RuntimeChocolateyPath "Chocolatey.json" }
+
+        ChocolateyCachePath = if ([string]::IsNullOrWhiteSpace($ChocolateyCachePath)) { $null } else { Join-Path $RuntimeChocolateyPath "Cache" }
 
         Installed = $true
 

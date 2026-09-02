@@ -218,12 +218,42 @@ Context "Show-PimsOSDriverMenu" {
 
 
 # ==================================================
+# Show-PimsOSChocolateyPackageMenu
+# ==================================================
+
+Context "Show-PimsOSChocolateyPackageMenu" {
+
+    It "Retourne immédiatement avec le choix 0" {
+
+        InModuleScope PimsOS {
+
+            $Root = Join-Path $TestDrive "PimsOS"
+            New-Item -ItemType Directory -Path (Join-Path $Root "Config\Packages") -Force | Out-Null
+            $Catalog = @{ Provider="Chocolatey"; Version="1.0"; Description="Test"; Packages=@(@{ Id="chocolatey"; Enabled=$true; Category="Chocolatey"; Mode="Offline"; Version=$null }) }
+            $Catalog | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath (Join-Path $Root "Config\Packages\Chocolatey.json") -Encoding utf8
+
+            $TestContext = [pscustomobject]@{
+                Project = [pscustomobject]@{ Root = $Root }
+            }
+
+            Mock Read-Host { return "0" }
+            Mock Write-Log {}
+
+            Show-PimsOSChocolateyPackageMenu -Context $TestContext
+
+            Test-Path -LiteralPath (Join-Path $Root "Config\Packages\Chocolatey.json") | Should -BeTrue
+        }
+    }
+}
+
+
+# ==================================================
 # Show-PimsOSBuildWizard
 # ==================================================
 
 Context "Show-PimsOSBuildWizard" {
 
-    It "Retourne le contexte lorsque le choix 6 est sélectionné" {
+    It "Retourne le contexte lorsque le choix 7 est sélectionné" {
 
         InModuleScope PimsOS {
 
@@ -245,7 +275,7 @@ Context "Show-PimsOSBuildWizard" {
             }
 
             Mock Read-Host {
-                return "6"
+                return "7"
             }
 
             Mock Write-Log {}
@@ -292,7 +322,7 @@ Context "Show-PimsOSBuildWizard" {
 
                 }
 
-                return "6"
+                return "7"
 
             }
 
@@ -349,7 +379,7 @@ Context "Show-PimsOSBuildWizard" {
 
                 }
 
-                return "6"
+                return "7"
 
             }
 
@@ -375,7 +405,7 @@ Context "Show-PimsOSBuildWizard" {
     }
 
 
-    It "Lance le résumé lorsque le choix 5 est sélectionné" {
+    It "Lance le résumé lorsque le choix 6 est sélectionné" {
 
         InModuleScope PimsOS {
 
@@ -402,11 +432,11 @@ Context "Show-PimsOSBuildWizard" {
 
                 if (-not $script:SummaryCalled) {
 
-                    return "5"
+                    return "6"
 
                 }
 
-                return "6"
+                return "7"
 
             }
 

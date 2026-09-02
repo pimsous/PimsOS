@@ -37,6 +37,44 @@ function Invoke-DriverAction {
 
     $Stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+    # --------------------------------------------------
+    # Normalisation de l'action
+    # --------------------------------------------------
+    # Les actions créées dynamiquement par le Pipeline ne portent pas
+    # forcément les propriétés de résultat. Les ajouter avant le try
+    # garantit que le bloc catch peut toujours enregistrer le résultat,
+    # même si la validation ou l'injection échoue.
+
+    if ($null -eq $Action.PSObject.Properties["Success"]) {
+
+        Add-Member `
+            -InputObject $Action `
+            -MemberType NoteProperty `
+            -Name "Success" `
+            -Value $false
+
+    }
+
+    if ($null -eq $Action.PSObject.Properties["Duration"]) {
+
+        Add-Member `
+            -InputObject $Action `
+            -MemberType NoteProperty `
+            -Name "Duration" `
+            -Value ([TimeSpan]::Zero)
+
+    }
+
+    if ($null -eq $Action.PSObject.Properties["Error"]) {
+
+        Add-Member `
+            -InputObject $Action `
+            -MemberType NoteProperty `
+            -Name "Error" `
+            -Value $null
+
+    }
+
     try {
 
         # --------------------------------------------------

@@ -7,6 +7,14 @@
 
 Set-StrictMode -Version Latest
 
+# ==========================================
+# Dépendances des providers utilisés par le pipeline
+# ==========================================
+
+. "$PSScriptRoot\..\Package\Chocolatey.ps1"
+. "$PSScriptRoot\..\Package\ChocolateyCache.ps1"
+
+
 
 # ==========================================
 # Exécute une étape du pipeline
@@ -589,6 +597,50 @@ function Apply-Drivers {
 }
 
 # ==========================================
+# Prépare le cache Chocolatey Offline
+# ==========================================
+
+function Prepare-ChocolateyCache {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][psobject]$Context)
+
+    $CatalogPath = Join-Path $Context.Project.Root 'Config\Packages\Chocolatey.json'
+    if (-not (Test-Path -LiteralPath $CatalogPath -PathType Leaf)) {
+        throw "Le catalogue Chocolatey est introuvable : $CatalogPath"
+    }
+
+    Write-Log "Préparation du cache Chocolatey Offline..." INFO
+    $Result = Initialize-ChocolateyCache -Context $Context -CatalogPath $CatalogPath
+
+    # Chocolatey est un prérequis du runtime PostInstall : le Build doit
+    # impérativement embarquer son .nupkg avant de préparer l'image.
+    $Bootstrap = Test-ChocolateyBootstrapPackage -CachePath $Result.CachePath
+
+    if (-not $Bootstrap.Present) {
+        throw "Le Build ne peut pas continuer : le bootstrap Chocolatey n'est pas disponible dans le cache."
+    }
+
+    Write-Log ("Cache Chocolatey Offline : {0} package(s), {1} téléchargé(s), {2} déjà présent(s)." -f $Result.Total, $Result.Downloaded, $Result.AlreadyCached) SUCCESS
+    Write-Log ("Bootstrap Chocolatey prêt pour le runtime : {0}" -f $Bootstrap.Name) SUCCESS
+
+    # Conserve explicitement la preuve de préparation dans le BuildState.
+    if ($Context.BuildState.PSObject.Properties.Name -contains 'Chocolatey') {
+        $Context.BuildState.Chocolatey.BootstrapReady = $true
+        $Context.BuildState.Chocolatey.BootstrapPath = $Bootstrap.Path
+    }
+    else {
+        $Context.BuildState | Add-Member -MemberType NoteProperty -Name Chocolatey -Value ([pscustomobject]@{
+            BootstrapReady = $true
+            BootstrapPath  = $Bootstrap.Path
+            CachePath      = $Result.CachePath
+            OfflineCount   = $Result.Total
+        }) -Force
+    }
+
+    return $Context
+}
+
+# ==========================================
 # Prépare le PostInstall dans l'image montée
 # ==========================================
 
@@ -624,10 +676,16 @@ function Prepare-PostInstall {
     $RuntimeSource =
         Get-PostInstallRuntimePath
 
+    $CatalogPath = Join-Path $Context.Project.Root 'Config\Packages\Chocolatey.json'
+    $ProviderPath = Join-Path $Context.Project.Root 'Modules\Package\Chocolatey.ps1'
+
     $RuntimeResult =
         Install-PimsOSPostInstallRuntime `
             -MountPath $MountPath `
-            -SourcePath $RuntimeSource
+            -SourcePath $RuntimeSource `
+            -ChocolateyProviderPath $ProviderPath `
+            -ChocolateyCatalogPath $CatalogPath `
+            -ChocolateyCachePath (Get-ChocolateyCachePath -Context $Context)
 
     $BootstrapPath =
         "C:\ProgramData\PimsOS\PostInstall\Bootstrap.ps1"
@@ -1053,6 +1111,26 @@ function Get-BuildPipeline {
                 param($Context)
 
                 Apply-Drivers `
+                    -Context $Context
+
+            }
+
+        },
+
+        # ------------------------------------------
+        # Préparation du cache Chocolatey Offline
+        # ------------------------------------------
+
+        @{
+
+            Id   = "PrepareChocolateyCache"
+            Name = "Préparation du cache Chocolatey Offline"
+
+            Action = {
+
+                param($Context)
+
+                Prepare-ChocolateyCache `
                     -Context $Context
 
             }

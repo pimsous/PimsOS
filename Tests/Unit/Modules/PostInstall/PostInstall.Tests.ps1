@@ -11,11 +11,12 @@ BeforeAll {
     # Chargement explicite des dépendances
     # --------------------------------------------------
 
-    . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
     . "$ProjectRoot\Modules\PostInstall\State.ps1"
-    . "$ProjectRoot\Modules\PostInstall\Network.ps1"
-    . "$ProjectRoot\Modules\PostInstall\DriverCheck.ps1"
-    . "$ProjectRoot\Modules\PostInstall\PostInstall.ps1"
+	. "$ProjectRoot\Modules\PostInstall\Network.ps1"
+	. "$ProjectRoot\Modules\PostInstall\DriverCheck.ps1"
+    . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
+    . "$ProjectRoot\Modules\Package\Chocolatey.ps1"
+	. "$ProjectRoot\Modules\PostInstall\PostInstall.ps1"
 
 }
 
@@ -31,12 +32,21 @@ Describe "PostInstall" {
             $TestDrive `
             "PostInstall\state.json"
 
-        Start-Logger `
-            -Path (Join-Path $TestDrive "PostInstall\test.log") `
-            -Quiet
-
         $script:State = New-PostInstallState `
             -StatePath $script:StatePath
+
+        Mock Write-Log {}
+
+        # Runtime Chocolatey simulé pour les tests de la phase Chocolatey.
+        $script:RuntimeRoot = Split-Path -Parent $script:StatePath
+        $script:ChocolateyRoot = Join-Path $script:RuntimeRoot "Chocolatey"
+        $script:ChocolateyCachePath = Join-Path $script:ChocolateyRoot "Cache"
+        New-Item -ItemType Directory -Path $script:ChocolateyCachePath -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $script:ChocolateyCachePath "chocolatey.nupkg") -Value "test" -Encoding UTF8
+        Set-Content -LiteralPath (Join-Path $script:ChocolateyRoot "Chocolatey.json") -Value '{"Packages":[]}' -Encoding UTF8
+
+        Mock Install-ChocolateyBootstrap {}
+        Mock Invoke-ChocolateyCatalog { @() }
 
     }
 

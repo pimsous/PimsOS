@@ -67,6 +67,7 @@ Set-StrictMode -Version Latest
 
 . "$PSScriptRoot\Package\Chocolatey.ps1"
 . "$PSScriptRoot\Package\ChocolateyCache.ps1"
+. "$PSScriptRoot\Package\ChocolateyCatalog.ps1"
 . "$PSScriptRoot\Package\Winget.ps1"
 
 # --------------------------------------------------
@@ -90,6 +91,7 @@ Set-StrictMode -Version Latest
 . "$PSScriptRoot\PostInstall\State.ps1"
 . "$PSScriptRoot\PostInstall\Network.ps1"
 . "$PSScriptRoot\PostInstall\PostInstall.ps1"
+. "$PSScriptRoot\PostInstall\Finalize.ps1"
 . "$PSScriptRoot\PostInstall\FirstBoot.ps1"
 . "$PSScriptRoot\PostInstall\Unattend.ps1"
 . "$PSScriptRoot\PostInstall\Installer.ps1"
@@ -181,6 +183,7 @@ function Initialize-PimsOS {
 		if ($Context.Build.Interactive) {
 
 			Write-Verbose "Lancement de l'assistant de configuration..."
+
 			Write-Log "Lancement de l'assistant de configuration..." INFO
 
 			$Context = Show-PimsOSBuildWizard `

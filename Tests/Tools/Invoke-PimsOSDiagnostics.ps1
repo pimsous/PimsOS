@@ -389,6 +389,122 @@ function Get-TestSelection {
     }
 }
 
+function Get-PesterFailureDetails {
+    param([object]$PesterResult)
+
+    $failures = [System.Collections.Generic.List[object]]::new()
+
+    if ($null -eq $PesterResult) {
+        return @()
+    }
+
+    $failedItems = @()
+    if ($PesterResult.PSObject.Properties['Failed']) {
+        $failedItems = @($PesterResult.Failed)
+    }
+
+    foreach ($failure in $failedItems) {
+        $name = $null
+        foreach ($property in @('ExpandedName', 'Name', 'ParameterizedSuiteName')) {
+            if ($failure.PSObject.Properties[$property] -and $failure.$property) {
+                $name = [string]$failure.$property
+                break
+            }
+        }
+        if (-not $name) { $name = 'Test Pester sans nom' }
+
+        $path = $null
+        if ($failure.PSObject.Properties['ScriptBlock'] -and $failure.ScriptBlock) {
+            try { $path = [string]$failure.ScriptBlock.File }
+            catch { $path = $null }
+        }
+        if (-not $path -and $failure.PSObject.Properties['Block'] -and $failure.Block) {
+            try {
+                if ($failure.Block.PSObject.Properties['Path']) {
+                    $path = [string]$failure.Block.Path
+                }
+            }
+            catch { $path = $null }
+        }
+
+        $message = $null
+        $line = $null
+        $position = $null
+
+        $errorRecord = $null
+        foreach ($property in @('ErrorRecord', 'ErrorRecordException')) {
+            if ($failure.PSObject.Properties[$property] -and $failure.$property) {
+                $errorRecord = $failure.$property
+                break
+            }
+        }
+
+        if ($errorRecord) {
+            try {
+                if ($errorRecord.PSObject.Properties['Exception'] -and $errorRecord.Exception) {
+                    $message = [string]$errorRecord.Exception.Message
+                }
+                elseif ($errorRecord.PSObject.Properties['Message']) {
+                    $message = [string]$errorRecord.Message
+                }
+            }
+            catch { }
+
+            try {
+                if ($errorRecord.PSObject.Properties['InvocationInfo'] -and $errorRecord.InvocationInfo) {
+                    $invocation = $errorRecord.InvocationInfo
+                    if ($invocation.PSObject.Properties['ScriptName'] -and $invocation.ScriptName) {
+                        $path = [string]$invocation.ScriptName
+                    }
+                    if ($invocation.PSObject.Properties['ScriptLineNumber']) {
+                        $line = [int]$invocation.ScriptLineNumber
+                    }
+                    if ($invocation.PSObject.Properties['PositionMessage']) {
+                        $position = [string]$invocation.PositionMessage
+                    }
+                }
+            }
+            catch { }
+        }
+
+        if (-not $message -and $failure.PSObject.Properties['ErrorRecord']) {
+            try { $message = [string]$failure.ErrorRecord }
+            catch { }
+        }
+        if (-not $message -and $failure.PSObject.Properties['Result']) {
+            try { $message = [string]$failure.Result }
+            catch { }
+        }
+        if (-not $message) { $message = 'Erreur Pester non détaillée.' }
+
+        if (-not $path) {
+            try {
+                if ($failure.PSObject.Properties['Container'] -and $failure.Container) {
+                    if ($failure.Container.PSObject.Properties['Item']) {
+                        $path = [string]$failure.Container.Item
+                    }
+                }
+            }
+            catch { }
+        }
+
+        $relativePath = $path
+        if ($path -and $path.StartsWith($ProjectRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $relativePath = $path.Substring($ProjectRoot.Length).TrimStart('\')
+        }
+
+        $failures.Add([ordered]@{
+            Path          = $relativePath
+            Name          = $name
+            Message       = $message
+            Line          = $line
+            Position      = $position
+        })
+    }
+
+    return @($failures)
+}
+
 function Write-Inventory {
     param([object[]]$Inventory)
 
@@ -496,6 +612,7 @@ $report = [ordered]@{
             [string]$item.RelativePath
         }
     )
+    Failures         = @()
     Inventory        = @(
         $inventory | ForEach-Object {
             [ordered]@{
@@ -509,8 +626,7 @@ $report = [ordered]@{
     )
 }
 
-$report | ConvertTo-Json -Depth 10 |
-    Set-Content -LiteralPath $reportJson -Encoding utf8NoBOM
+$failureDetails = @()
 
 $md = [System.Text.StringBuilder]::new()
 [void]$md.AppendLine('# PimsOS Diagnostics')
@@ -574,6 +690,8 @@ else {
         }
 
         $pesterResult = Invoke-Pester -Path $paths -PassThru -Output Detailed
+        $failureDetails = @(Get-PesterFailureDetails -PesterResult $pesterResult)
+        $report.Failures = @($failureDetails)
 
         [void]$md.AppendLine('')
         [void]$md.AppendLine('## Résultats')
@@ -581,8 +699,30 @@ else {
         [void]$md.AppendLine("| Total | Pass | Fail | Skip |")
         [void]$md.AppendLine("|---:|---:|---:|---:|")
         [void]$md.AppendLine("| $($pesterResult.TotalCount) | $($pesterResult.PassedCount) | $($pesterResult.FailedCount) | $($pesterResult.SkippedCount) |")
+
+        if ($failureDetails.Count -gt 0) {
+            [void]$md.AppendLine('')
+            [void]$md.AppendLine('## Échecs détaillés')
+            [void]$md.AppendLine('')
+            foreach ($failure in $failureDetails) {
+                [void]$md.AppendLine("### $($failure.Name)")
+                if ($failure.Path) { [void]$md.AppendLine("- Fichier : $($failure.Path)") }
+                if ($failure.Line) { [void]$md.AppendLine("- Ligne : $($failure.Line)") }
+                [void]$md.AppendLine("- Message : $($failure.Message)")
+                if ($failure.Position) {
+                    [void]$md.AppendLine('')
+                    [void]$md.AppendLine('```text')
+                    [void]$md.AppendLine($failure.Position)
+                    [void]$md.AppendLine('```')
+                }
+                [void]$md.AppendLine('')
+            }
+        }
     }
 }
+
+$report | ConvertTo-Json -Depth 10 |
+    Set-Content -LiteralPath $reportJson -Encoding utf8NoBOM
 
 $md.ToString() |
     Set-Content -LiteralPath $reportMd -Encoding utf8NoBOM

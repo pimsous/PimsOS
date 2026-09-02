@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Module : PostInstall DeploymentValidation
 # Projet : PimsOS Builder
 # Version : 1.0.0
@@ -28,6 +28,8 @@ function Test-PostInstallDeployment {
 		"DriverCheck.ps1"
 		"PostInstall.ps1"
 		"State.ps1"
+        "Chocolatey.ps1"
+        "Finalize.ps1"
 	)
 
     $MissingFiles = @()
@@ -56,6 +58,9 @@ function Test-PostInstallDeployment {
     $FirstLogonCommands = $false
     $BootstrapReferenced = $false
     $RunOnceReferenced = $false
+    $BootstrapLoadsDriverCheck = $false
+    $BootstrapLoadsChocolatey = $false
+    $BootstrapLoadsFinalize = $false
 
     if ($UnattendExists) {
 
@@ -129,13 +134,38 @@ function Test-PostInstallDeployment {
 
     }
 
+    $BootstrapPath = Join-Path -Path $PostInstallPath -ChildPath "Bootstrap.ps1"
+
+    if (Test-Path -LiteralPath $BootstrapPath -PathType Leaf) {
+
+        try {
+
+            $BootstrapText = Get-Content -LiteralPath $BootstrapPath -Raw -ErrorAction Stop
+            $BootstrapLoadsDriverCheck = $BootstrapText -match '(?i)DriverCheck\.ps1'
+            $BootstrapLoadsChocolatey = $BootstrapText -match '(?i)Chocolatey\.ps1'
+            $BootstrapLoadsFinalize = $BootstrapText -match '(?i)Finalize\.ps1'
+
+        }
+        catch {
+
+            $BootstrapLoadsDriverCheck = $false
+            $BootstrapLoadsChocolatey = $false
+            $BootstrapLoadsFinalize = $false
+
+        }
+
+    }
+
     $Success = (
         $MissingFiles.Count -eq 0 -and
         $UnattendExists -and
         $XmlValid -and
         $FirstLogonCommands -and
         $BootstrapReferenced -and
-        -not $RunOnceReferenced
+        -not $RunOnceReferenced -and
+        $BootstrapLoadsDriverCheck -and
+        $BootstrapLoadsChocolatey -and
+        $BootstrapLoadsFinalize
     )
 
     return [pscustomobject]@{
@@ -146,7 +176,10 @@ function Test-PostInstallDeployment {
         XmlValid             = $XmlValid
         FirstLogonCommands   = $FirstLogonCommands
         BootstrapReferenced  = $BootstrapReferenced
-        RunOnceReferenced    = $RunOnceReferenced
+        RunOnceReferenced      = $RunOnceReferenced
+        BootstrapLoadsDriverCheck = $BootstrapLoadsDriverCheck
+        BootstrapLoadsChocolatey  = $BootstrapLoadsChocolatey
+        BootstrapLoadsFinalize    = $BootstrapLoadsFinalize
 
     }
 

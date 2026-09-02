@@ -2,7 +2,7 @@
 # Module : PostInstall DriverCheck
 # Projet : PimsOS Builder
 # Version : 1.0.0
-# Compatible : PowerShell 7+
+# Compatible : PowerShell 5.1+
 # ==========================================
 
 Set-StrictMode -Version Latest
