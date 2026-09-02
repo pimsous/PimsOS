@@ -4,7 +4,7 @@
 >
 > Statut : Référence de travail
 >
-> Dernière mise à jour : 2026-09-01
+> Dernière mise à jour : 2026-09-02
 
 ---
 
@@ -80,7 +80,7 @@ Le but est d'empêcher une reprise de session basée sur une mémoire partielle,
 
 Commencer par :
 
-1. `Documentation/DocumentationSync-2026-09-01.md` ou la note `DocumentationSync-*` la plus récente ;
+1. `Documentation/DocumentationSync-2026-09-02.md` ou la note `DocumentationSync-*` la plus récente ;
 2. `Documentation/ProjectStatus.md` ;
 3. `CurrentSprint.md` ;
 4. `Documentation/ChatGPT-Workflow.md` ;

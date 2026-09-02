@@ -1,38 +1,27 @@
-# Mise à jour du backlog — 01/09/2026
+# Mise à jour du backlog — 02/09/2026
 
-## Priorité immédiate — Wizard / Tweaks
+## Travaux clôturés
 
-- [x] Charger `TweakCatalog.ps1` dans `PimsOS.psm1`.
-- [x] Stabiliser le catalogue de présentation du Wizard.
-- [x] Permettre la sélection individuelle, par liste et par plage.
-- [x] Corriger la résolution des profils depuis `Profiles\`.
-- [x] Ajouter les tests du flux de sélection Tweaks.
-- [ ] Continuer l’enrichissement du catalogue et des profils.
+- [x] Build réel complet avec injection `CurrentSystem` validé.
+- [x] Diagnostic sécurisé : 815 Passed / 0 Failed / 1 Skipped.
+- [x] Chocolatey bootstrap Offline obligatoire au Build.
+- [x] `FailurePolicy=Stop|Continue` implémentée et testée.
+- [x] `FailurePolicy=Continue` validée en VM sur l’échec Chrome.
+- [x] PostInstall/FirstBoot validé en VM.
+- [x] Finalization et Cleanup différé validés en VM.
+- [x] Microsoft Store / iCloud / Widgets vérifiés en VM sans modification de l’intégration de base.
 
-## Tweaks / catégories
+## Prochaine priorité
 
-- [ ] Compléter les 9 fichiers JSON placeholders.
-- [ ] Vérifier les 19 définitions existantes et leurs Actions.
-- [ ] Harmoniser `Config\Categories.json` avec les `CategoryId` réellement utilisés.
-- [ ] Ne pas considérer un placeholder comme un Tweak terminé.
-
-## Validation
-
-- [x] Régénérer/valider les campagnes ciblées Pester du sprint.
-- [ ] Régénérer `Tests\testResults.xml`.
-- [x] Générer une ISO PimsOS 3.0.0 avec le pipeline réel.
-- [ ] Revalider Bootstrap/PostInstall/Write-Log dans Hyper-V sur la nouvelle ISO.
-- [ ] Vérifier `state.json` et l’idempotence.
+1. Synchronisation Git du projet et de la documentation.
+2. Régénération éventuelle de `Tests\testResults.xml`.
+3. Validation physique/Rufus.
+4. Audit Offline réel des packages Chocolatey.
+5. Winget et couverture Recovery/Security.
 
 ---
 
-# PimsOS Builder - Backlog
-
-> Version technique : 3.0.0
->
-> Statut : Référence
->
-> Dernière mise à jour : 2026-09-01
+## Backlog détaillé
 
 ---
 
@@ -50,20 +39,20 @@ Les éléments sont réévalués régulièrement en fonction des priorités du p
 
 ## Génération d'image
 
-- [ ] Finaliser la reconstruction automatique de l'ISO.
-- [ ] Valider automatiquement l'ISO générée.
-- [ ] Réaliser un Build complet de bout en bout.
-- [ ] Vérifier les artefacts de sortie.
-- [ ] Finaliser le nettoyage après génération.
+- [x] Générer une ISO réelle avec le pipeline complet.
+- [x] Valider la production de l'ISO par code retour 0, WIM SHA256 et absence de montage résiduel.
+- [x] Réaliser un Build complet de bout en bout.
+- [x] Vérifier les principaux artefacts de sortie.
+- [x] Valider le nettoyage des ressources Build.
 - [ ] Améliorer la gestion des erreurs pendant la production de l'image.
 
 ---
 
 ## Providers de packages
 
-- [~] Stabiliser le provider/cache Chocolatey et son catalogue.
+- [x] Stabiliser le provider/cache Chocolatey, son catalogue et `FailurePolicy`.
 - [ ] Implémenter le provider Winget.
-- [ ] Ajouter les tests des providers.
+- [x] Ajouter les tests Chocolatey/cache/catalogue.
 - [ ] Valider leur intégration avec `PackageManager`.
 
 ---
@@ -275,7 +264,7 @@ Toute tâche terminée doit être retirée du Backlog actif et reflétée dans l
 
 > Version technique : **3.0.0**
 >
-> Dernière mise à jour : **2026-09-01**
+> Dernière mise à jour : **2026-09-02**
 
 ## Priorité immédiate
 

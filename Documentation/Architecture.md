@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-09-01
+> Dernière mise à jour : 2026-09-02
 
 ---
 
@@ -493,7 +493,7 @@ Consulter également :
 
 ---
 
-## Validation de la chaîne réelle — 01/09/2026
+## Validation de la chaîne réelle — 02/09/2026
 
 La chaîne réelle actuellement validée est :
 
@@ -535,4 +535,4 @@ DismountIso
 NewPimsOSIso
 ```
 
-Cette chaîne a produit une ISO PimsOS 3.0.0 avec code retour 0 le 01/09/2026. Cette validation est une preuve du comportement actuel, pas une justification pour modifier l’architecture sans besoin.
+La chaîne de production a produit une ISO PimsOS 3.0.0 avec code retour 0 le 02/09/2026, avec injection réelle des drivers `CurrentSystem`. Cette validation est une preuve du comportement actuel, pas une justification pour modifier l’architecture sans besoin.

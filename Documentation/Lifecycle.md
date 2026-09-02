@@ -4,11 +4,11 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-09-01
+> Dernière mise à jour : 2026-09-02
 
 ---
 
-> Les références datées du 31/08/2026 conservées plus bas sont historiques ; l’état courant est celui du 01/09/2026.
+> Les références antérieures au 02/09/2026 sont historiques ; l’état courant est celui du 02/09/2026.
 
 
 # Objectif
@@ -100,7 +100,7 @@ Les principales fondations du framework sont maintenant en place :
 * reporting ;
 * nettoyage et finalisation du Build.
 
-Le Build réel de bout en bout est désormais démontré. Le développement se concentre sur la validation de l’artefact ISO, la stabilisation des providers de packages (notamment Chocolatey), la qualité CI et les scénarios réels FirstBoot/PostInstall.
+Le Build réel de bout en bout et la validation VM de FirstBoot/PostInstall sont désormais démontrés. Le développement se concentre sur la synchronisation Git, la validation physique/Rufus, l’audit Offline des packages et les fonctions encore au backlog.
 
 ---
 
@@ -256,7 +256,7 @@ Le moteur d'orchestration est suffisamment structuré et testé pour poursuivre 
 * [ ] Valider l'exécution réelle de `FirstLogonCommands`.
 * [ ] Valider le premier démarrage réel de Windows.
 * [ ] Valider la reprise réseau réelle.
-* [ ] Intégrer Chocolatey.
+* [x] Intégrer le provider Chocolatey.
 * [ ] Intégrer Winget.
 * [ ] Intégrer Microsoft Store.
 
@@ -266,7 +266,7 @@ Le moteur d'orchestration est suffisamment structuré et testé pour poursuivre 
 
 Le sous-système PostInstall est fonctionnel au niveau de la préparation et de l'intégration au Build.
 
-La validation du comportement réel lors de la première connexion Windows reste à effectuer.
+La validation réelle de `FirstLogonCommands`, Bootstrap, PostInstall et Finalization est maintenant effectuée en VM.
 
 ---
 
@@ -299,7 +299,7 @@ La validation du comportement réel lors de la première connexion Windows reste
 La dernière campagne officielle de tests donne :
 
 ```text id="fny8oe"
-971 Passed (historical — 31/08/2026)
+815 Passed / 0 Failed / 1 Skipped (reference — 02/09/2026)
 0 Failed
 1 Skipped
 0 Inconclusive
@@ -541,87 +541,3 @@ Les évolutions architecturales importantes sont documentées dans les ADR.
 * `PostInstall.md`
 * `Prerequisites.md`
 * `Documentation\ADR\`
-
-# PimsOS Builder - Feuille de route
-
-> Version technique : **3.0.0**
->
-> Dernière mise à jour : **2026-09-01**
-
-## Phase 1 — Fondations
-
-**Statut : ✅ Terminée**
-
-- Module PowerShell unique
-- BuildContext / BuildState
-- Workflow / Pipeline
-- ActionRegistry / ActionEngine
-- Configuration JSON
-- Profils
-- Tweaks
-- Engines / Managers
-- Tests Pester
-
-## Phase 2 — Chaîne de personnalisation
-
-**Statut : 🟢 Fonctionnelle**
-
-- Catalogue Tweaks
-- Wizard
-- Profils
-- Configuration Custom
-- Actions Registry et autres Engines
-- Drivers
-- PostInstall / FirstBoot
-
-## Phase 3 — Validation produit
-
-**Statut : 🟡 En cours**
-
-- Nouvelle ISO depuis le commit 3bbaf73
-- Hyper-V FirstBoot/PostInstall
-- application réelle des Tweaks
-- réseau / reprise
-- idempotence
-- validation Rufus / physique
-
-## Phase 4 — Providers
-
-**Statut : ⬜ A venir**
-
-Ordre recommandé :
-
-1. Chocolatey
-2. Winget
-3. Microsoft Store
-
-Les trois providers doivent respecter le contrat du PackageManager et rester
-séparés du moteur générique des Tweaks.
-
-## Phase 5 — Qualité et exploitation
-
-- Recovery
-- Security
-- Reporting
-- Converters
-- PSScriptAnalyzer
-- CI
-- rapports Pester
-
-## Phase 6 — Enrichissement
-
-- nouveaux Tweaks
-- nouveaux profils
-- documentation des effets et risques
-- nouveaux scénarios d'intégration
-
-`Tests\Legacy` reste une archive historique et ne revient pas dans la campagne
-officielle.
-
-
-
----
-
-## Gate de validation
-
-Avant toute campagne de tests, le diagnostic sécurisé classe les tests. Une validation réelle du Build constitue une étape distincte et doit être explicitement autorisée.

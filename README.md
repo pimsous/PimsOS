@@ -71,7 +71,7 @@ Cette séparation permet de construire un framework :
 
 **Version technique : 3.0.0**
 
-**Statut :** 🚧 Développement actif / architecture stabilisée
+**Statut :** 🚧 Développement actif / architecture stabilisée ; chaîne Build + VM validée
 
 | Domaine | État |
 |---------|------|
@@ -90,8 +90,8 @@ Cette séparation permet de construire un framework :
 | Image ISO / WIM | ✅ Implémentée |
 | Tests Pester | ✅ Forte couverture / extension en cours |
 | Reporting | 🟡 À enrichir |
-| Génération ISO | ✅ ISO 3.0.0 générée le 01/09 ; validation de l’artefact restante |
-| Providers Chocolatey / Winget | 🟡 Chocolatey/cache en cours ; Winget à venir |
+| Génération ISO | ✅ ISO 3.0.0 générée le 02/09 ; Build réel validé |
+| Providers Chocolatey / Winget | 🟢 Chocolatey fonctionnel ; Winget à venir |
 | Converters | ⬜ À implémenter |
 
 La version technique 3.0.0 ne constitue pas encore une release finale stable du produit.
@@ -135,7 +135,7 @@ Les principales étapes du Build sont actuellement implémentées :
 - ✔ Nettoyage
 - ✔ Finalisation du Build
 
-Un Build réel de bout en bout a été exécuté avec succès le 01/09/2026 et une ISO PimsOS 3.0.0 a été générée. La validation fonctionnelle de cette nouvelle ISO reste à effectuer.
+Un Build réel de bout en bout a été exécuté avec succès le 02/09/2026. L’ISO `PimsOS_3.0.0_20260902_141928.iso` a ensuite été validée en VM sur le flux FirstBoot/PostInstall/Finalization.
 
 ---
 
@@ -676,8 +676,8 @@ Framework PowerShell de construction et personnalisation d'images Windows.
 Base de référence actuelle :
 
 ```text
-Commit : 3bbaf73
-Tests  : 797 Passed / 0 Failed / 1 Skipped
+Tests  : 815 Passed / 0 Failed / 1 Skipped
+Référence Build : PimsOS_3.0.0_20260902_141928.iso
 Tweaks : 27 chargés avec Actions valides
 ```
 
@@ -728,7 +728,7 @@ Tests\Integration
 Dernière campagne :
 
 ```text
-797 Passed
+815 Passed
 0 Failed
 1 Skipped
 798 Total
@@ -736,14 +736,13 @@ Dernière campagne :
 
 ## Prochaines étapes
 
-1. Validation réelle de l'ISO reconstruite depuis `3bbaf73`.
-2. Hyper-V / FirstBoot / PostInstall.
-3. Validation réelle des Tweaks.
-4. Chocolatey.
+1. Synchronisation Git du code et de la documentation.
+2. Régénération éventuelle de `Tests\testResults.xml`.
+3. Validation Rufus / physique.
+4. Audit Offline des packages Chocolatey.
 5. Winget.
-6. Microsoft Store.
+6. Recovery / Security / Reporting.
 7. Enrichissement du catalogue.
-8. CI / qualité / Reporting.
 
-Le fichier `PimsOS_Reprise_2026-09-01.txt` constitue le point de reprise
+Le fichier `PimsOS_Reprise_2026-09-02.txt` constitue le point de reprise
 détaillé pour les prochaines sessions.

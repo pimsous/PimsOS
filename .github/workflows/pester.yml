@@ -11,8 +11,9 @@ on:
       - 'Modules/**'
       - 'Profiles/**'
       - 'Tests/**'
+      - 'Tools/**'
       - 'Tweaks/**'
-      - 'Tests/PesterConfiguration.ps1'
+      - 'PesterConfiguration.ps1'
       - 'version.json'
       - '.github/workflows/pester.yml'
       - '.github/workflows/codeql.yml'
@@ -27,8 +28,9 @@ on:
       - 'Modules/**'
       - 'Profiles/**'
       - 'Tests/**'
+      - 'Tools/**'
       - 'Tweaks/**'
-      - 'Tests/PesterConfiguration.ps1'
+      - 'PesterConfiguration.ps1'
       - 'version.json'
       - '.github/workflows/pester.yml'
       - '.github/workflows/codeql.yml'
@@ -146,9 +148,6 @@ jobs:
           $Config.Run.PassThru = $true
 
           $Config.Output.Verbosity = "Detailed"
-          $Config.TestResult.Enabled = $true
-          $Config.TestResult.OutputFormat = "NUnitXml"
-          $Config.TestResult.OutputPath = "Tests\Pester-Unit-TestResults.xml"
 
           $Result = Invoke-Pester `
             -Configuration $Config
@@ -172,9 +171,6 @@ jobs:
           $Config.Run.PassThru = $true
 
           $Config.Output.Verbosity = "Detailed"
-          $Config.TestResult.Enabled = $true
-          $Config.TestResult.OutputFormat = "NUnitXml"
-          $Config.TestResult.OutputPath = "Tests\Pester-Integration-TestResults.xml"
 
           $Result = Invoke-Pester `
             -Configuration $Config
@@ -184,6 +180,48 @@ jobs:
           }
 
           Write-Host "Pester integration tests : OK"
+
+      # --------------------------------------------------
+      # Test results - Unit
+      # --------------------------------------------------
+
+      - name: Generate Pester unit test report
+        if: always()
+        run: |
+          $Config = New-PesterConfiguration
+
+          $Config.Run.Path = "Tests\Unit"
+
+          $Config.Output.Verbosity = "Normal"
+
+          $Config.TestResult.Enabled = $true
+          $Config.TestResult.OutputFormat = "NUnitXml"
+          $Config.TestResult.OutputPath = "Tests\Pester-Unit-TestResults.xml"
+
+          Invoke-Pester `
+            -Configuration $Config `
+            -ErrorAction Stop
+
+      # --------------------------------------------------
+      # Test results - Integration
+      # --------------------------------------------------
+
+      - name: Generate Pester integration test report
+        if: always()
+        run: |
+          $Config = New-PesterConfiguration
+
+          $Config.Run.Path = "Tests\Integration"
+
+          $Config.Output.Verbosity = "Normal"
+
+          $Config.TestResult.Enabled = $true
+          $Config.TestResult.OutputFormat = "NUnitXml"
+          $Config.TestResult.OutputPath = "Tests\Pester-Integration-TestResults.xml"
+
+          Invoke-Pester `
+            -Configuration $Config `
+            -ErrorAction Stop
 
       # --------------------------------------------------
       # Upload test results
