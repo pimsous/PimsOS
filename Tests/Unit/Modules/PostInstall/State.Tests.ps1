@@ -1,4 +1,4 @@
-# ==========================================
+﻿# ==========================================
 # Tests : PostInstall State
 # Projet : PimsOS Builder
 # ==========================================
@@ -35,6 +35,15 @@ Describe "PostInstall State" {
                 Should -BeFalse
 
             $State.NetworkAvailable |
+                Should -BeFalse
+
+            $State.Verification.Verified |
+                Should -BeFalse
+
+            $State.Cleanup.Status |
+                Should -Be "Pending"
+
+            $State.Cleanup.Scheduled |
                 Should -BeFalse
 
         }

@@ -4,9 +4,12 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-02
 
 ---
+
+> Les références antérieures au 02/09/2026 sont historiques ; l’état courant est celui du 02/09/2026.
+
 
 # Objectif
 
@@ -97,7 +100,7 @@ Les principales fondations du framework sont maintenant en place :
 * reporting ;
 * nettoyage et finalisation du Build.
 
-Le développement se concentre désormais sur la finalisation de la chaîne de production et sur la validation complète du Build de bout en bout.
+Le Build réel de bout en bout et la validation VM de FirstBoot/PostInstall sont désormais démontrés. Le développement se concentre sur la synchronisation Git, la validation physique/Rufus, l’audit Offline des packages et les fonctions encore au backlog.
 
 ---
 
@@ -253,7 +256,7 @@ Le moteur d'orchestration est suffisamment structuré et testé pour poursuivre 
 * [ ] Valider l'exécution réelle de `FirstLogonCommands`.
 * [ ] Valider le premier démarrage réel de Windows.
 * [ ] Valider la reprise réseau réelle.
-* [ ] Intégrer Chocolatey.
+* [x] Intégrer le provider Chocolatey.
 * [ ] Intégrer Winget.
 * [ ] Intégrer Microsoft Store.
 
@@ -263,7 +266,7 @@ Le moteur d'orchestration est suffisamment structuré et testé pour poursuivre 
 
 Le sous-système PostInstall est fonctionnel au niveau de la préparation et de l'intégration au Build.
 
-La validation du comportement réel lors de la première connexion Windows reste à effectuer.
+La validation réelle de `FirstLogonCommands`, Bootstrap, PostInstall et Finalization est maintenant effectuée en VM.
 
 ---
 
@@ -296,7 +299,7 @@ La validation du comportement réel lors de la première connexion Windows reste
 La dernière campagne officielle de tests donne :
 
 ```text id="fny8oe"
-971 Passed
+815 Passed / 0 Failed / 1 Skipped (reference — 02/09/2026)
 0 Failed
 1 Skipped
 0 Inconclusive

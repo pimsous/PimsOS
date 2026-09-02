@@ -4,9 +4,12 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-02
 
 ---
+
+> Les références antérieures au 02/09/2026 sont historiques ; l’état courant est celui du 02/09/2026.
+
 
 # Objectif
 
@@ -26,7 +29,7 @@ Un jalon est considéré comme atteint lorsque les objectifs définis pour celui
 | Milestone 2 | Module PowerShell unique | ✅ Terminé |
 | Milestone 3 | Moteur de Build | ✅ Terminé |
 | Milestone 4 | Framework de configuration | ✅ Stabilisé |
-| Milestone 5 | Génération d'image | 🟡 En cours |
+| Milestone 5 | Génération d'image | 🟢 Validé techniquement |
 | Milestone 6 | Première version stable | ⏳ À venir |
 
 ---
@@ -379,7 +382,7 @@ Ils ne font pas partie de la campagne officielle.
 La dernière campagne de référence donne :
 
 ```text
-971 Passed
+815 Passed / 0 Failed / 1 Skipped (reference — 02/09/2026)
 0 Failed
 1 Skipped
 0 Inconclusive
@@ -391,7 +394,7 @@ Le seul test ignoré est conditionnel et concerne le cas d'une catégorie sans g
 La campagne complète s'exécute actuellement en environ :
 
 ```text
-5,69 secondes
+durée variable selon les tests et l’environnement
 ```
 
 ---

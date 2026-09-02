@@ -1,38 +1,27 @@
-# Mise à jour du backlog — 31/08/2026
+# Mise à jour du backlog — 02/09/2026
 
-## Priorité immédiate — Wizard / Tweaks
+## Travaux clôturés
 
-- [x] Charger `TweakCatalog.ps1` dans `PimsOS.psm1`.
-- [x] Stabiliser le catalogue de présentation du Wizard.
-- [x] Permettre la sélection individuelle, par liste et par plage.
-- [x] Corriger la résolution des profils depuis `Profiles\`.
-- [x] Ajouter les tests du flux de sélection Tweaks.
-- [ ] Continuer l’enrichissement du catalogue et des profils.
+- [x] Build réel complet avec injection `CurrentSystem` validé.
+- [x] Diagnostic sécurisé : 815 Passed / 0 Failed / 1 Skipped.
+- [x] Chocolatey bootstrap Offline obligatoire au Build.
+- [x] `FailurePolicy=Stop|Continue` implémentée et testée.
+- [x] `FailurePolicy=Continue` validée en VM sur l’échec Chrome.
+- [x] PostInstall/FirstBoot validé en VM.
+- [x] Finalization et Cleanup différé validés en VM.
+- [x] Microsoft Store / iCloud / Widgets vérifiés en VM sans modification de l’intégration de base.
 
-## Tweaks / catégories
+## Prochaine priorité
 
-- [ ] Compléter les 9 fichiers JSON placeholders.
-- [ ] Vérifier les 19 définitions existantes et leurs Actions.
-- [ ] Harmoniser `Config\Categories.json` avec les `CategoryId` réellement utilisés.
-- [ ] Ne pas considérer un placeholder comme un Tweak terminé.
-
-## Validation
-
-- [x] Régénérer/valider les campagnes ciblées Pester du sprint.
-- [ ] Régénérer `Tests\testResults.xml`.
-- [x] Générer une ISO PimsOS 3.0.0 avec le pipeline réel.
-- [ ] Revalider Bootstrap/PostInstall/Write-Log dans Hyper-V sur la nouvelle ISO.
-- [ ] Vérifier `state.json` et l’idempotence.
+1. Synchronisation Git du projet et de la documentation.
+2. Régénération éventuelle de `Tests\testResults.xml`.
+3. Validation physique/Rufus.
+4. Audit Offline réel des packages Chocolatey.
+5. Winget et couverture Recovery/Security.
 
 ---
 
-# PimsOS Builder - Backlog
-
-> Version technique : 3.0.0
->
-> Statut : Référence
->
-> Dernière mise à jour : 2026-08-31
+## Backlog détaillé
 
 ---
 
@@ -50,20 +39,20 @@ Les éléments sont réévalués régulièrement en fonction des priorités du p
 
 ## Génération d'image
 
-- [ ] Finaliser la reconstruction automatique de l'ISO.
-- [ ] Valider automatiquement l'ISO générée.
-- [ ] Réaliser un Build complet de bout en bout.
-- [ ] Vérifier les artefacts de sortie.
-- [ ] Finaliser le nettoyage après génération.
+- [x] Générer une ISO réelle avec le pipeline complet.
+- [x] Valider la production de l'ISO par code retour 0, WIM SHA256 et absence de montage résiduel.
+- [x] Réaliser un Build complet de bout en bout.
+- [x] Vérifier les principaux artefacts de sortie.
+- [x] Valider le nettoyage des ressources Build.
 - [ ] Améliorer la gestion des erreurs pendant la production de l'image.
 
 ---
 
 ## Providers de packages
 
-- [ ] Implémenter le provider Chocolatey.
+- [x] Stabiliser le provider/cache Chocolatey, son catalogue et `FailurePolicy`.
 - [ ] Implémenter le provider Winget.
-- [ ] Ajouter les tests des providers.
+- [x] Ajouter les tests Chocolatey/cache/catalogue.
 - [ ] Valider leur intégration avec `PackageManager`.
 
 ---
@@ -75,9 +64,9 @@ Les éléments sont réévalués régulièrement en fonction des priorités du p
 - [ ] Ajouter ou compléter les tests d'intégration.
 - [ ] Ajouter des scénarios de régression supplémentaires.
 - [ ] Ajouter une couverture de code exploitable dans la CI.
-- [ ] Intégrer PSScriptAnalyzer dans la CI.
-- [ ] Vérifier automatiquement le chargement du module PimsOS dans la CI.
-- [ ] Publier les résultats Pester dans GitHub Actions.
+- [x] Intégrer PSScriptAnalyzer dans la CI.
+- [x] Vérifier automatiquement le chargement du module PimsOS dans la CI.
+- [x] Publier les résultats Pester comme artefacts GitHub Actions.
 
 ---
 
@@ -86,6 +75,7 @@ Les éléments sont réévalués régulièrement en fonction des priorités du p
 ## Recovery et diagnostic
 
 - [ ] Améliorer `Test-WimMountState()`.
+- [x] Ajouter un diagnostic statique sécurisé des tests.
 - [ ] Ajouter un diagnostic détaillé de l'état des ressources.
 - [ ] Améliorer la détection des ressources laissées par un Build précédent.
 - [ ] Renforcer les scénarios de récupération.
@@ -269,3 +259,62 @@ Le Backlog permet de conserver une vision à moyen et long terme du projet sans 
 Les éléments les plus importants doivent être déplacés vers la Roadmap ou un jalon avant leur réalisation.
 
 Toute tâche terminée doit être retirée du Backlog actif et reflétée dans la documentation de statut du projet.
+
+# PimsOS Builder - Backlog
+
+> Version technique : **3.0.0**
+>
+> Dernière mise à jour : **2026-09-02**
+
+## Priorité immédiate
+
+### Validation ISO
+
+- [ ] Reconstruire l'ISO depuis le commit 3bbaf73.
+- [ ] Valider FirstBoot/PostInstall dans Hyper-V.
+- [ ] Vérifier Bootstrap / Logger.
+- [ ] Vérifier `state.json`.
+- [ ] Vérifier l'idempotence.
+- [ ] Tester la reprise après disponibilité réseau.
+- [ ] Vérifier l'application réelle des Tweaks.
+- [ ] Valider l'installation via Rufus.
+
+### Packages
+
+- [ ] Finaliser Chocolatey.
+- [ ] Finaliser Winget.
+- [ ] Définir le contrat des Providers.
+- [ ] Tester les installations réelles en PostInstall.
+
+### Microsoft Store
+
+- [ ] Définir la stratégie Store.
+- [ ] Implémenter son provider.
+- [ ] Intégrer le provider au PackageManager.
+- [ ] Ajouter les tests unitaires.
+- [ ] Ajouter les tests d'intégration.
+
+## Tweaks
+
+- [ ] Enrichir le catalogue au-delà des 27 Tweaks actuels.
+- [ ] Auditer les Tweaks existants.
+- [ ] Compléter les placeholders réellement utiles.
+- [ ] Harmoniser `Config/Categories.json`.
+- [ ] Maintenir `Documentation/Tweaks.md`.
+
+## Qualité
+
+- [ ] Régénérer `Tests\testResults.xml`.
+- [ ] Compléter Recovery.
+- [ ] Compléter Security.
+- [ ] Ajouter PSScriptAnalyzer.
+- [ ] Renforcer la CI.
+- [ ] Enrichir Reporting.
+- [ ] Implémenter Converters.
+
+## Règles
+
+- `Tests\Legacy` reste hors campagne officielle.
+- Les ADR historiques ne sont pas réécrits pour un simple changement d'état.
+- Les nouveaux providers ne doivent pas être mélangés au moteur générique des
+  Tweaks/Registry.

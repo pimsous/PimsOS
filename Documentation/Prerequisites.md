@@ -261,7 +261,7 @@ Show-PostInstallNetworkHelp
 Wait-PostInstallNetworkUI
 ```
 
-La validation réelle de la reprise après perte puis disponibilité du réseau reste à effectuer dans un environnement Windows réel.
+La reprise après perte puis disponibilité du réseau reste un scénario de validation dédié à réaliser. Le démarrage avec réseau disponible est déjà validé en VM.
 
 ---
 

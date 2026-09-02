@@ -1,8 +1,8 @@
-# ==========================================
+﻿# ==========================================
 # Module : PostInstall State
 # Projet : PimsOS Builder
-# Version : 1.0.0
-# Compatible : PowerShell 7+
+# Version : 1.1.0
+# Compatible : PowerShell 5.1+
 # ==========================================
 
 Set-StrictMode -Version Latest
@@ -50,6 +50,32 @@ function New-PostInstallState {
         CompletedTasks = @()
 
         PendingTasks = @()
+
+        Verification = [PSCustomObject]@{
+
+            Verified = $false
+
+            VerifiedAt = $null
+
+            MissingTasks = @()
+
+        }
+
+        Cleanup = [PSCustomObject]@{
+
+            Status = "Pending"
+
+            Scheduled = $false
+
+            ScheduledAt = $null
+
+            RemovedItems = @()
+
+            PreservedItems = @()
+
+            Errors = @()
+
+        }
 
     }
 

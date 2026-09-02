@@ -71,7 +71,7 @@ Cette séparation permet de construire un framework :
 
 **Version technique : 3.0.0**
 
-**Statut :** 🚧 Développement actif / architecture stabilisée
+**Statut :** 🚧 Développement actif / architecture stabilisée ; chaîne Build + VM validée
 
 | Domaine | État |
 |---------|------|
@@ -90,13 +90,24 @@ Cette séparation permet de construire un framework :
 | Image ISO / WIM | ✅ Implémentée |
 | Tests Pester | ✅ Forte couverture / extension en cours |
 | Reporting | 🟡 À enrichir |
-| Génération ISO | ✅ ISO 3.0.0 générée le 31/08 ; validation de l’artefact restante |
-| Providers Chocolatey / Winget | 🟡 À finaliser |
+| Génération ISO | ✅ ISO 3.0.0 générée le 02/09 ; Build réel validé |
+| Providers Chocolatey / Winget | 🟢 Chocolatey fonctionnel ; Winget à venir |
 | Converters | ⬜ À implémenter |
 
 La version technique 3.0.0 ne constitue pas encore une release finale stable du produit.
 
 ---
+
+
+## Diagnostic sécurisé
+
+Avant une campagne Pester, PimsOS recommande l'outil :
+
+```powershell
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -Unit -InventoryOnly -ExplainFailures
+```
+
+Les tests susceptibles de lancer un Build réel sont séparés des tests `SAFE`. Une validation de Build réel nécessite explicitement `-BuildValidation -AllowBuild`.
 
 # Fonctionnalités actuelles
 
@@ -124,7 +135,7 @@ Les principales étapes du Build sont actuellement implémentées :
 - ✔ Nettoyage
 - ✔ Finalisation du Build
 
-Un Build réel de bout en bout a été exécuté avec succès le 31/08/2026 et une ISO PimsOS 3.0.0 a été générée. La validation fonctionnelle de cette nouvelle ISO reste à effectuer.
+Un Build réel de bout en bout a été exécuté avec succès le 02/09/2026. L’ISO `PimsOS_3.0.0_20260902_141928.iso` a ensuite été validée en VM sur le flux FirstBoot/PostInstall/Finalization.
 
 ---
 
@@ -651,3 +662,87 @@ Pour le suivi de l'état du projet :
 ```text
 Documentation/ProjectStatus.md
 ```
+
+# PimsOS Builder
+
+Framework PowerShell de construction et personnalisation d'images Windows.
+
+## Etat
+
+**Version technique : 3.0.0**
+
+**Statut :** développement actif / architecture stabilisée.
+
+Base de référence actuelle :
+
+```text
+Tests  : 815 Passed / 0 Failed / 1 Skipped
+Référence Build : PimsOS_3.0.0_20260902_141928.iso
+Tweaks : 27 chargés avec Actions valides
+```
+
+## Architecture
+
+PimsOS utilise un **module PowerShell unique** :
+
+```text
+Modules\PimsOS.psd1
+Modules\PimsOS.psm1
+```
+
+Les sous-répertoires de `Modules` sont des composants internes chargés par le
+module principal.
+
+API publique :
+
+```text
+Initialize-PimsOS
+```
+
+## Composants principaux
+
+- BuildContext / BuildState
+- Workflow / Pipeline
+- Configuration / Profils / Tweaks
+- ActionRegistry / ActionEngine
+- Engines spécialisés
+- Managers
+- Image ISO / WIM / DISM
+- Registry
+- Drivers
+- PostInstall / FirstBoot
+- Wizard
+- Reporting
+
+## Tests
+
+Campagne officielle :
+
+```text
+Tests\Unit
+Tests\Integration
+```
+
+`Tests\Legacy` est historique et exclu.
+
+Dernière campagne :
+
+```text
+815 Passed
+0 Failed
+1 Skipped
+798 Total
+```
+
+## Prochaines étapes
+
+1. Synchronisation Git du code et de la documentation.
+2. Régénération éventuelle de `Tests\testResults.xml`.
+3. Validation Rufus / physique.
+4. Audit Offline des packages Chocolatey.
+5. Winget.
+6. Recovery / Security / Reporting.
+7. Enrichissement du catalogue.
+
+Le fichier `PimsOS_Reprise_2026-09-02.txt` constitue le point de reprise
+détaillé pour les prochaines sessions.

@@ -5,54 +5,93 @@
 
 BeforeAll {
     $ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..").Path
-    Import-Module "$ProjectRoot\Modules\PimsOS.psd1" -Force
+
+    . "$ProjectRoot\Modules\Infrastructure\Logger.ps1"
+    . "$ProjectRoot\Modules\Core\Core.ps1"
+    . "$ProjectRoot\Modules\Core\BuildContext.ps1"
+
+    . "$ProjectRoot\Modules\Configuration\Categories.ps1"
+    . "$ProjectRoot\Modules\Configuration\Tweak.ps1"
+    . "$ProjectRoot\Modules\Configuration\TweakCatalog.ps1"
+    . "$ProjectRoot\Modules\Configuration\Profile.ps1"
+    . "$ProjectRoot\Modules\Configuration\Configuration.ps1"
+
+    . "$ProjectRoot\Modules\UI\Wizard.ps1"
 }
 
 Describe "Architecture PimsOS" {
 
     It "Expose uniquement le point d'entrée public" {
-        (Get-Module PimsOS).ExportedFunctions.Keys |
-            Should -Be "Initialize-PimsOS"
+        # Le test doit charger explicitement le module : l'ordre d'exécution
+        # des fichiers Pester ne doit pas être une dépendance implicite.
+        Remove-Module PimsOS -ErrorAction SilentlyContinue
+        Import-Module "$ProjectRoot\Modules\PimsOS.psd1" -Force
+
+        $Module = Get-Module PimsOS
+        $Exports = @($Module.ExportedFunctions.Keys)
+
+        $Exports | Should -HaveCount 1
+        $Exports | Should -Contain "Initialize-PimsOS"
+
+        # Les fonctions internes (ex. catalogue Chocolatey) ne sont pas
+        # exposées par le contrat public du module.
+        $Exports | Should -Not -Contain "Get-ChocolateyCatalog"
+        $Exports | Should -Not -Contain "Get-ChocolateyCatalogEntries"
     }
 
     It "Charge toutes les définitions de tweaks avec des actions valides" {
-        InModuleScope PimsOS {
-            $Context = [pscustomobject]@{
-                Project = [pscustomobject]@{ Root = $ProjectRoot }
-                BuildState = [pscustomobject]@{
-                    Image = [pscustomobject]@{ TweaksLoaded = $false }
-                }
-            }
 
-            $Tweaks = @(Get-TweakDefinitions -Context $Context -Reload)
-            $Tweaks.Count | Should -BeGreaterThan 0
+		$Context = [pscustomobject]@{
+			Project = [pscustomobject]@{
+				Root = $ProjectRoot
+			}
 
-			foreach ($Tweak in $Tweaks) {
-				$Tweak.PSObject.Properties.Name | Should -Contain "Id"
-				$Tweak.PSObject.Properties.Name | Should -Contain "Enabled"
-
-				foreach ($Action in @($Tweak.Actions)) {
-					$Action.PSObject.Properties.Name | Should -Contain "Id"
-					$Action.PSObject.Properties.Name | Should -Contain "Type"
-					$Action.PSObject.Properties.Name | Should -Contain "Enabled"
+			BuildState = [pscustomobject]@{
+				Image = [pscustomobject]@{
+					TweaksLoaded = $false
 				}
 			}
-        }
-    }
+		}
+
+		$Tweaks = @(Get-TweakDefinitions -Context $Context -Reload)
+
+		$Tweaks.Count | Should -Be 27
+
+		foreach ($Tweak in $Tweaks) {
+
+			$Tweak.PSObject.Properties.Name |
+				Should -Contain "Id"
+
+			$Tweak.PSObject.Properties.Name |
+				Should -Contain "Enabled"
+
+			foreach ($Action in @($Tweak.Actions)) {
+
+				$Action.PSObject.Properties.Name |
+					Should -Contain "Id"
+
+				$Action.PSObject.Properties.Name |
+					Should -Contain "Type"
+
+				$Action.PSObject.Properties.Name |
+					Should -Contain "Enabled"
+			}
+		}
+	}
 
     It "Conserve une configuration Custom plate dans Get-PimsOSTweakConfiguration" {
-        InModuleScope PimsOS {
-            $Context = [pscustomobject]@{
-                Configuration = @(
-                    [pscustomobject]@{ Id="A"; Name="A"; Enabled=$true },
-                    [pscustomobject]@{ Id="B"; Name="B"; Enabled=$false }
-                )
-            }
 
-            $Result = @(Get-PimsOSTweakConfiguration -Context $Context)
-            $Result.Count | Should -Be 2
-            $Result[0].Enabled | Should -BeTrue
-            $Result[1].Enabled | Should -BeFalse
-        }
-    }
+		$Context = [pscustomobject]@{
+			Configuration = @(
+				[pscustomobject]@{ Id="A"; Name="A"; Enabled=$true },
+				[pscustomobject]@{ Id="B"; Name="B"; Enabled=$false }
+			)
+		}
+
+		$Result = @(Get-PimsOSTweakConfiguration -Context $Context)
+
+		$Result.Count | Should -Be 2
+		$Result[0].Enabled | Should -BeTrue
+		$Result[1].Enabled | Should -BeFalse
+	}
 }

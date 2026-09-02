@@ -3,7 +3,7 @@
 > **27 Tweaks fonctionnels** dans le catalogue actuel.
 
 > Version technique : 3.0.0  
-> Mise à jour : 2026-09-01
+> Mise à jour : 2026-09-02
 
 ## Objectif
 

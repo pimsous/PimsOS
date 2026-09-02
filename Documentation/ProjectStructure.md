@@ -4,7 +4,7 @@
 >
 > Statut : Développement / architecture stabilisée
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-02
 
 ---
 
@@ -37,6 +37,10 @@ PimsOS
 ├── Packages
 ├── Tests
 ├── Workspace
+├── Drivers
+├── Profiles
+├── Resources
+├── Tweaks
 ├── version.json
 └── README.md
 ```

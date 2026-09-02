@@ -1,18 +1,18 @@
-# État de validation au 31/08/2026
+# État de validation au 02/09/2026
 
-Une validation réelle du cycle FirstBoot/PostInstall a déjà été réalisée dans Hyper-V avec une ISO PimsOS. L’installation a fonctionné, RunOnce a été présent puis consommé, et `C:\ProgramData\PimsOS\PostInstall\state.json` a été créé avec un état `Completed`.
+Le cycle PostInstall/Chocolatey a été validé en VM sur une ISO PimsOS 3.0.0 générée le 02/09/2026. Le réseau et le contrôle des pilotes fonctionnent, Chocolatey est installé localement depuis le cache embarqué et les packages Online peuvent être installés.
 
-`CompletedTasks` contenait une seule entrée `Local`. Une protection contre une seconde exécution lorsque l’état est déjà `Completed` a été ajoutée.
+La politique `FailurePolicy=Continue` a également été validée en conditions réelles : l'échec de Google Chrome sur son checksum est signalé sans bloquer le PostInstall et le package suivant est exécuté. Aucun `--ignore-checksums` n'est utilisé.
 
-Une correction concernant la disponibilité de `Write-Log` dans l’environnement PostInstall installé a ensuite été apportée au source. **Cette correction doit encore être validée dans l’ISO générée le 31/08/2026.**
+Le Microsoft Store est également validé en VM : il s'ouvre normalement, iCloud peut être installé depuis le Store et les Widgets peuvent être ouverts, installés et utilisés.
 
-La prochaine validation réelle doit donc reconstruire une ISO depuis le code actuel, installer cette ISO dans Hyper-V, puis vérifier Bootstrap, `Write-Log`, `state.json`, RunOnce et l’absence de double exécution.
+La finalisation après Bootstrap est maintenant implémentée dans `Finalize.ps1`. Elle vérifie l'état final avant de programmer un nettoyage différé. La validation VM de cette nouvelle étape est maintenant réussie : les scripts temporaires et `C:\Windows\Panther\unattend.xml` sont supprimés après la fin du Bootstrap, tandis que `state.json`, `PostInstall.log` et le cache Chocolatey sont conservés.
 
 ---
 
 # PostInstall PimsOS
 
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-02
 
 ## Objectif
 
@@ -50,6 +50,7 @@ Network.ps1
 UI.ps1
 PostInstall.ps1
 State.ps1
+Finalize.ps1
 ```
 
 Le mécanisme FirstBoot génère :
@@ -291,6 +292,7 @@ State.ps1
 Network.ps1
 UI.ps1
 PostInstall.ps1
+Finalize.ps1
 ```
 
 Le mécanisme FirstBoot s'appuie sur ce Bootstrap pour démarrer le
@@ -521,9 +523,6 @@ La préparation du runtime dans le WIM, la génération de
 l'interface réseau du premier démarrage, la préparation FirstBoot et
 l'intégration au BuildPipeline sont couvertes par les tests actuels.
 
-La prochaine validation fonctionnelle importante est l'exécution réelle
-de `FirstLogonCommands` lors de la première connexion Windows, ainsi que
-la validation du comportement complet lorsque le réseau devient
-disponible après le démarrage.
+La chaîne `FirstLogonCommands → Bootstrap → Network → DriverCheck → Chocolatey → Finalize` est validée en VM. La reprise après perte puis disponibilité du réseau reste un scénario de validation dédié à compléter, distinct de la validation d’un démarrage avec réseau disponible.
 
 ---

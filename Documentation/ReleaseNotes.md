@@ -1,428 +1,59 @@
-# Mise à jour de validation — 31/08/2026
+# PimsOS Builder — Notes de version
 
-Depuis la rédaction initiale des notes 3.0.0, une validation réelle Hyper-V du cycle PostInstall/FirstBoot a été obtenue. Une correction de disponibilité de `Write-Log` dans le runtime installé a ensuite été apportée et doit encore être validée dans une nouvelle ISO.
+> Version technique : 3.0.0
+>
+> Dernière mise à jour : 2026-09-02
 
-Le dépôt courant contient également un catalogue Tweaks partiellement rempli : 19 définitions JSON actives et 9 placeholders vides. Le raccordement `TweakCatalog` ↔ Wizard est désormais intégré au module central et le menu Tweaks est couvert par 15 tests verts.
+## Validation du 02/09/2026
 
-Le dernier résultat global Pester communiqué pendant la session est 971 Passed / 0 Failed / 1 Skipped ; le XML présent dans le ZIP est plus ancien et doit être régénéré.
+- Build réel complet validé avec Windows 11 Professionnel index 6.
+- Drivers `CurrentSystem` exportés et injectés avec DISM.
+- 27 Tweaks appliqués.
+- WIM sauvegardé, démonté et synchronisé avec SHA256 vérifié.
+- ISO générée : `Output\PimsOS_3.0.0_20260902_141928.iso`.
+- Taille ISO : 11,29 Go.
+- Code retour Build : 0.
+- Diagnostic sécurisé : 815 Passed / 0 Failed / 1 Skipped.
+- PostInstall validé en VM.
+- Chocolatey bootstrap local validé.
+- `FailurePolicy=Continue` validé avec poursuite après échec Chrome.
+- Microsoft Store, iCloud depuis le Store et Widgets validés en VM.
+- Finalization et nettoyage différé validés en VM.
 
----
+### Artefacts de référence
 
-# PimsOS Builder - Notes de version
+- WIM SHA256 : `B6BA0B8E8474761380FCC26DB165DC786162EA916B8D35192A977C49E72E9941`
+- Diagnostic : `Tests\Reports\Diagnostics\Diagnostics-20260902-141259.md`
+- État VM : `state.json` avec `Completed=true`, `Failed=false`, `Verification.Verified=true`.
 
-## Objectif
+### Anomalie connue non bloquante
 
-Ce document présente les principales évolutions de chaque version de **PimsOS Builder**.
-
-Les notes de version mettent en avant les changements importants pour les utilisateurs et les développeurs.
-
-Contrairement au `CHANGELOG.md`, qui recense les modifications techniques détaillées, ce document présente les évolutions majeures, les améliorations, les corrections et les changements importants.
-
----
-
-# Format
-
-Chaque version documente, lorsque cela est pertinent :
-
-* nouveautés ;
-* améliorations ;
-* corrections ;
-* changements incompatibles (Breaking Changes) ;
-* problèmes connus.
-
----
-
-# Version 3.0.0
-
-## État
-
-🚧 Développement / architecture stabilisée
-
-La version 3.0.0 représente l'état technique actuel du framework.
-
-Une ISO 3.0.0 a été générée avec succès le 31/08/2026. La version ne constitue toutefois pas encore une release finale stable tant que la nouvelle ISO n’a pas passé la validation réelle FirstBoot/PostInstall.
+`googlechrome` peut échouer sur un checksum lorsque l’installateur servi par Google évolue avant la mise à jour du package Chocolatey. `FailurePolicy=Continue` permet de poursuivre. Aucun contournement de checksum n’est utilisé.
 
 ---
 
-## Nouveautés
+# Mise à jour de validation — 01/09/2026
 
-### Architecture
+## Build réel
 
-* Stabilisation du modèle de module PowerShell unique.
-* Centralisation du chargement des composants dans `PimsOS.psm1`.
-* Centralisation de l'API publique.
-* Renforcement du `BuildContext` comme contrat central.
-* Mise en place et stabilisation de l'`ActionRegistry`.
-* Routage centralisé des Actions par `ActionEngine`.
-* Séparation explicite entre les tests actifs et les tests historiques `Legacy`.
+- Build complet PimsOS 3.0.0 validé avec code retour 0.
+- Windows 11 Professionnel, index 6.
+- 27 Tweaks appliqués.
+- PostInstall préparé et validé.
+- WIM synchronisé vers la source ISO avec SHA256 vérifié.
+- ISO `Output\PimsOS_3.0.0_20260901_180342.iso` créée, 7,9 Go annoncés.
 
-### Configuration
+## Diagnostic sécurisé
 
-* Stabilisation du chargement des catégories.
-* Stabilisation du chargement des Tweaks.
-* Stabilisation du chargement des profils.
-* Fusion des profils et des Tweaks.
-* Validation des définitions de configuration.
-* Construction de la configuration finale dans le `BuildContext`.
-* Intégration de la sélection du profil dans le Wizard.
-* Intégration des options du Build dans le Wizard.
+- Ajout de `Tests\Tools\Invoke-PimsOSDiagnostics.ps1`.
+- Séparation `SAFE` / `BUILD-CAPABLE` / `UNKNOWN`.
+- Validation Build séparée par `-BuildValidation -AllowBuild`.
+- Inventaire sans exécution avec `-InventoryOnly`.
 
-### Wizard
+## CI
 
-Le Wizard de configuration est désormais intégré au flux principal.
-
-Il permet notamment :
-
-* de sélectionner un profil ;
-* de modifier les options du Build ;
-* de configurer les drivers ;
-* d'afficher le résumé ;
-* de valider ou d'annuler la configuration.
-
-Les informations configurées dans le Wizard sont transmises au `BuildContext`, puis au pipeline.
-
-### Drivers
-
-Le pipeline prend désormais en charge la préparation des drivers.
-
-Les sources actuellement supportées sont :
-
-* `None` ;
-* `CurrentSystem` ;
-* `Folder`.
-
-Le Wizard permet de sélectionner la source des drivers.
-
-Les actions DISM correspondantes sont construites et enregistrées dans le contexte du Build.
-
-### PostInstall / FirstBoot
-
-Le sous-système PostInstall et sa préparation FirstBoot sont désormais intégrés au BuildPipeline.
-
-Les composants concernés comprennent :
-
-* `State.ps1` ;
-* `Network.ps1` ;
-* `PostInstall.ps1` ;
-* `Bootstrap.ps1` ;
-* `FirstBoot.ps1` ;
-* `Unattend.ps1` ;
-* `Installer.ps1` ;
-* `UI.ps1`.
-
-Le runtime PostInstall est installé dans :
-
-```text
-C:\ProgramData\PimsOS\PostInstall\
-```
-
-La préparation du runtime est exécutée après l'application des drivers et avant le montage de la ruche `SOFTWARE`.
-
-La couche UI fournit notamment :
-
-* l'affichage de l'état réseau ;
-* l'aide utilisateur lorsque le réseau est indisponible ;
-* l'attente avec affichage de l'état ;
-* la reprise automatique lorsque la connexion devient disponible.
-
-### Tests
-
-Extension importante de la couverture Pester avec :
-
-* tests dédiés aux Engines ;
-* tests dédiés aux Managers ;
-* tests du système de configuration ;
-* tests du module Registry ;
-* tests du Wizard ;
-* tests des drivers ;
-* tests du pipeline ;
-* tests PostInstall ;
-* tests FirstBoot ;
-* tests réseau ;
-* tests UI PostInstall ;
-* tests d'intégration de l'API publique ;
-* tests d'intégration du BuildPipeline.
+- Ajout d'une concurrence par branche/ref dans PimsOS CI.
+- Annulation des runs obsolètes lors des synchronisations rapides.
+- Déclenchement limité aux chemins techniques pertinents afin que les changements purement documentaires ne déclenchent pas inutilement Pester.
 
 ---
-
-## Améliorations
-
-### Core
-
-* Stabilisation du `BuildContext`.
-* Stabilisation du `BuildState`.
-* Stabilisation du Workflow.
-* Stabilisation du Pipeline.
-* Amélioration de la finalisation du Build.
-* Meilleure propagation des informations entre les différentes phases.
-
-### Actions
-
-* Routage centralisé via `ActionRegistry`.
-* Séparation plus stricte entre Engines et Managers.
-* Gestion homogène des états `Success`, `Duration` et `Error`.
-* Amélioration de la gestion des erreurs des Actions.
-
-### Managers
-
-* Normalisation des mécanismes de sélection des providers.
-* Validation systématique des paramètres.
-* Amélioration de la gestion des handlers.
-* Correction de plusieurs problèmes liés aux dictionnaires ordonnés PowerShell.
-* Validation du comportement lorsqu'un handler inexistant est demandé.
-
-### Configuration
-
-* Meilleure propagation de l'état dans le `BuildContext`.
-* Mise à jour des indicateurs de chargement de la configuration.
-* Validation renforcée des définitions.
-* Intégration du profil sélectionné dans le contexte.
-* Tests de régression ajoutés.
-
-### PostInstall
-
-* Détection du réseau avec `Get-NetConnectionProfile`.
-* Repli vers `Get-NetAdapter` lorsque nécessaire.
-* Vérification distincte de la connectivité Internet.
-* Attente configurable de la disponibilité réseau.
-* Interface console dédiée au premier démarrage.
-* Affichage de l'état du réseau et de l'accès Internet.
-* Aide utilisateur lorsque le réseau est indisponible.
-* Reprise automatique après disponibilité du réseau.
-* Préparation du runtime dans le WIM.
-* Génération de `unattend.xml`.
-* Préparation des commandes `FirstLogonCommands`.
-* Intégration de `PreparePostInstall` dans le pipeline.
-
-### Tests et qualité
-
-La campagne officielle utilise désormais exclusivement :
-
-```text
-Tests\Unit
-Tests\Integration
-```
-
-Les tests historiques sont conservés dans :
-
-```text
-Tests\Legacy
-```
-
-et ne font pas partie de la campagne officielle.
-
-Les résultats communiqués à la fin de la session sont :
-
-```text
-971 Passed
-0 Failed
-1 Skipped
-```
-
-La campagne ciblée `Wizard.Tests.ps1` est à `15 Passed / 0 Failed / 0 Skipped`. La campagne PostInstall/Unattend communiquée est à `744 Passed / 0 Failed / 1 Skipped`. Le fichier `Tests\testResults.xml` présent dans l’archive reste plus ancien et doit être régénéré.
-
----
-
-## Corrections
-
-Les travaux de stabilisation de la version 3.0.0 ont notamment permis de corriger :
-
-* la propagation incorrecte du `BuildContext` ;
-* la mise à jour de l'état de chargement de la configuration ;
-* la propagation du profil sélectionné ;
-* la propagation des options du Build ;
-* la propagation de la configuration des drivers ;
-* l'ordre des étapes du BuildPipeline ;
-* la préparation PostInstall dans le pipeline ;
-* la gestion des sources de drivers ;
-* la construction des actions DISM pour les drivers ;
-* plusieurs problèmes de détection des providers ;
-* l'utilisation incorrecte de `ContainsKey()` avec des dictionnaires ordonnés ;
-* la propagation des erreurs dans les Engines ;
-* plusieurs incohérences de gestion des statistiques ;
-* des incohérences entre les contrats des Managers et leurs tests ;
-* le comportement du test réseau expirant qui attendait réellement une minute avant de terminer ;
-* la gestion d'un handler inexistant dans `CommandManager` ;
-* l'intégration de la couche UI PostInstall avec la logique réseau existante.
-
----
-
-## Breaking Changes
-
-La version 3.0.0 poursuit et stabilise les changements introduits par l'architecture du module unique.
-
-Principes importants :
-
-* `PimsOS.psm1` constitue le module central ;
-* `Initialize-PimsOS` constitue le point d'entrée public fonctionnel ;
-* les composants internes ne sont pas des modules PowerShell indépendants ;
-* les fonctions internes ne constituent pas automatiquement une API publique ;
-* le `BuildContext` constitue le contrat central entre les composants ;
-* le Wizard transmet sa configuration au contexte puis au pipeline ;
-* les tests `Legacy` sont séparés de la campagne officielle.
-
-Les anciennes architectures basées sur plusieurs modules indépendants ne constituent plus le modèle de référence.
-
----
-
-## Problèmes connus
-
-Les éléments suivants restent en développement :
-
-* finalisation complète de la génération de l'ISO ;
-* validation complète d'un Build de bout en bout ;
-* validation réelle de l'exécution de `FirstLogonCommands` lors de la première connexion Windows ;
-* validation complète de la reprise après perte puis disponibilité du réseau ;
-* implémentation du provider Chocolatey ;
-* implémentation du provider Winget ;
-* intégration Microsoft Store ;
-* implémentation de `Converters.ps1` ;
-* couverture complémentaire de `Recovery.ps1` ;
-* couverture complémentaire de `Security.ps1` ;
-* enrichissement du Reporting.
-
-La version 3.0.0 ne doit donc pas encore être considérée comme une release stable finale.
-
----
-
-# Historique
-
-## Version 0.3.0-dev
-
-### État
-
-🚧 Historique
-
-Cette version correspond à une étape précédente du développement du Builder.
-
-### Principales évolutions
-
-* migration vers un module PowerShell unique ;
-* introduction de `Initialize-PimsOS` ;
-* restructuration du Pipeline ;
-* introduction du mécanisme Recovery ;
-* gestion des images WIM ;
-* gestion des images ISO ;
-* gestion des ruches du registre ;
-* chargement de la configuration ;
-* chargement des profils ;
-* fusion des profils et des Tweaks ;
-* validation de la configuration ;
-* sélection interactive de l'image Windows ;
-* introduction de `Test-WimMountState()` ;
-* premiers tests Pester ;
-* centralisation des informations du projet dans `version.json`.
-
-### Corrections historiques
-
-* correction de la gestion des montages DISM invalides ;
-* amélioration de la logique de reprise ;
-* amélioration de la copie du WIM ;
-* amélioration de la gestion des erreurs du Pipeline.
-
----
-
-# Versions futures
-
-Les prochaines versions seront documentées selon le modèle suivant.
-
----
-
-# Version X.Y.Z
-
-## État
-
-* En développement
-* Publiée
-* Maintenance
-
----
-
-## Nouveautés
-
-...
-
----
-
-## Améliorations
-
-...
-
----
-
-## Corrections
-
-...
-
----
-
-## Breaking Changes
-
-...
-
----
-
-## Problèmes connus
-
-...
-
----
-
-# Politique de version
-
-Le projet suit le principe du **Semantic Versioning (SemVer)**.
-
-Format :
-
-```text
-MAJOR.MINOR.PATCH
-```
-
-* **MAJOR** : changements incompatibles.
-* **MINOR** : nouvelles fonctionnalités compatibles.
-* **PATCH** : corrections de bugs.
-
-Exemple :
-
-```text
-3.0.1
-```
-
----
-
-# Références
-
-Consulter également :
-
-* `CHANGELOG.md`
-* `Milestones.md`
-* `Roadmap.md`
-* `ProjectStatus.md`
-* `Testing.md`
-* `PostInstall.md`
-* `Legacy.md`
-
-
-## 3.0.0 — Catalogue Tweaks enrichi — 2026-09-01
-
-### Ajouts
-
-- affichage des secondes dans l'horloge ;
-- désactivation des surbrillances de recherche ;
-- contrôle des recommandations du menu Démarrer ;
-- désactivation des expériences personnalisées basées sur les diagnostics ;
-- contrôle des suggestions tierces de Windows Spotlight ;
-- contrôle de l'enregistrement des instantanés Recall ;
-- désactivation complète de Recall.
-
-### Corrections documentaires
-
-- clarification de la différence entre fichiers cachés et fichiers système
-  protégés ;
-- précision du comportement réel du Tweak Xbox/Game DVR ;
-- documentation du choix `DEFAULT` vs `SOFTWARE`.
-
-### Tests
-
-Ajout de tests de contrat pour les nouveaux fichiers JSON et leurs Actions
-registre.

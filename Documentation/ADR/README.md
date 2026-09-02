@@ -4,7 +4,7 @@
 >
 > Statut : Référence
 >
-> Dernière mise à jour : 2026-08-28
+> Dernière mise à jour : 2026-09-01
 
 ---
 
@@ -83,6 +83,7 @@ La conservation de l'historique est prioritaire sur la suppression d'une ancienn
 | ADR-0010 | Cycle de vie du BuildContext | Accepted |
 | ADR-0011 | Contrats d'interface entre composants | Accepted |
 | ADR-0012 | Module PowerShell unique | Accepted |
+| ADR-0013 | Diagnostic sécurisé avant exécution des tests | Accepted |
 
 ---
 

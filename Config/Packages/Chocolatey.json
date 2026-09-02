@@ -3,34 +3,209 @@
   "Version": "1.0",
   "Description": "Catalogue des packages Chocolatey utilisés par PimsOS.",
   "Packages": [
-    {"Id":"vcredist140","Enabled":true,"Category":"Prerequisite"},
-    {"Id":"DoNet3.5","Enabled":true,"Category":"Prerequisite"},
-    {"Id":"chocolatey","Enabled":true,"Category":"Chocolatey"},
-    {"Id":"chocolateygui","Enabled":true,"Category":"Chocolatey"},
-    {"Id":"chocolatey-core.extension","Enabled":true,"Category":"Chocolatey"},
-    {"Id":"choco-package-list-backup","Enabled":true,"Category":"Chocolatey"},
-    {"Id":"googlechrome","Enabled":true,"Category":"Browser"},
-    {"Id":"brave","Enabled":true,"Category":"Browser"},
-    {"Id":"firefox","Enabled":true,"Category":"Browser"},
-    {"Id":"tor-browser","Enabled":true,"Category":"Browser"},
-    {"Id":"winrar","Enabled":true,"Category":"Utility"},
-    {"Id":"keepass","Enabled":true,"Category":"Utility"},
-    {"Id":"notepadplusplus","Enabled":true,"Category":"Utility"},
-    {"Id":"vlc","Enabled":true,"Category":"Multimedia"},
-    {"Id":"teamviewer","Enabled":true,"Category":"Remote"},
-    {"Id":"iCloud","Enabled":true,"Category":"Cloud"},
-    {"Id":"everything","Enabled":true,"Category":"Utility"},
-    {"Id":"rufus","Enabled":true,"Category":"Utility"},
-    {"Id":"filezilla","Enabled":true,"Category":"Network"},
-    {"Id":"treesizefree","Enabled":true,"Category":"Utility"},
-    {"Id":"bluescreenview","Enabled":true,"Category":"Diagnostic"},
-    {"Id":"powertoys","Enabled":true,"Category":"Utility"},
-    {"Id":"rainmeter","Enabled":true,"Category":"Desktop"},
-    {"Id":"XnViewMP","Enabled":true,"Category":"Graphics"},
-    {"Id":"yacreader","Enabled":true,"Category":"Reading"},
-    {"Id":"razer-synapse-4","Enabled":true,"Category":"Hardware"},
-    {"Id":"autohotkey","Enabled":true,"Category":"Utility"},
-    {"Id":"powershell-core","Enabled":true,"Category":"Development"},
-    {"Id":"soundblaster-command","Enabled":true,"Category":"Hardware"}
+    {
+      "Id": "vcredist140",
+      "Enabled": true,
+      "Category": "Prerequisite",
+      "Mode": "Online",
+      "Version": "14.51.36247"
+    },
+    {
+      "Id": "dotnet3.5",
+      "Enabled": true,
+      "Category": "Prerequisite",
+      "Mode": "Online",
+      "Version": "3.5.20260626"
+    },
+    {
+      "Id": "chocolatey",
+      "Enabled": true,
+      "Category": "Chocolatey",
+      "Mode": "Offline",
+      "Version": null
+    },
+    {
+      "Id": "chocolateygui",
+      "Enabled": true,
+      "Category": "Chocolatey",
+      "Mode": "Online",
+      "Version": "3.2.0"
+    },
+    {
+      "Id": "chocolatey-core.extension",
+      "Enabled": true,
+      "Category": "Chocolatey",
+      "Mode": "Online",
+      "Version": "1.4.0"
+    },
+    {
+      "Id": "choco-package-list-backup",
+      "Enabled": true,
+      "Category": "Chocolatey",
+      "Mode": "Online",
+      "Version": "2023.6.28"
+    },
+    {
+      "Id": "googlechrome",
+      "Enabled": true,
+      "Category": "Browser",
+      "Mode": "Online",
+      "Version": "153.0.8010.12",
+      "FailurePolicy": "Continue"
+    },
+    {
+      "Id": "brave",
+      "Enabled": true,
+      "Category": "Browser",
+      "Mode": "Online",
+      "Version": null
+    },
+    {
+      "Id": "firefox",
+      "Enabled": true,
+      "Category": "Browser",
+      "Mode": "Online",
+      "Version": "154.0.1"
+    },
+    {
+      "Id": "tor-browser",
+      "Enabled": true,
+      "Category": "Browser",
+      "Mode": "Online",
+      "Version": "15.0.20"
+    },
+    {
+      "Id": "winrar",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": "7.23.0"
+    },
+    {
+      "Id": "keepass",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": "2.61.1"
+    },
+    {
+      "Id": "notepadplusplus",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": "8.9.8"
+    },
+    {
+      "Id": "vlc",
+      "Enabled": true,
+      "Category": "Multimedia",
+      "Mode": "Online",
+      "Version": "3.0.23"
+    },
+    {
+      "Id": "teamviewer",
+      "Enabled": true,
+      "Category": "Remote",
+      "Mode": "Online",
+      "Version": "15.81.5"
+    },
+    {
+      "Id": "iCloud",
+      "Enabled": true,
+      "Category": "Cloud",
+      "Mode": "Online",
+      "Version": "7.21.0.23"
+    },
+    {
+      "Id": "everything",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": "1.4.11032"
+    },
+    {
+      "Id": "rufus",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": "4.15.0"
+    },
+    {
+      "Id": "filezilla",
+      "Enabled": true,
+      "Category": "Network",
+      "Mode": "Online",
+      "Version": "3.71.1"
+    },
+    {
+      "Id": "treesizefree",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": null
+    },
+    {
+      "Id": "bluescreenview",
+      "Enabled": true,
+      "Category": "Diagnostic",
+      "Mode": "Online",
+      "Version": "1.55"
+    },
+    {
+      "Id": "powertoys",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": "0.101.2362"
+    },
+    {
+      "Id": "rainmeter",
+      "Enabled": true,
+      "Category": "Desktop",
+      "Mode": "Online",
+      "Version": "4.5.26"
+    },
+    {
+      "Id": "XnViewMP",
+      "Enabled": true,
+      "Category": "Graphics",
+      "Mode": "Online",
+      "Version": "1.11.5"
+    },
+    {
+      "Id": "yacreader",
+      "Enabled": true,
+      "Category": "Reading",
+      "Mode": "Online",
+      "Version": null
+    },
+    {
+      "Id": "razer-synapse-4",
+      "Enabled": true,
+      "Category": "Hardware",
+      "Mode": "Online",
+      "Version": "2.5.0.882"
+    },
+    {
+      "Id": "autohotkey",
+      "Enabled": true,
+      "Category": "Utility",
+      "Mode": "Online",
+      "Version": "2.0.26"
+    },
+    {
+      "Id": "powershell-core",
+      "Enabled": true,
+      "Category": "Development",
+      "Mode": "Online",
+      "Version": "7.6.5"
+    },
+    {
+      "Id": "soundblaster-command",
+      "Enabled": true,
+      "Category": "Hardware",
+      "Mode": "Online",
+      "Version": "3.5.10"
+    }
   ]
 }

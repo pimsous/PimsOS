@@ -4,7 +4,7 @@
 >
 > Statut : Référence de travail
 >
-> Dernière mise à jour : 2026-08-31
+> Dernière mise à jour : 2026-09-02
 
 ---
 
@@ -70,19 +70,103 @@ Toute nouvelle fonctionnalité doit donc :
 
 ---
 
-# Début de chaque nouvelle session
+# Début de chaque nouvelle session — GATE OBLIGATOIRE
 
-Lorsque ce document est utilisé au début d'une nouvelle conversation :
+**Cette étape est obligatoire avant toute proposition de correction, toute recherche de cause et toute modification.**
 
-1. Lire `Documentation/ProjectStatus.md`.
-2. Lire `Documentation/Roadmap.md`.
-3. Lire `Documentation/Backlog.md` si nécessaire.
-4. Lire les ADR nécessaires à la tâche.
-5. Respecter les Architecture Rules.
-6. Vérifier le contexte réel du dépôt avant toute modification.
-7. Vérifier l'état Git lorsque cela est possible.
+Le but est d'empêcher une reprise de session basée sur une mémoire partielle, une ancienne conversation ou une hypothèse.
 
-Ne jamais commencer directement à modifier du code sans comprendre le contexte.
+## 1. Lire la documentation de continuité
+
+Commencer par :
+
+1. `Documentation/DocumentationSync-2026-09-02.md` ou la note `DocumentationSync-*` la plus récente ;
+2. `Documentation/ProjectStatus.md` ;
+3. `CurrentSprint.md` ;
+4. `Documentation/ChatGPT-Workflow.md` ;
+5. `Documentation/Roadmap.md` et `Documentation/Backlog.md` si la tâche concerne la planification ;
+6. les ADR et documents techniques directement concernés.
+
+**Ne jamais considérer qu'une information ancienne de conversation remplace cette lecture.**
+
+## 2. Vérifier le dépôt réel
+
+Avant toute modification :
+
+```powershell
+git status
+git branch --show-current
+git log --oneline -5
+```
+
+Lorsque GitHub est connecté, vérifier également le dernier commit et les fichiers concernés sur `main`.
+
+Le fait de penser que « le local est à jour » n'est pas une preuve. La synchronisation doit être vérifiée.
+
+## 3. Vérifier les changements récents
+
+Identifier :
+
+- les derniers commits ;
+- les fichiers ajoutés ou supprimés ;
+- les tests récemment ajoutés ;
+- les nouveaux outils ;
+- les changements de workflow CI ;
+- les documents de synchronisation.
+
+## 4. Ne pas partir dans une théorie
+
+Règle absolue :
+
+> **Pas d'hypothèse présentée comme un diagnostic.**
+
+Si un comportement est suspect :
+
+1. chercher une preuve dans le code ;
+2. chercher une preuve dans les tests ;
+3. reproduire le comportement si nécessaire ;
+4. comparer avec le dernier Build ou résultat connu ;
+5. seulement ensuite conclure.
+
+Si les preuves contredisent une première intuition, abandonner l'intuition.
+
+## 5. Passer par le diagnostic sécurisé
+
+Avant une campagne Pester, utiliser :
+
+```powershell
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -Unit -InventoryOnly -ExplainFailures
+```
+
+ou :
+
+```powershell
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -Integration -InventoryOnly -ExplainFailures
+```
+
+Ne jamais lancer `-Unit` et `-Integration` ensemble : le script exige un seul mode.
+
+Pour une validation de Build réel, utiliser uniquement après décision explicite :
+
+```powershell
+.\Tests\Tools\Invoke-PimsOSDiagnostics.ps1 -BuildValidation -AllowBuild -InventoryOnly -ExplainFailures
+```
+
+Puis exécuter les tests/builds réellement nécessaires. `-AllowBuild` signifie que des opérations WIM/ISO peuvent être exécutées : ce n'est pas un mode de sécurité.
+
+## 6. Reprise de séance
+
+Avant de continuer, annoncer en quelques lignes :
+
+- état confirmé ;
+- derniers changements ;
+- tests validés ;
+- problèmes connus ;
+- prochaine action concrète.
+
+Ce résumé doit être basé sur les preuves nouvellement vérifiées, pas sur une supposition issue d'une ancienne séance.
+
+Ne jamais commencer directement à modifier du code sans avoir passé ce gate.
 
 ---
 
@@ -255,6 +339,8 @@ Les documents principaux comprennent notamment :
 - `Testing.md`
 - `TechnicalDecisions.md`
 - `API.md`
+- `DocumentationSync-*.md` pour les états de synchronisation vérifiés
+- `Tests\Tools\README.md` pour le diagnostic sécurisé
 
 La documentation doit décrire le comportement réel du projet.
 

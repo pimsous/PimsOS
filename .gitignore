@@ -73,3 +73,6 @@ Assets/Rainmeter/
 .DS_Store
 # Notes de reprise locales
 PimsOS_Reprise_*.txt
+
+# Local package catalog backups
+Config/Packages/*.local-backup.json
